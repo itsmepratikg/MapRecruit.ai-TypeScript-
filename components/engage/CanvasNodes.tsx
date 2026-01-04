@@ -26,7 +26,7 @@ export const CriteriaBubble = ({ node, onClick, onStartConnect, onEndConnect, is
              style={{ left: node.x, top: node.y, width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
         >
             <div 
-                className={`w-full h-full rounded-full shadow-sm border-2 flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:shadow-md ${isEnabled ? 'bg-green-500 border-white' : 'bg-white border-slate-300 text-slate-400 hover:border-slate-400'}`}
+                className={`w-full h-full rounded-full shadow-sm border-2 flex items-center justify-center cursor-pointer transition-all hover:scale-110 hover:shadow-md ${isEnabled ? 'bg-green-500 border-white dark:border-slate-800' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-400 hover:border-slate-400'}`}
                 onClick={(e) => { e.stopPropagation(); onClick(); }}
                 title={isEnabled ? "Edit Criteria" : "Add Automation"}
             >
@@ -34,7 +34,7 @@ export const CriteriaBubble = ({ node, onClick, onStartConnect, onEndConnect, is
             </div>
             
             {label && (
-                <div className={`absolute whitespace-nowrap bg-white border border-slate-200 px-2 py-0.5 rounded text-[10px] font-bold text-slate-600 shadow-sm ${layoutDirection === 'HORIZONTAL' ? '-top-6' : 'left-full ml-2 top-1/2 -translate-y-1/2'}`}>
+                <div className={`absolute whitespace-nowrap bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold text-slate-600 dark:text-slate-300 shadow-sm ${layoutDirection === 'HORIZONTAL' ? '-top-6' : 'left-full ml-2 top-1/2 -translate-y-1/2'}`}>
                     {label}
                 </div>
             )}
@@ -44,8 +44,8 @@ export const CriteriaBubble = ({ node, onClick, onStartConnect, onEndConnect, is
                 <div 
                     className={`absolute w-2.5 h-2.5 rounded-full border-2 cursor-crosshair transition-all duration-300 ${inputClass} ${
                         isConnecting && isValidTarget 
-                        ? 'bg-green-500 border-green-200 scale-150 shadow-[0_0_10px_rgba(34,197,94,0.5)] z-50' 
-                        : 'bg-slate-400 border-white hover:bg-indigo-600 hover:scale-150'
+                        ? 'bg-green-500 border-green-200 dark:border-green-800 scale-150 shadow-[0_0_10px_rgba(34,197,94,0.5)] z-50' 
+                        : 'bg-slate-400 border-white dark:border-slate-800 hover:bg-indigo-600 hover:scale-150'
                     }`}
                     style={{ opacity: isConnecting && !isValidTarget ? 0 : 1, pointerEvents: isConnecting && !isValidTarget ? 'none' : 'auto' }}
                     onClick={(e) => { 
@@ -59,7 +59,7 @@ export const CriteriaBubble = ({ node, onClick, onStartConnect, onEndConnect, is
             {/* Output Handle */}
             {!isConnecting && (
                 <div 
-                    className={`absolute w-2.5 h-2.5 rounded-full bg-slate-400 border-2 border-white cursor-crosshair hover:bg-indigo-600 hover:scale-150 transition-all ${outputClass}`}
+                    className={`absolute w-2.5 h-2.5 rounded-full bg-slate-400 border-2 border-white dark:border-slate-800 cursor-crosshair hover:bg-indigo-600 hover:scale-150 transition-all ${outputClass}`}
                     onClick={(e) => { e.stopPropagation(); onStartConnect(node.id); }}
                     title="Connect Output"
                 ></div>
@@ -75,23 +75,23 @@ export const StartNode = ({ node, onClick, onStartConnect, isConnecting, layoutD
 
     return (
         <div 
-        className="node-card absolute bg-emerald-50 rounded-full shadow-sm border-2 border-emerald-200 flex items-center justify-center gap-3 z-10 cursor-pointer hover:ring-2 hover:ring-emerald-100 transition-all hover:shadow-md"
+        className="node-card absolute bg-emerald-50 dark:bg-emerald-900/30 rounded-full shadow-sm border-2 border-emerald-200 dark:border-emerald-800 flex items-center justify-center gap-3 z-10 cursor-pointer hover:ring-2 hover:ring-emerald-100 dark:hover:ring-emerald-900/50 transition-all hover:shadow-md"
         style={{ left: node.x, top: node.y, width: START_NODE_WIDTH, height: START_NODE_HEIGHT }}
         onClick={(e) => { e.stopPropagation(); onClick(); }}
         title="Configure Start Trigger"
         >
-        <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-sm border-2 border-emerald-100">
+        <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-sm border-2 border-emerald-100 dark:border-emerald-900">
             <Play size={18} fill="currentColor" className="ml-0.5" />
         </div>
         <div className="flex flex-col justify-center">
-            <span className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Start Workflow</span>
-            <span className="text-[10px] text-emerald-600 font-medium">Candidate Applied</span>
+            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">Start Workflow</span>
+            <span className="text-[10px] text-emerald-600 dark:text-emerald-300 font-medium">Candidate Applied</span>
         </div>
         
         {/* Output Handle Only */}
         {!isConnecting && (
             <div 
-                className={`absolute w-2.5 h-2.5 rounded-full border-2 border-white bg-slate-400 z-20 cursor-crosshair hover:bg-indigo-600 hover:scale-150 transition-all ${outputClass}`}
+                className={`absolute w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-800 bg-slate-400 z-20 cursor-crosshair hover:bg-indigo-600 hover:scale-150 transition-all ${outputClass}`}
                 onClick={(e) => { e.stopPropagation(); onStartConnect(node.id); }}
             ></div>
         )}
@@ -121,13 +121,13 @@ export const NodeCard = ({ node, onSelect, onEdit, onDelete, onStartConnect, onE
     const stats = node.data.stats || {};
     return (
         <>
-          <div className="flex flex-col border-r border-slate-100 pr-3">
+          <div className="flex flex-col border-r border-slate-100 dark:border-slate-700 pr-3">
              <span className="text-[10px] text-slate-400 font-medium">Scheduled</span>
-             <span className="text-sm font-bold text-slate-700">{stats.scheduled || 0}</span>
+             <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{stats.scheduled || 0}</span>
           </div>
           <div className="flex flex-col pl-3">
              <span className="text-[10px] text-slate-400 font-medium">{node.type === 'ANNOUNCEMENT' ? 'Viewed' : 'Completed'}</span>
-             <span className="text-sm font-bold text-blue-600">{stats.viewed || stats.responded || 0}</span>
+             <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{stats.viewed || stats.responded || 0}</span>
           </div>
         </>
     );
@@ -141,13 +141,16 @@ export const NodeCard = ({ node, onSelect, onEdit, onDelete, onStartConnect, onE
         ? "top-1/2 -translate-y-1/2 -right-[10px]"
         : "left-1/2 -translate-x-1/2 -bottom-[10px]";
 
+  // Dark mode color adaptation for header bars
+  const headerColor = config.color.split(' ')[0].replace('bg-', 'bg-').replace('100', '500'); // make brighter for header strip
+
   return (
     <div 
-      className={`node-card absolute bg-white rounded-lg shadow-md border-2 group hover:shadow-xl flex flex-col z-10 ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-slate-200'}`}
+      className={`node-card absolute bg-white dark:bg-slate-800 rounded-lg shadow-md border-2 group hover:shadow-xl flex flex-col z-10 transition-colors ${isSelected ? 'border-indigo-500 ring-2 ring-indigo-200 dark:ring-indigo-900' : 'border-slate-200 dark:border-slate-700'}`}
       style={{ left: node.x, top: node.y, width: CARD_WIDTH, height: CARD_HEIGHT }} 
       onClick={() => onSelect(node)}
     >
-      <div className={`h-1.5 rounded-t-sm w-full shrink-0 ${config.color.split(' ')[0]}`}></div>
+      <div className={`h-1.5 rounded-t-sm w-full shrink-0 ${headerColor}`}></div>
       
       <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-3">
@@ -156,14 +159,14 @@ export const NodeCard = ({ node, onSelect, onEdit, onDelete, onStartConnect, onE
           </div>
           <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button 
-              className="p-1 hover:bg-slate-100 rounded text-slate-400 hover:text-slate-600"
+              className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               onClick={(e) => { e.stopPropagation(); onEdit(node); }}
               title="Edit Configuration"
             >
               <Edit3 size={12}/>
             </button>
             <button 
-              className="p-1 hover:bg-red-50 rounded text-slate-400 hover:text-red-500"
+              className="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-slate-400 hover:text-red-500"
               onClick={(e) => { e.stopPropagation(); onDelete(node.id); }}
               title="Delete"
             >
@@ -171,15 +174,15 @@ export const NodeCard = ({ node, onSelect, onEdit, onDelete, onStartConnect, onE
             </button>
           </div>
         </div>
-        <h4 className="font-bold text-slate-800 text-sm mb-1">{node.title}</h4>
-        <p className="text-[10px] text-slate-500 line-clamp-2 leading-relaxed">{node.data.desc}</p>
+        <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-1">{node.title}</h4>
+        <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{node.data.desc}</p>
         
-        <div className="mt-auto pt-3 flex items-center border-t border-slate-50">
+        <div className="mt-auto pt-3 flex items-center border-t border-slate-50 dark:border-slate-700">
            {renderStats()}
            <div className="ml-auto">
               <button 
                 onClick={(e) => { e.stopPropagation(); onShowAnalytics && onShowAnalytics(node.type); }}
-                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
                 title="Round Analytics"
               >
                 <Network size={16} />
@@ -193,8 +196,8 @@ export const NodeCard = ({ node, onSelect, onEdit, onDelete, onStartConnect, onE
           <div 
             className={`absolute w-5 h-5 rounded-full border-4 shadow-sm transition-all duration-300 cursor-crosshair z-20 ${inputClass} ${
                 isConnecting && isValidTarget 
-                ? 'bg-green-500 border-green-200 scale-125 shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse' 
-                : 'bg-slate-300 border-white hover:bg-indigo-500 hover:scale-125'
+                ? 'bg-green-500 border-green-200 dark:border-green-800 scale-125 shadow-[0_0_15px_rgba(34,197,94,0.6)] animate-pulse' 
+                : 'bg-slate-300 dark:bg-slate-600 border-white dark:border-slate-800 hover:bg-indigo-500 hover:scale-125'
             }`} 
             onClick={(e) => { 
                 e.stopPropagation(); 
@@ -206,7 +209,7 @@ export const NodeCard = ({ node, onSelect, onEdit, onDelete, onStartConnect, onE
       {/* Output Handle */}
       {!isConnecting && (
           <div 
-            className={`absolute w-5 h-5 rounded-full border-4 border-white shadow-sm bg-slate-300 hover:bg-indigo-500 hover:scale-125 transition-all cursor-crosshair z-20 ${outputClass}`} 
+            className={`absolute w-5 h-5 rounded-full border-4 border-white dark:border-slate-800 shadow-sm bg-slate-300 dark:bg-slate-600 hover:bg-indigo-500 hover:scale-125 transition-all cursor-crosshair z-20 ${outputClass}`} 
             onClick={(e) => { e.stopPropagation(); onStartConnect(node.id); }}
           ></div>
       )}
@@ -237,7 +240,7 @@ export const BezierEdge = ({ start, end, label, direction = 'HORIZONTAL' }: any)
       <path d={path} fill="none" stroke="#94a3b8" strokeWidth="2.5" />
       {label && (
         <foreignObject x={labelX} y={labelY} width={40} height={20}>
-           <div className="bg-white text-[10px] text-slate-500 border border-slate-200 rounded px-1 text-center truncate">{label}</div>
+           <div className="bg-white dark:bg-slate-800 text-[10px] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 rounded px-1 text-center truncate">{label}</div>
         </foreignObject>
       )}
     </g>

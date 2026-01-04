@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Megaphone, Video, Phone, MapPin, Calendar, Activity, 
@@ -28,10 +29,10 @@ export const RoundCard = ({ round, isOpen, onToggle, onMaximizeTemplate }: any) 
 
   const getRoundColor = () => {
     switch(round.type) {
-      case 'Announcement': return 'bg-purple-100 text-purple-600';
-      case 'Interview': return 'bg-orange-100 text-orange-600';
-      case 'Assessment': return 'bg-blue-100 text-blue-600';
-      default: return 'bg-slate-100 text-slate-600';
+      case 'Announcement': return 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'Interview': return 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400';
+      case 'Assessment': return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400';
+      default: return 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400';
     }
   };
 
@@ -51,9 +52,9 @@ export const RoundCard = ({ round, isOpen, onToggle, onMaximizeTemplate }: any) 
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden transition-all">
+    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm overflow-hidden transition-all">
        <div 
-         className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-colors"
+         className="px-4 py-3 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
          onClick={onToggle}
        >
           <div className="flex items-center gap-3">
@@ -61,9 +62,9 @@ export const RoundCard = ({ round, isOpen, onToggle, onMaximizeTemplate }: any) 
                 {getRoundIcon()}
              </div>
              <div>
-                <h5 className="font-semibold text-slate-800 text-sm">{round.name}</h5>
+                <h5 className="font-semibold text-slate-800 dark:text-slate-200 text-sm">{round.name}</h5>
                 <div className="flex flex-col">
-                   <span className="text-[10px] text-slate-500">{round.type} {round.mode ? `• ${round.mode}` : ''}</span>
+                   <span className="text-[10px] text-slate-500 dark:text-slate-400">{round.type} {round.mode ? `• ${round.mode}` : ''}</span>
                 </div>
              </div>
           </div>
@@ -71,26 +72,26 @@ export const RoundCard = ({ round, isOpen, onToggle, onMaximizeTemplate }: any) 
              <div className="flex items-center gap-1">
                 <StatusBadge status={round.status} />
              </div>
-             <button className="text-slate-400 hover:text-slate-600">
+             <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
                {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
              </button>
           </div>
        </div>
 
        {isOpen && (
-          <div className="p-4 space-y-4 bg-white animate-in slide-in-from-top-1 duration-200">
+          <div className="p-4 space-y-4 bg-white dark:bg-slate-800 animate-in slide-in-from-top-1 duration-200">
              {round.type === 'Announcement' && (
-                <div className="p-4 bg-slate-50 rounded border border-slate-100 text-center">
+                <div className="p-4 bg-slate-50 dark:bg-slate-700/30 rounded border border-slate-100 dark:border-slate-600 text-center">
                    <Megaphone size={24} className="text-purple-300 mx-auto mb-2" />
-                   <p className="text-sm text-slate-600 italic">"{round.description}"</p>
+                   <p className="text-sm text-slate-600 dark:text-slate-300 italic">"{round.description}"</p>
                    <p className="text-xs text-slate-400 mt-2">Sent on {round.date}</p>
                 </div>
              )}
 
              {round.type === 'Interview' && !activeTemplate && !showSelector && (
-                <div className="text-center py-8 bg-slate-50 rounded border border-dashed border-slate-300">
-                   <FileEdit size={32} className="text-slate-300 mx-auto mb-2" />
-                   <p className="text-slate-600 font-medium mb-1">No Interview Template Attached</p>
+                <div className="text-center py-8 bg-slate-50 dark:bg-slate-700/30 rounded border border-dashed border-slate-300 dark:border-slate-600">
+                   <FileEdit size={32} className="text-slate-300 dark:text-slate-500 mx-auto mb-2" />
+                   <p className="text-slate-600 dark:text-slate-300 font-medium mb-1">No Interview Template Attached</p>
                    <p className="text-xs text-slate-400 mb-4">Select a template to start evaluating the candidate.</p>
                    <button 
                      onClick={() => setShowSelector(true)}
@@ -125,20 +126,20 @@ export const RoundCard = ({ round, isOpen, onToggle, onMaximizeTemplate }: any) 
                    </div>
                    
                    {/* Round Level Feedback */}
-                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                   <div className="bg-slate-50 dark:bg-slate-700/30 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
                       <div className="flex justify-between items-start mb-3">
                          <div>
-                            <h5 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Assessment Feedback</h5>
+                            <h5 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Assessment Feedback</h5>
                             <p className="text-xs text-slate-400">Rate the candidate's performance in this specific round.</p>
                          </div>
-                         <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-slate-200">
-                            <span className="text-xs font-medium text-slate-700">Score:</span>
+                         <div className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-600">
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Score:</span>
                             <StarRating rating={roundRating} onRate={setRoundRating} />
                          </div>
                       </div>
                       <div className="space-y-3">
                          <textarea 
-                            className="w-full p-3 border border-slate-300 rounded text-sm focus:outline-none focus:border-green-500 resize-none h-24 bg-white" 
+                            className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded text-sm focus:outline-none focus:border-green-500 resize-none h-24 bg-white dark:bg-slate-800 dark:text-slate-200" 
                             placeholder="Enter detailed feedback for this assessment round..."
                          ></textarea>
                          <div className="flex justify-end">
@@ -161,31 +162,31 @@ export const CampaignDetailView = ({ campaign, onBack, onMaximizeTemplate, isScr
   if (!campaign) return null;
 
   return (
-    <div className="flex flex-col min-h-full bg-white shadow-sm overflow-hidden relative"> 
+    <div className="flex flex-col min-h-full bg-white dark:bg-slate-900 shadow-sm overflow-hidden relative transition-colors"> 
        {/* Sticky Header */}
-       <div className={`bg-white border-b border-slate-200 z-30 transition-all duration-300 sticky top-0 ${isScrolled ? 'py-2 px-6 shadow-sm sticky top-0' : 'py-6 px-8'}`}>
+       <div className={`bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-30 transition-all duration-300 sticky top-0 ${isScrolled ? 'py-2 px-6 shadow-sm sticky top-0' : 'py-6 px-8'}`}>
          <div className="flex justify-between items-center">
              <div className="flex items-center gap-4 overflow-hidden">
-                 <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-1 hover:bg-slate-100 rounded-full transition-colors shrink-0" title="Back to Campaigns List"><ChevronLeft size={24} /></button>
+                 <button onClick={onBack} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors shrink-0" title="Back to Campaigns List"><ChevronLeft size={24} /></button>
                  
                  {/* COMPACT STATE */}
                  <div className={`flex items-center gap-4 transition-all duration-300 ${isScrolled ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
-                     <button onClick={() => onShowMatchScore && onShowMatchScore()} className="rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold border border-red-200 shadow-sm w-8 h-8 text-xs shrink-0">0.1</button>
+                     <button onClick={() => onShowMatchScore && onShowMatchScore()} className="rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-800 shadow-sm w-8 h-8 text-xs shrink-0">0.1</button>
                      <div className="flex items-center gap-3 min-w-0">
-                        <h3 className="font-bold text-green-600 truncate text-base">{campaign.name}</h3>
-                        <div className="hidden sm:block font-mono text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">ID: {campaign.jobID}</div>
+                        <h3 className="font-bold text-green-600 dark:text-green-400 truncate text-base">{campaign.name}</h3>
+                        <div className="hidden sm:block font-mono text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">ID: {campaign.jobID}</div>
                         <StatusBadge status={campaign.status} />
                      </div>
                  </div>
 
                  {/* EXPANDED STATE */}
                  <div className={`flex items-start gap-4 transition-all duration-300 ${!isScrolled ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden'}`}>
-                     <button onClick={() => onShowMatchScore && onShowMatchScore()} className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold border border-red-200 shadow-sm hover:scale-105 transition-transform shrink-0">0.1</button>
+                     <button onClick={() => onShowMatchScore && onShowMatchScore()} className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold border border-red-200 dark:border-red-800 shadow-sm hover:scale-105 transition-transform shrink-0">0.1</button>
                      <div>
-                        <h3 className="font-bold text-green-600 text-xl leading-tight mb-1">{campaign.name}</h3>
-                        <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                        <h3 className="font-bold text-green-600 dark:text-green-400 text-xl leading-tight mb-1">{campaign.name}</h3>
+                        <div className="flex flex-wrap gap-4 text-xs text-slate-500 dark:text-slate-400">
                            <span className="flex items-center gap-1"><Briefcase size={12}/> {campaign.role}</span>
-                           <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded">ID: {campaign.jobID}</span>
+                           <span className="font-mono bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded">ID: {campaign.jobID}</span>
                            <span className="flex items-center gap-1"><MapPin size={12}/> {campaign.location}</span>
                            <StatusBadge status={campaign.status} />
                         </div>
@@ -194,8 +195,8 @@ export const CampaignDetailView = ({ campaign, onBack, onMaximizeTemplate, isScr
              </div>
 
              <div className="flex items-center gap-2 shrink-0">
-                <button className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors" title="Share Campaign"><Share2 size={18} /></button>
-                <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-colors" title="More Options"><MoreHorizontal size={18} /></button>
+                <button className="p-2 text-slate-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full transition-colors" title="Share Campaign"><Share2 size={18} /></button>
+                <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full transition-colors" title="More Options"><MoreHorizontal size={18} /></button>
              </div>
          </div>
        </div>
@@ -203,12 +204,12 @@ export const CampaignDetailView = ({ campaign, onBack, onMaximizeTemplate, isScr
        {/* Content Area */}
        <div className="flex-1 p-6 space-y-6">
           <div className="flex items-center gap-2 mb-2">
-             <Activity size={18} className="text-slate-700" />
-             <h4 className="font-bold text-slate-700">Screening Rounds</h4>
+             <Activity size={18} className="text-slate-700 dark:text-slate-300" />
+             <h4 className="font-bold text-slate-700 dark:text-slate-300">Screening Rounds</h4>
           </div>
           {(!campaign.rounds || campaign.rounds.length === 0) ? (
-             <div className="bg-white border border-slate-200 rounded-lg p-8 text-center shadow-sm">
-                <p className="text-slate-500 mb-1">No Screening Rounds Scheduled!</p>
+             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-8 text-center shadow-sm">
+                <p className="text-slate-500 dark:text-slate-400 mb-1">No Screening Rounds Scheduled!</p>
              </div>
           ) : (
              <div className="space-y-4">
@@ -223,15 +224,15 @@ export const CampaignDetailView = ({ campaign, onBack, onMaximizeTemplate, isScr
              </div>
           )}
           
-          <div className="pt-8 border-t border-slate-200">
+          <div className="pt-8 border-t border-slate-200 dark:border-slate-700">
              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle size={18} className="text-slate-700" />
-                <h4 className="font-bold text-slate-700">Overall Feedback</h4>
+                <CheckCircle size={18} className="text-slate-700 dark:text-slate-300" />
+                <h4 className="font-bold text-slate-700 dark:text-slate-300">Overall Feedback</h4>
              </div>
              
-             <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-sm space-y-4">
+             <div className="bg-white dark:bg-slate-800 p-5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                 <div>
-                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Rate this candidate</label>
+                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">Rate this candidate</label>
                    <div className="flex items-center gap-2">
                       <StarRating rating={overallRating} onRate={setOverallRating} />
                       <span className="text-xs text-slate-400 font-medium">{overallRating > 0 ? `${overallRating}/5` : ''}</span>
@@ -240,8 +241,8 @@ export const CampaignDetailView = ({ campaign, onBack, onMaximizeTemplate, isScr
                 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                    <div className="md:col-span-1">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Status</label>
-                      <select className="w-full p-2 border border-slate-300 rounded text-sm bg-white focus:outline-none focus:border-green-500">
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">Status</label>
+                      <select className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded text-sm bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:border-green-500">
                          <option value="Pending">Pending</option>
                          <option value="Shortlisted">Shortlisted</option>
                          <option value="Rejected">Rejected</option>
@@ -249,9 +250,9 @@ export const CampaignDetailView = ({ campaign, onBack, onMaximizeTemplate, isScr
                       </select>
                    </div>
                    <div className="md:col-span-3">
-                      <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Overall Comment</label>
+                      <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 block">Overall Comment</label>
                       <textarea 
-                         className="w-full p-2 border border-slate-300 rounded text-sm focus:outline-none focus:border-green-500 resize-none h-20" 
+                         className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded text-sm focus:outline-none focus:border-green-500 resize-none h-20 bg-white dark:bg-slate-700 dark:text-slate-200" 
                          placeholder="Add overall feedback for this candidate..."
                       ></textarea>
                    </div>
@@ -269,8 +270,8 @@ export const CampaignDetailView = ({ campaign, onBack, onMaximizeTemplate, isScr
 
 export const CampaignCard = ({ camp, onPreview, expanded, onToggle, onShowMatchScore }: any) => {
   return (
-    <div className="bg-white rounded-lg border border-slate-100 shadow-sm transition-all hover:shadow-md overflow-hidden">
-      <div className="flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors">
+    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm transition-all hover:shadow-md overflow-hidden">
+      <div className="flex items-center gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
         <div className="shrink-0">
             <button 
                 onClick={(e) => { e.stopPropagation(); onShowMatchScore && onShowMatchScore(); }}
@@ -280,24 +281,24 @@ export const CampaignCard = ({ camp, onPreview, expanded, onToggle, onShowMatchS
             </button>
         </div>
         <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4 items-center">
-           <button onClick={() => onPreview(camp)} className="font-medium text-green-600 text-sm truncate hover:underline text-left">{camp.name}</button>
-           <div className="hidden md:block font-mono text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded w-fit">ID: {camp.jobID}</div>
-           <div className="text-xs text-slate-500">Linked: {camp.date}</div>
+           <button onClick={() => onPreview(camp)} className="font-medium text-green-600 dark:text-green-400 text-sm truncate hover:underline text-left">{camp.name}</button>
+           <div className="hidden md:block font-mono text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded w-fit">ID: {camp.jobID}</div>
+           <div className="text-xs text-slate-500 dark:text-slate-400">Linked: {camp.date}</div>
            <div><StatusBadge status={camp.status} /></div>
         </div>
-        <button onClick={onToggle} className="text-slate-400 hover:text-green-600 transition-colors p-2">{expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</button>
+        <button onClick={onToggle} className="text-slate-400 hover:text-green-600 dark:hover:text-green-400 transition-colors p-2">{expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</button>
       </div>
       {expanded && (
-        <div className="px-4 pb-4 pt-0 bg-slate-50/50 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">
+        <div className="px-4 pb-4 pt-0 bg-slate-50/50 dark:bg-slate-700/30 border-t border-slate-100 dark:border-slate-700 animate-in slide-in-from-top-2 duration-200">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-4 text-sm">
-              <div><p className="text-xs font-semibold text-slate-400 uppercase mb-1">Role / Position</p><div className="flex items-center gap-2 text-slate-700"><Briefcase size={14} className="text-slate-400" />{camp.role}</div></div>
-              <div><p className="text-xs font-semibold text-slate-400 uppercase mb-1">Company</p><div className="flex items-center gap-2 text-slate-700"><Building2 size={14} className="text-slate-400" />{camp.company}</div></div>
-              <div><p className="text-xs font-semibold text-slate-400 uppercase mb-1">Location</p><div className="flex items-center gap-2 text-slate-700"><MapPin size={14} className="text-slate-400" /><span className="truncate" title={camp.location}>{camp.location}</span></div></div>
-              <div><p className="text-xs font-semibold text-slate-400 uppercase mb-1">Status Check</p><div className="flex justify-between items-center text-xs"><span className="text-slate-500">Applied: <b className="text-slate-800">{camp.applied}</b></span><span className="text-slate-500">Feedback: <b className="text-slate-800">{camp.feedback}</b></span></div></div>
+              <div><p className="text-xs font-semibold text-slate-400 uppercase mb-1">Role / Position</p><div className="flex items-center gap-2 text-slate-700 dark:text-slate-300"><Briefcase size={14} className="text-slate-400" />{camp.role}</div></div>
+              <div><p className="text-xs font-semibold text-slate-400 uppercase mb-1">Company</p><div className="flex items-center gap-2 text-slate-700 dark:text-slate-300"><Building2 size={14} className="text-slate-400" />{camp.company}</div></div>
+              <div><p className="text-xs font-semibold text-slate-400 uppercase mb-1">Location</p><div className="flex items-center gap-2 text-slate-700 dark:text-slate-300"><MapPin size={14} className="text-slate-400" /><span className="truncate" title={camp.location}>{camp.location}</span></div></div>
+              <div><p className="text-xs font-semibold text-slate-400 uppercase mb-1">Status Check</p><div className="flex justify-between items-center text-xs"><span className="text-slate-500 dark:text-slate-400">Applied: <b className="text-slate-800 dark:text-slate-200">{camp.applied}</b></span><span className="text-slate-500 dark:text-slate-400">Feedback: <b className="text-slate-800 dark:text-slate-200">{camp.feedback}</b></span></div></div>
            </div>
-           <div className="mt-4 flex justify-end gap-2 pt-3 border-t border-slate-200/50">
-              <button className="text-xs font-medium text-slate-500 hover:text-slate-800 px-3 py-1.5 hover:bg-white rounded border border-transparent hover:border-slate-200 transition-all">View Job Details</button>
-              <button className="text-xs font-medium text-red-600 hover:bg-red-50 px-3 py-1.5 rounded transition-colors">Unlink Campaign</button>
+           <div className="mt-4 flex justify-end gap-2 pt-3 border-t border-slate-200/50 dark:border-slate-600/50">
+              <button className="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 px-3 py-1.5 hover:bg-white dark:hover:bg-slate-700 rounded border border-transparent hover:border-slate-200 dark:hover:border-slate-600 transition-all">View Job Details</button>
+              <button className="text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded transition-colors">Unlink Campaign</button>
            </div>
         </div>
       )}
@@ -311,11 +312,11 @@ export const CampaignsView = ({ onPreviewCampaign, onShowMatchScore }: any) => {
   return (
     <div className="space-y-4">
        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-semibold text-green-600 text-lg">Linked Campaigns</h3>
+          <h3 className="font-semibold text-green-600 dark:text-green-400 text-lg">Linked Campaigns</h3>
           <div className="flex gap-2">
               <div className="relative">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input type="text" placeholder="Search..." className="pl-9 pr-4 py-1.5 text-sm bg-white border border-slate-200 rounded-full w-64 focus:outline-none focus:border-green-500" />
+                <input type="text" placeholder="Search..." className="pl-9 pr-4 py-1.5 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full w-64 focus:outline-none focus:border-green-500 dark:text-slate-200" />
               </div>
           </div>
        </div>

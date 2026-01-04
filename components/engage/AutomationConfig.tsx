@@ -9,17 +9,17 @@ interface AutomationConfigProps {
 
 export const AutomationConfig = ({ isEnabled, onToggle }: AutomationConfigProps) => {
     return (
-        <div className="flex flex-col h-full bg-white">
+        <div className="flex flex-col h-full bg-white dark:bg-slate-800">
             {/* Status Bar */}
-            <div className="px-6 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center shrink-0">
-                <span className="text-xs font-bold text-slate-500 uppercase">Status</span>
+            <div className="px-6 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex justify-between items-center shrink-0">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Status</span>
                 <div className="flex items-center gap-3">
-                    <span className={`text-sm font-medium ${isEnabled ? 'text-green-600' : 'text-slate-400'}`}>
+                    <span className={`text-sm font-medium ${isEnabled ? 'text-green-600 dark:text-green-400' : 'text-slate-400 dark:text-slate-500'}`}>
                         {isEnabled ? 'Enabled' : 'Disabled'}
                     </span>
                     <button 
                         onClick={() => onToggle(!isEnabled)}
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isEnabled ? 'bg-green-600' : 'bg-slate-300'}`}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isEnabled ? 'bg-green-600' : 'bg-slate-300 dark:bg-slate-600'}`}
                     >
                         <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
@@ -28,20 +28,20 @@ export const AutomationConfig = ({ isEnabled, onToggle }: AutomationConfigProps)
             
             {/* Configuration Content */}
             <div className="p-8 text-center space-y-4 flex-1 overflow-y-auto">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 ${isEnabled ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-2 ${isEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500'}`}>
                     <GitBranch size={32} />
                 </div>
-                <h3 className="font-bold text-slate-700">
+                <h3 className="font-bold text-slate-700 dark:text-slate-200">
                     {isEnabled ? 'Automation Active' : 'Enable Automation?'}
                 </h3>
-                <p className="text-sm text-slate-500 max-w-xs mx-auto">
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
                     {isEnabled 
                         ? "Logic conditions are currently active for this transition. Editing functionality coming soon." 
                         : "Define criteria to automatically move candidates to the next stage."}
                 </p>
                 
                 {!isEnabled && (
-                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-left text-xs text-slate-500 mt-4 mx-auto max-w-xs">
+                    <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700 text-left text-xs text-slate-500 dark:text-slate-400 mt-4 mx-auto max-w-xs">
                         <p className="font-bold mb-1">Coming Soon:</p>
                         <ul className="list-disc pl-4 space-y-1">
                             <li>Score-based triggers</li>
