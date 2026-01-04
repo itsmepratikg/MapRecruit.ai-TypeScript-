@@ -367,3 +367,348 @@ export const SIDEBAR_FILTERS = [
   { id: 'availability', label: 'Availability', options: ['Immediate', '2 Weeks', '1 Month'] },
   { id: 'match', label: 'Match Quality', options: ['High Match (>90%)'] }
 ];
+
+// --- DYNAMIC FULL PROFILE DATA ---
+export const FULL_PROFILE_DATA = {
+    "resumeDetails": {
+        "_id": "690983bcb7f941d7bdaf0a27",
+        "companyID": "6112806bc9147f673d28c6eb",
+        "sharedUserID": [],
+        "favouriteUserID": [],
+        "articleID": [
+            "63d760a9aec60c5e1494a9ea"
+        ],
+        "campaignID": [
+            "69292315e875b71058253412",
+            "62c5a8c7250281f99ac58215",
+            "6915cf8c26bd5d74fe99dc7b",
+            "6931992db394b307b3b087df",
+            "6904a1b1fc63a531b40f27ba",
+            "692922fc67d80b239e4e3ab0",
+            "68f7cdae322c76d7b59f221a",
+            "667d30e5004ab28fd4bd3af4",
+            "690b60b2ee0e3af66c119ac3",
+            "693155d5f2242275bd7148e3",
+            "678802b344b68e1a8c7a40eb",
+            "69453921710bafba20237de6",
+            "693696b395bfcea522303666"
+        ],
+        "attachedCampaigns": [],
+        "sharedArticleID": [],
+        "status": "SUCCESS",
+        "personnelStatus": "Pending Applicant",
+        "employmentStatus": "Active",
+        "availability": "Available",
+        "tagID": [],
+        "active": true,
+        "resume": {
+            "profile": {
+                "fullName": "Pratik Gaurav",
+                "firstName": "Pratik",
+                "middleName": "",
+                "lastName": "Gaurav",
+                "nickName": "",
+                "nameSuffix": "",
+                "emails": [
+                    {
+                        "text": "pratik.gaurav@maprecruit.ai",
+                        "email": "pratik.gaurav@maprecruit.ai",
+                        "type": "Personal",
+                        "preferred": "Primary",
+                        "confidenceScore": 1,
+                        "valid": true,
+                        "verified": false,
+                        "subscribeStatus": "Opt-in"
+                    }
+                ],
+                "phones": [
+                    {
+                        "text": "+917004029399",
+                        "phoneNumberOnly": "7004029399",
+                        "internationalPhoneCode": "+91",
+                        "nationalPhoneCode": "",
+                        "country": "INDIA",
+                        "countryCode": "IN",
+                        "type": "Mobile",
+                        "preferred": "Primary",
+                        "DNDStatus": "",
+                        "confidenceScore": 1,
+                        "valid": true,
+                        "verified": false,
+                        "subscribeStatus": "Opt-in",
+                        "ontology": true
+                    }
+                ],
+                "websites": [],
+                "skypeID": "",
+                "locations": [
+                    {
+                        "text": "san diego,california,united states of america,92101",
+                        "tier": "",
+                        "address": "",
+                        "addressType": "present",
+                        "area": "",
+                        "city": "san diego",
+                        "district": "",
+                        "state": "california",
+                        "stateCode": "CA",
+                        "country": "united states of america",
+                        "countryCode": "US",
+                        "postalCode": "92101",
+                        "pin": {
+                            "lat": 32.717421,
+                            "lon": -117.162771
+                        },
+                        "cityCanonical": "san diego",
+                        "districtCanonical": "",
+                        "stateCanonical": "california",
+                        "countryCanonical": "united states of america",
+                        "foundInResume": true,
+                        "confidenceScore": 1,
+                        "ontology": true
+                    }
+                ],
+                "gender": { "text": "", "label": "", "found": false },
+                "ethnicity": "",
+                "veteranStatus": "",
+                "languagesKnown": [],
+                "age": { "text": "", "inYears": 0, "found": false, "confidenceScore": 1 },
+                "dob": { "text": "", "standard": "", "month": "", "date": "", "year": "", "confidenceScore": 1 },
+                "nationality": { "text": "", "label": "", "nationalityCanonical": "", "ethnicity": "", "country": "", "countryCode": "" },
+                "maritalStatus": "",
+                "fatherName": "",
+                "motherName": "",
+                "spouseName": "",
+                "passport": { "passportNumber": "", "country": "", "countryCode": "", "expiryDate": { "text": "", "standard": "", "date": "", "month": "", "year": "" } },
+                "profileImage": { "content": "", "fileName": "" }
+            },
+            "professionalSummary": {
+                "objective": "",
+                "summary": "Skilled Software Engineer with 3 years of hands-on experience in automation and manual testing. Proficient in Selenium, TestNG, and Rest Assured with a strong track record of reducing manual testing efforts and enhancing software quality. Experienced in\nAPI, ETL, web application, and Database testing techniques. Worked on waterfall and agile methodologies across various teams and clients to deliver reliable software solutions.",
+                "noticePeriod": { "text": "", "days": 0, "negotiable": false },
+                "workPermit": { "text": "", "type": "", "status": "Unknown", "country": "", "countryCode": "" },
+                "currentSalary": { "text": "", "period": "Per Hour", "currency": "", "value": 0, "country": "", "countryCode": "", "minvalue": "" },
+                "expectedSalary": { "text": "", "period": "Per Hour", "currency": "", "minvalue": 0, "maxvalue": 0, "negotiable": false },
+                "preferredLocations": [],
+                "desiredWorkSchedule": [],
+                "availableDate": { "text": "", "standard": "", "year": "", "month": "","date": "" },
+                "yearsOfExperience": { "text": "0.0", "derivedYears": 6.75, "mentionedYears": 6.75, "finalYears": 6.75, "confidenceScore": 1 },
+                "currentRole": { "jobTitle": "Instructional Student Assistant", "entityID": "", "jobProfile": "", "jobLevel": "", "jobType": "", "jobCategory": "", "jobTitleCanonical": [ "instructional student assistant" ], "canonicalID": [ "688cd2d2f4b6d9e7b4c3ffdb" ], "confidenceScore": 1 },
+                "currentCompany": { "company": "San Diego", "companyCanonical": "san diego", "confidenceScore": 1 },
+                "preferredRoles": [],
+                "currentlyWorking": true,
+                "gapYears": { "experienceGapYears": 0, "recentExperienceGap": 0, "longestExperienceGapYears": 0, "educationExperienceGapYears": 0 },
+                "avgExperiencePerCompany": 0
+            },
+            "professionalQualification": {
+                "education": [
+                    {
+                        "campus": { "text": "San Diego State University", "redFlag": false, "canonical": "san diego state university", "type": "Unknown", "confidenceScore": 1 },
+                        "university": { "text": "san diego state university", "canonical": "san diego state university", "type": "University", "confidenceScore": 1 },
+                        "degree": { "text": "Master of Science", "canonical": "master of science", "similar": [], "type": "", "level": "pg", "confidenceScore": 1, "entityID": "5bbb58d1ef29be4f56d0b152", "canonicalID": "", "ontology": true },
+                        "major": [ { "text": "Computer Science | Design, Machine Learning", "entityID": "", "canonical": [ "machine learning" ], "canonicalID": [], "similar": [], "confidenceScore": 1, "ontology": true } ],
+                        "minor": [],
+                        "merit": { "percentage": 38.8, "GPA": "3.88", "GPAOutOf": 10 },
+                        "currentStatus": "Passed",
+                        "startDate": { "text": "2022-08-01", "standard": "2022-08-01", "year": "2022", "month": "08", "date": "01", "ontology": true },
+                        "endDate": { "text": "2024-05-01", "standard": "2024-05-01", "year": "2024", "month": "05", "date": "01", "ontology": true },
+                        "duration": { "text": "1 years 9 months", "inYears": 1.8, "years": 1, "months": 9, "days": 0 },
+                        "location": { "text": "SanDiego,CA,USA", "tier": "", "address": "San Diego, CA, USA", "area": "", "city": "", "district": "", "state": "USA", "stateCode": "", "country": "", "countryCode": "", "postalCode": "", "pin": { "lat": "", "lon": "" }, "cityCanonical": "", "districtCanonical": "", "stateCanonical": "", "countryCanonical": "", "latitude": "", "longitude": "", "ontology": false }
+                    },
+                    {
+                        "campus": { "text": "", "redFlag": false, "canonical": "", "type": "Unknown", "confidenceScore": 1 },
+                        "university": { "text": "", "canonical": "", "type": "University", "confidenceScore": 1 },
+                        "degree": { "text": "Bachelor of Technology", "canonical": "bachelor of technology", "similar": [], "type": "", "level": "ug", "confidenceScore": 1, "entityID": "5bbb58e2ef29be4f56d0bfe6", "canonicalID": "", "ontology": true },
+                        "major": [ { "text": "Computer Science & Engineering | Mining", "entityID": "", "canonical": [ "mining" ], "canonicalID": [], "similar": [], "confidenceScore": 1, "ontology": true } ],
+                        "minor": [],
+                        "merit": { "percentage": 31.1, "GPA": "3.11", "GPAOutOf": 10 },
+                        "currentStatus": "Passed",
+                        "startDate": { "text": "2014-07-01", "standard": "2014-07-01", "year": "2014", "month": "07", "date": "01", "ontology": true },
+                        "endDate": { "text": "2018-05-01", "standard": "2018-05-01", "year": "2018", "month": "05", "date": "01", "ontology": true },
+                        "duration": { "text": "3 years 10 months", "inYears": 3.8, "years": 3, "months": 10, "days": 0 },
+                        "location": { "text": "hyderabad,telangana,Hyderabad,India,india", "tier": "", "address": "Hyderabad, India", "area": "", "city": "hyderabad", "district": "", "state": "telangana", "stateCode": "TG", "country": "india", "countryCode": "IN", "postalCode": [], "pin": { "lat": 17.361608, "lon": 78.474629 }, "cityCanonical": "hyderabad", "districtCanonical": "", "stateCanonical": "telangana", "countryCanonical": "india", "latitude": "", "longitude": "", "addressType": "others", "ontology": true, "confidenceScore": 1 }
+                    },
+                    {
+                        "campus": { "canonical": "keiser university", "confidenceScore": 1, "redFlag": false, "text": "Keiser University", "type": "Unknown" },
+                        "currentStatus": "Studying",
+                        "degree": { "canonical": "associate's degree", "canonicalID": "", "confidenceScore": 1, "entityID": "", "level": "ug", "similar": [], "text": "Associate Degree", "type": "" },
+                        "duration": { "days": 0, "inYears": 0, "months": 0, "text": "", "years": 0 },
+                        "endDate": { "date": "", "month": "", "standard": "", "text": "Present", "year": "" },
+                        "location": { "address": "", "area": "", "city": "", "cityCanonical": "", "country": "", "countryCanonical": "", "countryCode": "", "district": "", "districtCanonical": "", "latitude": "", "longitude": "", "pin": { "lat": "", "lon": "" }, "postalCode": "", "state": "", "stateCanonical": "", "stateCode": "", "text": "", "tier": "" },
+                        "major": [ { "canonical": [ "engineering" ], "canonicalID": [], "confidenceScore": 1, "entityID": "", "similar": [], "text": "Engineering" } ],
+                        "merit": { "GPA": 0, "GPAOutOf": 10, "percentage": 0 },
+                        "minor": [],
+                        "startDate": { "date": "1", "month": "8", "standard": "2021-08-01", "text": "2021-08-01", "year": "2021" },
+                        "university": { "canonical": "", "confidenceScore": 1, "text": "keiser university", "type": "University" }
+                    }
+                ],
+                "skills": [
+                    { "text": "Leadership" }, { "text": "Conflict management" }, { "text": "Communication skills" }, { "text": "Microsoft Office" }, { "text": "Shipping & Receiving" }, { "text": "Shipping" }, { "text": "Operating Systems" }, { "text": "Warehouse Experience" }, { "text": "Forklift" }, { "text": "Order Picking" }, { "text": "Picking" }, { "text": "Warehouse Management" }, { "text": "Computer skills" }, { "text": "Computer" }, { "text": "Customer service" }, { "text": "Organizational skills" }, { "text": "Documentation" }, { "text": "Phone etiquette" }, { "text": "Pallet Jack" }, { "text": "Pallet" }, { "text": "effectively communicating" }, { "text": "assisting employees" }, { "text": "professional manner" }, { "text": "teach others" }, { "text": "Problem solving" }, { "text": "high energy" }, { "text": "enthusiastic" }, { "text": "communicating" }, { "text": "attention to detail" }, { "text": "customer orders" }, { "text": "clean" }, { "text": "handheld scanners" }, { "text": "safety procedures" }, { "text": "machine equipment" }, { "text": "working with a team" }, { "text": "exceeding expectations" }, { "text": "Service / Sales" }, { "text": "Sales" }, { "text": "online sales" }, { "text": "keep track of inventory" }, { "text": "shopping experience" }, { "text": "answering questions" }, { "text": "answering inbound calls" }, { "text": "inbound" }, { "text": "inbound calls" }, { "text": "providing customers" }, { "text": "resolving customer issues" }, { "text": "delivering results" }, { "text": "customer issues" }, { "text": "Warehouse" },
+                    { "text": "automation" }, { "text": "manual testing" }, { "text": "Selenium" }, { "text": "TestNG" }, { "text": "Rest Assured" }, { "text": "software quality" }, { "text": "API" }, { "text": "ETL" }, { "text": "web application" }, { "text": "Database testing" }, { "text": "testing techniques" }, { "text": "waterfall" }, { "text": "agile methodologies" }, { "text": "software solutions" }, { "text": "testing" }, { "text": "Core Java" }, { "text": "HTML5" }, { "text": "CSS3" }, { "text": "jQuery" }, { "text": "MySQL" }, { "text": "MongoDB" }, { "text": "Python" }, { "text": "JavaScript" }, { "text": "ReactJS" }, { "text": "NodeJS" }, { "text": "SOAPUI" }, { "text": "Postman" }, { "text": "Agile" }, { "text": "Workbench" }, { "text": "Eclipse" }, { "text": "Brackets" }, { "text": "Tableau" }, { "text": "Git" }, { "text": "GitHub" }, { "text": "JIRA" }, { "text": "ML" }, { "text": "Data Analysis" }, { "text": "NumPy" }, { "text": "Pandas" }, { "text": "SciPy" }, { "text": "Scikit - learn" }, { "text": "Matplotlib" }, { "text": "Plotly" }, { "text": "Seaborn" }, { "text": "Analysis" }, { "text": "Scikit" }, { "text": "Data Science" }, { "text": "Wireless Networks" }, { "text": "lecture" }, { "text": "grading" }, { "text": "coding" }, { "text": "project proposals" }, { "text": "assist students" }, { "text": "canvas" }, { "text": "STLC" }, { "text": "SDLC" }, { "text": "ETL testing" }, { "text": "JIRA , Agile" }, { "text": "Java" }, { "text": "POM" }, { "text": "automation framework" }, { "text": "regression" }, { "text": "Selenium WebDriver" }, { "text": "web pages" }, { "text": "XPath" }, { "text": "WebDriver" }, { "text": "debugging" }, { "text": "QA" }, { "text": "generated reports" }, { "text": "ensured successful delivery" }, { "text": "RESTful services" }, { "text": "XML" }, { "text": "JSON" }, { "text": "RESTful" }, { "text": "offshore" }, { "text": "QA validation" }, { "text": "database migration" }, { "text": "SQL" }, { "text": "Azure" }, { "text": "Data Mart" }, { "text": "migration" }, { "text": "SQL queries" }, { "text": "Python scripts" }, { "text": "Azure Data Lake" }, { "text": "Data Lake" }, { "text": "Insurance" }, { "text": "test cases" }, { "text": "Sanity" }, { "text": "Integration" }, { "text": "user experience" }, { "text": "user stories" }, { "text": "WebMethods" }, { "text": "MuleSoft" }, { "text": "data integrity" }, { "text": "knowledge - sharing" }, { "text": "Insurance concepts" }, { "text": "XGBoost" }, { "text": "regression models" }, { "text": "algorithms" }, { "text": "training" }, { "text": "testing data" }, { "text": "Random Forest" }, { "text": "Support Vector Machine" }, { "text": "Logistic Regression" }, { "text": "Inventory Management System" }, { "text": "MERN Stack" }, { "text": "HTML" }, { "text": "Inventory Management" }, { "text": "Management System" }, { "text": "MERN" }, { "text": "web development framework" }, { "text": "development framework" }, { "text": "backend" }, { "text": "logic" }, { "text": "cluster" }, { "text": "RESTful API" }, { "text": "warehouse operation" }, { "text": "safety protocols " }, { "text": "ability to lift" }
+                ],
+                "licences": []
+            },
+            "professionalExperience": [
+                {
+                    "company": { "canonical": [], "canonicalDetails": [], "confidenceScore": 1, "redFlag": false, "text": "Animal Supply Company" },
+                    "currentStatus": "Working",
+                    "description": "The responsibilities that the position of warehouse lead required, consisted of the supervision of other employees which entailed keeping track of schedules, effectively communicating and assisting employees and management to meet the demands of the company and being able to address concerns and conflict in an appropriate, professional manner. This role requires one to not only be good at the job but to know how to add value and teach others to be just as good . Problem solving and conflict resolution with high energy combined with the ability to be interactive and enthusiastic are key qualities to have in assuming the position.\nGeneral Warehouse",
+                    "duration": { "days": 28, "inYears": 4, "months": 11, "text": "3 years 11 months 28 days", "years": 3 },
+                    "endDate": { "date": "29", "month": "12", "standard": "", "text": "Present", "year": "2025" },
+                    "jobTitle": { "confidenceScore": 1, "entityID": "5bc70e185e801c57a520d445", "jobCategory": "", "jobTitles": [], "jobType": "Premanent", "text": "Warehouse Lead" },
+                    "location": { "address": "Duluth, GA", "area": "", "city": "", "cityCanonical": "", "country": "", "countryCanonical": "", "countryCode": "", "district": "", "districtCanonical": "", "pin": { "lat": "", "lon": "" }, "postalCode": "", "state": "", "stateCanonical": "", "stateCode": "", "text": "Duluth, GA", "tier": "" },
+                    "previousGapYears": { "days": 0, "inYears": 0, "months": 0, "years": 0 },
+                    "projects": [],
+                    "reasonForLeave": "",
+                    "skills": [],
+                    "startDate": { "date": "1", "month": "1", "standard": "2022-01-01", "text": "2022-01-01", "year": "2022" },
+                    "supervisor": { "confidenceScore": 1, "jobTitles": [], "name": "", "text": "" },
+                    "workSchedule": ""
+                },
+                {
+                    "company": { "canonical": [], "canonicalDetails": [], "confidenceScore": 1, "redFlag": false, "text": "Animal Supply Co. - Suwannee, GA" },
+                    "currentStatus": "Working",
+                    "description": "This role requires attention to detail and the ability to learn instantaneously how to pick items for customer orders and pack them while following proper warehouse procedures. Tasks often come with different variations such as preserving a clean and orderly workspace, using handheld scanners and computerized operating systems that coincide with inventory, practicing safety procedures, operating machine equipment and working with a team to meet performance standards and productivity goals.",
+                    "duration": { "days": 28, "inYears": 4.7, "months": 7, "text": "4 years 7 months 28 days", "years": 4 },
+                    "endDate": { "date": "29", "month": "12", "standard": "", "text": "Present", "year": "2025" },
+                    "jobTitle": { "confidenceScore": 1, "entityID": "", "jobCategory": "", "jobTitles": [], "jobType": "Premanent", "text": "Seasonal Customer Service / Sales" },
+                    "location": { "address": "prosperity", "area": "", "city": "", "cityCanonical": "", "country": "", "countryCanonical": "", "countryCode": "", "district": "", "districtCanonical": "", "pin": { "lat": "", "lon": "" }, "postalCode": "", "state": "", "stateCanonical": "", "stateCode": "", "text": "prosperity", "tier": "" },
+                    "previousGapYears": { "days": 0, "inYears": 0, "months": 0, "years": 0 },
+                    "projects": [],
+                    "reasonForLeave": "",
+                    "skills": [],
+                    "startDate": { "date": "1", "month": "5", "standard": "2021-05-01", "text": "2021-05-01", "year": "2021" },
+                    "supervisor": { "confidenceScore": 1, "jobTitles": [], "name": "", "text": "" },
+                    "workSchedule": ""
+                },
+                {
+                    "company": { "canonical": [], "canonicalDetails": [], "confidenceScore": 1, "redFlag": false, "text": "PureBlanding" },
+                    "currentStatus": "Worked",
+                    "description": "The primary obligations of the job were to assist with online sales. It was important to keep track of inventory and sale performances. To sustain a positive online shopping experience for customer, providing help with any complications and answering questions in a timely, adequate manner were vital.",
+                    "duration": { "days": 0, "inYears": 0.5, "months": 6, "text": "6 months", "years": 0 },
+                    "endDate": { "date": "1", "month": "12", "standard": "2020-12-01", "text": "2020-12-01", "year": "2020" },
+                    "jobTitle": { "confidenceScore": 1, "entityID": "", "jobCategory": "", "jobTitles": [], "jobType": "Premanent", "text": "N/A" },
+                    "location": { "address": "Irvington, NJ", "area": "", "city": "", "cityCanonical": "", "country": "", "countryCanonical": "", "countryCode": "", "district": "", "districtCanonical": "", "pin": { "lat": "", "lon": "" }, "postalCode": "", "state": "", "stateCanonical": "", "stateCode": "", "text": "Irvington, NJ", "tier": "" },
+                    "previousGapYears": { "days": 0, "inYears": 0, "months": 0, "years": 0 },
+                    "projects": [],
+                    "reasonForLeave": "",
+                    "skills": [],
+                    "startDate": { "date": "1", "month": "6", "standard": "2020-06-01", "text": "2020-06-01", "year": "2020" },
+                    "supervisor": { "confidenceScore": 1, "jobTitles": [], "name": "", "text": "" },
+                    "workSchedule": ""
+                },
+                {
+                    "company": { "canonical": [], "canonicalDetails": [], "confidenceScore": 1, "redFlag": false, "text": "Amazon.com requires discipline and enthusiasm" },
+                    "currentStatus": "Worked",
+                    "description": "Amazon.com - Remote\nThe work from home customer service associate position with Amazon.com requires discipline and enthusiasm to give customers the best online shopping experience. There was an ongoing commitment to answering inbound calls dealing with sales, customer account fixes, and processing returns and refunds all while practicing 100% customer. Successfully doing so, the ability to maintain performance rates of\n96% and above came effortlessly.\nCashier/ Customer Service",
+                    "duration": { "days": 0, "inYears": 0.5, "months": 6, "text": "6 months", "years": 0 },
+                    "endDate": { "date": "1", "month": "6", "standard": "2020-06-01", "text": "2020-06-01", "year": "2020" },
+                    "jobTitle": { "confidenceScore": 1, "entityID": "5bc70dde5e801c57a520be8c", "jobCategory": "", "jobTitles": [], "jobType": "Premanent", "text": "Customer Service Associate" },
+                    "location": { "address": "", "area": "", "city": "", "cityCanonical": "", "country": "", "countryCanonical": "", "countryCode": "", "district": "", "districtCanonical": "", "pin": { "lat": "", "lon": "" }, "postalCode": "", "state": "", "stateCanonical": "", "stateCode": "", "text": "N/A", "tier": "" },
+                    "previousGapYears": { "days": 0, "inYears": 0, "months": 0, "years": 0 },
+                    "projects": [],
+                    "reasonForLeave": "",
+                    "skills": [],
+                    "startDate": { "date": "1", "month": "12", "standard": "2019-12-01", "text": "2019-12-01", "year": "2019" },
+                    "supervisor": { "confidenceScore": 1, "jobTitles": [], "name": "", "text": "" },
+                    "workSchedule": ""
+                },
+                {
+                    "company": { "canonical": [], "canonicalDetails": [], "confidenceScore": 1, "redFlag": false, "text": "Walmart" },
+                    "currentStatus": "Worked",
+                    "description": "As a cashier the main duties performed on a day-to-day basis were providing customers with expeditious, friendly, and efficient shopping experience. Regulating transactions, resolving customer issues and delivering results, as well as maintaining a safe and well put together workstation contributed to the responsibilities of the job title.",
+                    "duration": { "days": 0, "inYears": 1.1, "months": 1, "text": "1 years 1 months", "years": 1 },
+                    "endDate": { "date": "1", "month": "11", "standard": "2019-11-01", "text": "2019-11-01", "year": "2019" },
+                    "jobTitle": { "confidenceScore": 1, "entityID": "", "jobCategory": "", "jobTitles": [], "jobType": "Premanent", "text": "N/A" },
+                    "location": { "address": "Loganville, GA", "area": "", "city": "", "cityCanonical": "", "country": "", "countryCanonical": "", "countryCode": "", "district": "", "districtCanonical": "", "pin": { "lat": "", "lon": "" }, "postalCode": "", "state": "", "stateCanonical": "", "stateCode": "", "text": "Loganville, GA", "tier": "" },
+                    "previousGapYears": { "days": 0, "inYears": 0, "months": 0, "years": 0 },
+                    "projects": [],
+                    "reasonForLeave": "",
+                    "skills": [],
+                    "startDate": { "date": "1", "month": "10", "standard": "2018-10-01", "text": "2018-10-01", "year": "2018" },
+                    "supervisor": { "confidenceScore": 1, "jobTitles": [], "name": "", "text": "" },
+                    "workSchedule": ""
+                },
+                {
+                    "company": { "text": "TRC Staffing", "redFlag": false, "canonical": "trc staffing", "canonicalDetails": [], "confidenceScore": 1 },
+                    "jobTitle": { "text": "warehouse operator", "jobType": "Premanent", "jobCategory": "", "jobTitles": [ { "jobTitle": "warehouse operator", "canonical": [ "warehouse operator" ], "canonicalID": [ "5bc70e0c5e801c57a520d090" ], "canonicalDetails": [], "relations": [] } ], "confidenceScore": 1 },
+                    "workSchedule": "",
+                    "startDate": { "text": "N/A", "standard": "", "year": "", "month": "", "date": "" },
+                    "endDate": { "text": "", "standard": "", "year": "", "month": "", "date": "" },
+                    "duration": { "text": "", "inYears": 0, "years": 0, "months": 0, "days": 0 },
+                    "projects": [],
+                    "currentStatus": "Worked",
+                    "location": { "text": "N/A", "tier": "", "address": "", "area": "", "city": "", "district": "", "state": "", "stateCode": "", "country": "", "countryCode": "", "postalCode": "", "pin": { "lat": "", "lon": "" }, "cityCanonical": "", "districtCanonical": "", "stateCanonical": "", "countryCanonical": "" },
+                    "description": "• Operated warehouse equipment including forklifts, pallet jacks, and hand trucks to efficiently move and organize inventory.\n• Performed regular inventory checks to ensure accurate stock levels and timely identification of discrepancies.\n• Trained new staff on best practices for warehouse operations, enhancing team efficiency and safety compliance.\n• Utilized warehouse management software to track inventory movement and generate reports for management.\n",
+                    "skills": [],
+                    "supervisor": { "text": "", "jobTitles": [], "name": "", "confidenceScore": 1 },
+                    "previousGapYears": { "years": 0, "months": 0, "days": 0, "inYears": 0 },
+                    "reasonForLeave": ""
+                }
+            ],
+            "otherInformation": {
+                "references": [],
+                "sectionsText": {
+                    "personal_details": "Pratik Gaurav\n+91 - 7004029399 pratik.gaurav@maprecruit.ai",
+                    "summary": "",
+                    "education": "",
+                    "experience": "",
+                    "certification": "",
+                    "others": "",
+                    "unknown": ""
+                },
+                "contextual_derived_skills": [],
+                "militaryHistory": [],
+                "accomplishments": [],
+                "bufferEntities": [],
+                "contextualSkills": [],
+                "extracurricularActivities": [],
+                "declaration": "",
+                "curriculumVitae": "",
+                "publications": [],
+                "additionalInformation": "",
+                "fullText": "\nPratik Gaurav\n+91-7004029399 pratik.gaurav@maprecruit.ai",
+                "profileSummary": "",
+                "industryScores": {
+                    "accounting_finance": 15.0851,
+                    "administrative_management": 65.3146,
+                    "agriculture_horticulture": 0.0398,
+                    "airport_aviation": 0.0077,
+                    "arts_media": 0.1049,
+                    "banking_insurance": 1.4369,
+                    "education_training": 0.0101,
+                    "energy_mining": 0.0305,
+                    "engineering_manufacturing": 1.845,
+                    "general_services": 1.4755,
+                    "healthcare_medical": 0.1127,
+                    "hospitality_tourism": 0.1829,
+                    "information_technology": 0.3956,
+                    "legal_law": 0.1277,
+                    "logistics_warehouse": 8.9419,
+                    "pharma_drugs": 0.7331,
+                    "sales_marketing": 0.4072,
+                    "sports_club": 0.0063,
+                    "staffing_hr": 0.4117,
+                    "support_service": 3.3307
+                },
+                "textBySections": [],
+                "unusedLines": [],
+                "industry": [
+                    { "industry_label": "Accounting and Finance", "industry_name": "accounting_finance", "score": 15.0851, "percentage": 18.76 },
+                    { "industry_label": "Administration", "industry_name": "administrative_management", "score": 65.3146, "percentage": 81.24 }
+                ]
+            },
+            "metaData": {
+                "originalFileName": "",
+                "fileExtension": "",
+                "timeTaken": 0.05993,
+                "version": "6.0.0",
+                "wordsCount": 6,
+                "linesCount": 3,
+                "languageCode": "sl",
+                "tablesCount": 0
+            },
+            "customData": {}
+        }
+    }
+};

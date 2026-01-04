@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Briefcase, Users, UserCheck, UserX, AlertCircle, Calendar, 
   MoreHorizontal, Download, Share2, Search, Filter, X, CheckCircle,
@@ -42,52 +42,86 @@ const EMAIL_DATA = [
 
 // --- WIDGET COMPONENTS ---
 
-export const WelcomeHeader = () => (
-  <div className="bg-gradient-to-br from-indigo-900 to-indigo-800 rounded-xl p-6 text-white flex flex-col h-full relative overflow-hidden shadow-lg border border-indigo-700/50">
-    {/* Decorative Elements */}
-    <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-    <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500 opacity-20 rounded-full blur-2xl translate-y-1/3 -translate-x-1/3 pointer-events-none"></div>
-    
-    <div className="z-10 flex-1">
-      <div className="flex justify-between items-start mb-2">
-        <h2 className="text-xl font-bold tracking-tight">Good Evening, Pratik</h2>
-        <span className="text-[10px] text-indigo-300 bg-indigo-950/30 px-2 py-1 rounded border border-indigo-700/30 whitespace-nowrap">
-          Last Login: 12/26/2025 12:36 PM
-        </span>
-      </div>
-      <p className="text-indigo-200 text-xs mb-6 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-        You have 0 new notifications
-      </p>
+export const WelcomeHeader = () => {
+  const [timeData, setTimeData] = useState({ greeting: 'Good Evening', lastLogin: '' });
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      let greeting = 'Good Evening';
       
-      <div className="flex items-center gap-4 mb-6">
-        <div className="w-14 h-14 rounded-xl bg-white p-0.5 shadow-lg ring-2 ring-indigo-700/50">
-           <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" className="w-full h-full object-cover rounded-lg" alt="User" />
+      if (hour >= 5 && hour < 12) {
+        greeting = 'Good Morning';
+      } else if (hour >= 12 && hour < 18) {
+        greeting = 'Good Afternoon';
+      }
+
+      // Format date to user's local timezone (handles Standard vs DST automatically)
+      const lastLogin = now.toLocaleString('en-US', {
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+
+      setTimeData({ greeting, lastLogin });
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 60000); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="bg-gradient-to-br from-indigo-900 to-indigo-800 rounded-xl p-6 text-white flex flex-col h-full relative overflow-hidden shadow-lg border border-indigo-700/50">
+      {/* Decorative Elements */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500 opacity-20 rounded-full blur-2xl translate-y-1/3 -translate-x-1/3 pointer-events-none"></div>
+      
+      <div className="z-10 flex-1">
+        <div className="flex justify-between items-start mb-2">
+          <h2 className="text-xl font-bold tracking-tight">{timeData.greeting}, Pratik</h2>
+          <span className="text-[10px] text-indigo-300 bg-indigo-950/30 px-2 py-1 rounded border border-indigo-700/30 whitespace-nowrap">
+            Last Login: {timeData.lastLogin}
+          </span>
         </div>
-        <div>
-           <p className="font-bold text-base">Pratik</p>
-           <p className="text-xs text-indigo-300 font-medium">Product Admin</p>
-           <div className="flex items-center gap-1.5 mt-1 text-xs text-indigo-200 bg-indigo-800/50 px-2 py-0.5 rounded-full w-fit border border-indigo-700/50">
-             <Briefcase size={10} /> 
-             <span>TRC Talent Solutions</span>
-           </div>
+        <p className="text-indigo-200 text-xs mb-6 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+          You have 0 new notifications
+        </p>
+        
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-14 h-14 rounded-xl bg-white p-0.5 shadow-lg ring-2 ring-indigo-700/50">
+             <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" className="w-full h-full object-cover rounded-lg" alt="User" />
+          </div>
+          <div>
+             <p className="font-bold text-base">Pratik</p>
+             <p className="text-xs text-indigo-300 font-medium">Product Admin</p>
+             <div className="flex items-center gap-1.5 mt-1 text-xs text-indigo-200 bg-indigo-800/50 px-2 py-0.5 rounded-full w-fit border border-indigo-700/50">
+               <Briefcase size={10} /> 
+               <span>TRC Talent Solutions</span>
+             </div>
+          </div>
         </div>
       </div>
+      
+      {/* Stats Footer */}
+      <div className="z-10 mt-auto pt-4 border-t border-indigo-700/30 grid grid-cols-2 gap-4">
+          <div className="text-left group cursor-pointer hover:bg-indigo-800/30 rounded p-1 transition-colors -ml-1">
+              <span className="block text-3xl font-bold text-white group-hover:text-green-400 transition-colors">1</span>
+              <span className="text-[10px] text-indigo-300 uppercase tracking-wider font-semibold group-hover:text-indigo-100">New Campaigns</span>
+          </div>
+          <div className="text-left border-l border-indigo-700/30 pl-4 group cursor-pointer hover:bg-indigo-800/30 rounded p-1 transition-colors">
+              <span className="block text-3xl font-bold text-white group-hover:text-blue-400 transition-colors">0</span>
+              <span className="text-[10px] text-indigo-300 uppercase tracking-wider font-semibold group-hover:text-indigo-100">Upcoming Interviews</span>
+          </div>
+      </div>
     </div>
-    
-    {/* Stats Footer */}
-    <div className="z-10 mt-auto pt-4 border-t border-indigo-700/30 grid grid-cols-2 gap-4">
-        <div className="text-left group cursor-pointer hover:bg-indigo-800/30 rounded p-1 transition-colors -ml-1">
-            <span className="block text-3xl font-bold text-white group-hover:text-green-400 transition-colors">1</span>
-            <span className="text-[10px] text-indigo-300 uppercase tracking-wider font-semibold group-hover:text-indigo-100">New Campaigns</span>
-        </div>
-        <div className="text-left border-l border-indigo-700/30 pl-4 group cursor-pointer hover:bg-indigo-800/30 rounded p-1 transition-colors">
-            <span className="block text-3xl font-bold text-white group-hover:text-blue-400 transition-colors">0</span>
-            <span className="text-[10px] text-indigo-300 uppercase tracking-wider font-semibold group-hover:text-indigo-100">Upcoming Interviews</span>
-        </div>
-    </div>
-  </div>
-);
+  );
+};
 
 export const MetricCard = ({ title, value, subValue, icon: Icon, colorClass, iconBg }: any) => (
   <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow h-full">

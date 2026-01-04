@@ -1,85 +1,227 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { 
   Briefcase, MapPin, CheckCircle, Clock, 
-  MessageCircle, Paperclip, Send, AlertCircle, ExternalLink, ThumbsUp
+  MessageCircle, Paperclip, Send, AlertCircle, ExternalLink, ThumbsUp,
+  User, Phone, Mail, Globe, Award, Calendar, Shield, Lock, Star, X
 } from 'lucide-react';
 import { SectionCard, SecureContactCard } from './Common';
 import { CANDIDATE } from '../data';
 
-export const ProfileDetails = () => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 duration-500">
-     <div className="lg:col-span-2 space-y-6">
-        <SectionCard title="Professional Summary" id="summary">
-           <p className="text-sm leading-relaxed text-slate-600">{CANDIDATE.summary}</p>
-        </SectionCard>
+// Updated Profile Details Component to handle dynamic JSON schema with the OLD UI Layout
+export const ProfileDetails = ({ data }: { data?: any }) => {
+  const [showAllSkills, setShowAllSkills] = useState(false);
 
-        <SectionCard title="Work Experience" id="experience">
-           <div className="space-y-6 relative before:absolute before:inset-y-0 before:left-2 before:w-0.5 before:bg-slate-100">
-              {CANDIDATE.experience?.map((exp: any) => (
-                 <div key={exp.id} className="relative pl-8">
-                    <div className="absolute left-0 top-1.5 w-4 h-4 rounded-full border-2 border-white bg-green-500 shadow-sm"></div>
-                    <div className="flex justify-between items-start mb-1">
-                       <h4 className="font-bold text-slate-800 text-sm">{exp.role}</h4>
-                       <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{exp.period}</span>
+  // Safe extraction of nested data
+  const resume = data?.resumeDetails?.resume || {};
+  const profile = resume.profile || {};
+  const summary = resume.professionalSummary || {};
+  const experience = resume.professionalExperience || [];
+  const education = resume.professionalQualification?.education || [];
+  const skills = resume.professionalQualification?.skills || [];
+  
+  // Format helpers
+  const formatSalary = (salary: any) => {
+      if (!salary) return 'N/A';
+      if (salary.text) return salary.text;
+      if (salary.value) return `${salary.currency || '$'} ${salary.value} ${salary.period || ''}`;
+      return 'N/A';
+  };
+
+  const toSentenceCase = (str: string) => {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
+  return (
+    <>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 duration-500">
+       {/* LEFT COLUMN - MAIN CONTENT */}
+       <div className="lg:col-span-2 space-y-6">
+          
+          {/* Professional Summary */}
+          <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Professional Summary</h3>
+             <p className="text-sm leading-relaxed text-slate-600">
+                {summary.summary || "No summary provided."}
+             </p>
+          </div>
+
+          {/* Work Experience - Timeline UI */}
+          <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6">Work Experience</h3>
+             
+             <div className="relative border-l-2 border-slate-100 ml-3 space-y-8 pb-2">
+                {experience.map((exp: any, idx: number) => (
+                   <div key={idx} className="relative pl-8">
+                      {/* Timeline Dot */}
+                      <div className={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-2 border-white shadow-sm z-10 ${exp.currentStatus === 'Working' || idx === 0 ? 'bg-green-500' : 'bg-slate-300'}`}></div>
+                      
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2">
+                         <div>
+                            <h4 className="font-bold text-slate-800 text-base">{exp.jobTitle?.text || 'N/A'}</h4>
+                            <div className="text-sm font-semibold text-green-600 flex items-center gap-2 mt-0.5">
+                               {exp.company?.text || 'Unknown Company'}
+                               {exp.location?.text && <span className="text-slate-400 font-normal text-xs">• {exp.location.text}</span>}
+                            </div>
+                         </div>
+                         <div className="mt-1 sm:mt-0 text-right">
+                            <div className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded inline-block font-medium">
+                               {exp.startDate?.text || 'N/A'} - {exp.endDate?.text || 'Present'}
+                            </div>
+                            {exp.duration?.text && <div className="text-[10px] text-slate-400 mt-1">{exp.duration.text}</div>}
+                         </div>
+                      </div>
+
+                      <p className="text-sm text-slate-600 leading-relaxed mb-3 whitespace-pre-line">
+                         {exp.description || "No description provided."}
+                      </p>
+
+                      {/* Skills used in this role */}
+                      {exp.skills && exp.skills.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                              {exp.skills.slice(0, 5).map((skill: any, sIdx: number) => (
+                                  <span key={sIdx} className="text-[10px] px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-full text-slate-500">
+                                      {toSentenceCase(skill.text)}
+                                  </span>
+                              ))}
+                              {exp.skills.length > 5 && <span className="text-[10px] px-2 py-0.5 text-slate-400">+{exp.skills.length - 5} more</span>}
+                          </div>
+                      )}
+                   </div>
+                ))}
+                {experience.length === 0 && <div className="pl-8 text-slate-400 italic">No experience listed.</div>}
+             </div>
+          </div>
+
+          {/* Education */}
+          <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-6">
+             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6">Education</h3>
+             <div className="space-y-4">
+                {education.map((edu: any, idx: number) => (
+                   <div key={idx} className="flex items-start gap-4 p-4 rounded-lg border border-slate-100 hover:bg-slate-50 transition-colors">
+                      <div className="w-10 h-10 rounded bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                         <Award size={20} />
+                      </div>
+                      <div>
+                         <h4 className="font-bold text-slate-800 text-sm">{edu.degree?.text || 'Degree'}</h4>
+                         <p className="text-xs text-slate-500 uppercase font-bold mt-0.5">{edu.university?.text || edu.campus?.text || 'University'}</p>
+                         <p className="text-xs text-slate-400 mt-1">{edu.endDate?.year || 'Year N/A'}</p>
+                      </div>
+                   </div>
+                ))}
+                {education.length === 0 && <div className="text-slate-400 italic">No education listed.</div>}
+             </div>
+          </div>
+
+       </div>
+
+       {/* RIGHT COLUMN - SIDEBAR */}
+       <div className="space-y-6">
+          
+          {/* Secure Contact */}
+          <SecureContactCard contact={{ 
+              email: profile.emails?.[0]?.text || 'N/A', 
+              phone: profile.phones?.[0]?.text || 'N/A' 
+          }} />
+
+          {/* Skills & Competencies */}
+          <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5">
+             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Skills & Competencies</h3>
+             <div className="flex flex-wrap gap-2">
+                {skills.slice(0, 15).map((skill: any, idx: number) => (
+                   <span key={idx} className="px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 transition-colors cursor-default">
+                      {toSentenceCase(skill.text)}
+                      {skill.yearsOfExperience ? <span className="ml-1 text-slate-400">({skill.yearsOfExperience}y)</span> : ''}
+                   </span>
+                ))}
+                {skills.length > 15 && (
+                    <button 
+                        onClick={() => setShowAllSkills(true)}
+                        className="px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100 transition-colors"
+                    >
+                        +{skills.length - 15} more
+                    </button>
+                )}
+                {skills.length === 0 && <span className="text-slate-400 text-xs">No skills extracted.</span>}
+             </div>
+          </div>
+
+          {/* Key Details */}
+          <div className="bg-white rounded-lg border border-slate-200 shadow-sm p-5">
+             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Key Details</h3>
+             <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                   <span className="text-sm text-slate-600">Willing to Relocate</span>
+                   <span className="text-sm font-bold text-slate-800">{summary.preferredLocations && summary.preferredLocations.length > 0 ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                   <span className="text-sm text-slate-600">Work Authorization</span>
+                   <span className="text-sm font-bold text-slate-800">{summary.workPermit?.text || 'Unknown'}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                   <span className="text-sm text-slate-600">Notice Period</span>
+                   <span className="text-sm font-bold text-slate-800">{summary.noticePeriod?.text || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                   <span className="text-sm text-slate-600">Current Salary</span>
+                   <span className="text-sm font-bold text-slate-800">{formatSalary(summary.currentSalary)}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                   <span className="text-sm text-slate-600">Expected Salary</span>
+                   <span className="text-sm font-bold text-slate-800">{formatSalary(summary.expectedSalary)}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                   <span className="text-sm text-slate-600">Experience</span>
+                   <span className="text-sm font-bold text-slate-800">{summary.yearsOfExperience?.finalYears || 0} Years</span>
+                </div>
+             </div>
+          </div>
+
+          {/* AI Summary Widget */}
+          {data?.resumeDetails?.genAISummary && (
+             <div className="bg-gradient-to-br from-indigo-50 to-white rounded-lg border border-indigo-100 shadow-sm p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-2 opacity-10">
+                    <Briefcase size={64} className="text-indigo-600" />
+                </div>
+                <h3 className="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <AlertCircle size={14} /> AI Profile Summary
+                </h3>
+                <p className="text-xs leading-relaxed text-indigo-900/80">
+                    {data.resumeDetails.genAISummary.profileSummary || "AI is analyzing this profile to provide insights on fit and potential."}
+                </p>
+             </div>
+          )}
+
+       </div>
+    </div>
+
+    {/* All Skills Modal */}
+    {showAllSkills && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[80vh]">
+                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <h2 className="text-lg font-bold text-slate-800">All Skills ({skills.length})</h2>
+                    <button onClick={() => setShowAllSkills(false)} className="p-1 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                    <div className="flex flex-wrap gap-2">
+                        {skills.map((skill: any, idx: number) => (
+                            <span key={idx} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 transition-colors">
+                                {toSentenceCase(skill.text)}
+                                {skill.yearsOfExperience ? <span className="ml-1.5 text-slate-400 text-xs font-normal">({skill.yearsOfExperience} Years)</span> : ''}
+                            </span>
+                        ))}
                     </div>
-                    <div className="text-xs font-semibold text-green-600 mb-2 uppercase tracking-wide">{exp.company} • {exp.location}</div>
-                    <p className="text-sm text-slate-600 leading-relaxed">{exp.desc}</p>
-                 </div>
-              ))}
-           </div>
-        </SectionCard>
-
-        <SectionCard title="Education" id="education">
-           <div className="space-y-4">
-              {CANDIDATE.education?.map((edu: any) => (
-                 <div key={edu.id} className="flex items-start gap-4 p-3 rounded-lg border border-slate-100 hover:border-green-200 hover:bg-green-50/30 transition-colors">
-                    <div className="p-2 bg-slate-50 rounded text-slate-400"><Briefcase size={20} /></div>
-                    <div>
-                       <h4 className="font-bold text-slate-800 text-sm">{edu.degree}</h4>
-                       <p className="text-xs text-slate-500 font-medium">{edu.school}, {edu.year}</p>
-                    </div>
-                 </div>
-              ))}
-           </div>
-        </SectionCard>
-     </div>
-
-     <div className="space-y-6">
-        <SecureContactCard contact={CANDIDATE.contact} />
-
-        <SectionCard title="Skills & Competencies">
-           <div className="flex flex-wrap gap-2">
-              {CANDIDATE.skills?.map((skill: string) => (
-                 <span key={skill} className="px-3 py-1 bg-white border border-slate-200 rounded-full text-slate-600 text-xs font-medium shadow-sm hover:border-green-400 hover:text-green-700 transition-colors cursor-default">
-                    {skill}
-                 </span>
-              ))}
-           </div>
-        </SectionCard>
-
-        <SectionCard title="Key Details">
-           <div className="space-y-3 text-sm">
-              <div className="flex justify-between border-b border-slate-50 pb-2">
-                 <span className="text-slate-500">Willing to Relocate</span>
-                 <span className="font-medium text-slate-800">Yes</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-50 pb-2">
-                 <span className="text-slate-500">Security Clearance</span>
-                 <span className="font-medium text-slate-800">None</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-50 pb-2">
-                 <span className="text-slate-500">Work Authorization</span>
-                 <span className="font-medium text-slate-800">US Citizen</span>
-              </div>
-              <div className="flex justify-between">
-                 <span className="text-slate-500">Notice Period</span>
-                 <span className="font-medium text-slate-800">2 Weeks</span>
-              </div>
-           </div>
-        </SectionCard>
-     </div>
-  </div>
-);
+                </div>
+            </div>
+        </div>
+    )}
+    </>
+  );
+};
 
 export const ActivitiesView = () => (
   <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">

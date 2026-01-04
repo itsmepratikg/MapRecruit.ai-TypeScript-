@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   User, FileText, Briefcase, Activity, MessageSquare, 
@@ -6,7 +7,7 @@ import {
   FileEdit, Folder, Copy, MessageCircle, MapPin, CheckCircle, Tag as TagIcon
 } from 'lucide-react';
 import { ActionIcons, StatusBadge, EmptyView } from '../components/Common';
-import { CANDIDATE } from '../data';
+import { CANDIDATE, FULL_PROFILE_DATA } from '../data';
 import { InterviewFormContent } from '../components/InterviewComponents';
 import { CampaignsView, CampaignDetailView } from '../components/ProfileCampaigns';
 import { InterviewsView } from '../components/ProfileInterviews';
@@ -39,6 +40,23 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
   const [selectedInterview, setSelectedInterview] = useState<any>(null);
   const [showMatchScore, setShowMatchScore] = useState(false);
 
+  // Extract Profile Data safely from the dynamic JSON
+  const profileResume = (FULL_PROFILE_DATA.resumeDetails?.resume || {}) as any;
+  const profileBasic = profileResume.profile || {};
+  const profileSummary = profileResume.professionalSummary || {};
+  
+  const candidateName = profileBasic.fullName || CANDIDATE.name;
+  const candidateRole = profileSummary.currentRole?.jobTitle || CANDIDATE.role;
+  const candidateLocation = profileBasic.locations?.[0]?.text || CANDIDATE.location;
+  const candidateStatus = FULL_PROFILE_DATA.resumeDetails?.personnelStatus || CANDIDATE.status;
+  const candidateType = "Pending Applicant"; // hardcoded in schema as personnelStatus but using separate var
+  const candidateAvailability = FULL_PROFILE_DATA.resumeDetails?.availability || CANDIDATE.availability;
+  
+  // Tag handling - dynamic tags
+  const tags = (FULL_PROFILE_DATA.resumeDetails as any).tags || [];
+  // If no main tags, try to grab some skills as tags for display
+  const displayTags = tags.length > 0 ? tags : (profileResume.professionalQualification?.skills?.slice(0, 3).map((s: any) => s.text) || []);
+
   useEffect(() => {
     // Reset preview campaign when tab changes
     setPreviewCampaign(null);
@@ -57,7 +75,7 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
 
   const renderContent = () => {
     switch(activeTab) {
-      case 'profile': return <ProfileDetails />;
+      case 'profile': return <ProfileDetails data={FULL_PROFILE_DATA} />;
       case 'resume': return <div className="h-[800px] bg-slate-200 rounded flex items-center justify-center text-slate-400 font-medium">PDF Viewer Placeholder</div>;
       case 'activity': return <ActivitiesView />;
       case 'chat': return <TalentChatView />;
@@ -67,7 +85,7 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
       case 'recommended': return <RecommendedView />;
       case 'duplicate': return <EmptyView title="No Duplicate Profiles" message="We didn't find any potential duplicates for this candidate in the system." icon={Copy} />;
       case 'similar': return <SimilarProfilesView />;
-      default: return <ProfileDetails />;
+      default: return <ProfileDetails data={FULL_PROFILE_DATA} />;
     }
   };
 
@@ -123,23 +141,34 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
             <div className={`transition-opacity duration-200 ${isScrolled ? 'hidden opacity-0' : 'block opacity-100'}`}>
               <div className="flex justify-between items-start">
                 <div className="flex gap-4">
-                  <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={32} /></div>
+                  <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold text-2xl uppercase">
+                    {candidateName.charAt(0)}
+                  </div>
                   <div>
-                    <div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-green-500">{CANDIDATE.name}</h1><button className="text-slate-400 hover:text-green-600"><FileEdit size={14} /></button></div>
-                    <p className="text-sm text-slate-500 font-medium mb-1">{CANDIDATE.role}</p>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-bold text-green-500">{candidateName}</h1>
+                        <button className="text-slate-400 hover:text-green-600"><FileEdit size={14} /></button>
+                    </div>
+                    <p className="text-sm text-slate-500 font-medium mb-1">{candidateRole}</p>
                     <div className="flex flex-col gap-1 text-sm text-slate-500">
                       <div className="flex items-center gap-2"><span className="font-bold text-slate-700 flex items-center gap-1"><User size={12}/> Contact Details</span></div>
-                      <div className="flex items-center gap-2"><MapPin size={14} className="text-green-500" /><span>{CANDIDATE.location}</span><CheckCircle size={14} className="text-green-500" /></div>
-                      <div className="flex items-center gap-2"><TagIcon size={14} className="text-slate-400" />{CANDIDATE.tags?.map(tag => (<span key={tag} className="bg-slate-100 px-2 py-0.5 rounded text-xs">{tag}</span>))}</div>
+                      <div className="flex items-center gap-2"><MapPin size={14} className="text-green-500" /><span>{candidateLocation}</span><CheckCircle size={14} className="text-green-500" /></div>
+                      <div className="flex items-center gap-2"><TagIcon size={14} className="text-slate-400" />
+                        {displayTags.length > 0 ? (
+                            displayTags.map((tag: any, i: number) => (<span key={i} className="bg-slate-100 px-2 py-0.5 rounded text-xs">{tag}</span>))
+                        ) : (
+                            <span className="text-xs text-slate-400 italic">No Tags</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-6">
                   <ActionIcons />
                   <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-right text-sm">
-                    <div><span className="text-slate-800 font-bold block">Candidate Type</span><span className="text-slate-500">{CANDIDATE.type}</span></div>
-                    <div><span className="text-slate-800 font-bold block">Availability</span><span className="text-slate-500">{CANDIDATE.availability}</span></div>
-                    <div><span className="text-slate-800 font-bold block">Employment Status</span><span className="text-slate-500">{CANDIDATE.status}</span></div>
+                    <div><span className="text-slate-800 font-bold block">Candidate Type</span><span className="text-slate-500">{candidateType}</span></div>
+                    <div><span className="text-slate-800 font-bold block">Availability</span><span className="text-slate-500">{candidateAvailability}</span></div>
+                    <div><span className="text-slate-800 font-bold block">Employment Status</span><span className="text-slate-500">{candidateStatus}</span></div>
                     <div><span className="text-slate-800 font-bold block">Channel</span><span className="text-slate-500">{CANDIDATE.channel}</span></div>
                   </div>
                 </div>
@@ -147,12 +176,17 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
             </div>
             <div className={`flex items-center justify-between transition-opacity duration-200 ${isScrolled ? 'flex opacity-100' : 'hidden opacity-0'}`}>
               <div className="flex items-center gap-6">
-                <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-400"><User size={16} /></div><span className="font-bold text-green-500 text-lg">{CANDIDATE.name}</span></div>
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold">
+                        {candidateName.charAt(0)}
+                    </div>
+                    <span className="font-bold text-green-500 text-lg">{candidateName}</span>
+                </div>
                 <div className="h-6 w-px bg-slate-200"></div>
                 <div className="flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2"><span className="text-slate-400 font-medium">Type:</span><span className="text-slate-700 font-semibold">{CANDIDATE.type}</span></div>
-                  <div className="flex items-center gap-2"><span className="text-slate-400 font-medium">Availability:</span><span className="text-slate-700 font-semibold">{CANDIDATE.availability}</span></div>
-                  <div className="flex items-center gap-2"><span className="text-slate-400 font-medium">Status:</span><StatusBadge status={CANDIDATE.status} /></div>
+                  <div className="flex items-center gap-2"><span className="text-slate-400 font-medium">Type:</span><span className="text-slate-700 font-semibold">{candidateType}</span></div>
+                  <div className="flex items-center gap-2"><span className="text-slate-400 font-medium">Availability:</span><span className="text-slate-700 font-semibold">{candidateAvailability}</span></div>
+                  <div className="flex items-center gap-2"><span className="text-slate-400 font-medium">Status:</span><StatusBadge status={candidateStatus} /></div>
                 </div>
               </div>
               <div className="scale-90 origin-right"><ActionIcons /></div>
