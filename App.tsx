@@ -16,8 +16,8 @@ import { Profiles } from './pages/Profiles';
 import { Campaigns } from './pages/Campaigns';
 import { Metrics } from './pages/Metrics';
 import { CandidateProfile } from './pages/CandidateProfile';
-import { CampaignDashboard } from './pages/Campaign/index'; // Updated import
-import { SettingsPage } from './pages/Settings';
+import { CampaignDashboard } from './pages/Campaign/index'; 
+import { SettingsPage } from './pages/Settings/index';
 import { Campaign } from './types';
 import { CreateProfileModal } from './components/CreateProfileModal';
 import { useScreenSize } from './hooks/useScreenSize';

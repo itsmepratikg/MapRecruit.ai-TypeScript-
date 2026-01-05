@@ -1,11 +1,12 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { 
   WelcomeHeader, TrendGraph, 
   SourceDistributionChart, EmailDeliveryReport, PreScreeningProgress, EmptyWidget,
-  MetricsOverviewWidget
+  MetricCard, AlertsWidget
 } from '../components/DashboardWidgets';
 import { GridStack } from 'gridstack';
-import { Layout, Save, RotateCcw } from '../components/Icons';
+import { Layout, Save, Briefcase, Users, UserCheck } from '../components/Icons';
 
 export const Home = () => {
   const gridRef = useRef<GridStack | null>(null);
@@ -16,19 +17,17 @@ export const Home = () => {
     if (!gridRef.current) {
         gridRef.current = GridStack.init({
             column: 12,
-            cellHeight: 100,
-            margin: 10,
-            staticGrid: true, // Default to locked
+            cellHeight: 60, 
+            margin: 30, // Increased to 30px (half of cellHeight) for substantial structural gaps
+            staticGrid: true, 
             animate: true,
-            disableOneColumnMode: false, // Enable stacking on mobile
-            float: true // Allow widgets to float up
+            disableOneColumnMode: false, 
+            float: true 
         });
     }
 
-    // Cleanup on unmount
     return () => {
-        // GridStack instance is often global or attached to DOM, careful with cleanup if needed
-        // gridRef.current?.destroy(false); 
+        // Cleanup if needed
     };
   }, []);
 
@@ -37,9 +36,8 @@ export const Home = () => {
       if (grid) {
           const newMode = !isEditing;
           setIsEditing(newMode);
-          grid.setStatic(!newMode); // Enable/Disable moving/resizing
+          grid.setStatic(!newMode); 
           if (newMode) {
-              // Add visual cues for editing
               document.querySelector('.grid-stack')?.classList.add('editing-mode');
           } else {
               document.querySelector('.grid-stack')?.classList.remove('editing-mode');
@@ -48,16 +46,15 @@ export const Home = () => {
   };
 
   const saveLayout = () => {
-      // Mock save functionality
       if (gridRef.current) {
           const serializedData = gridRef.current.save();
           console.log('Layout saved:', serializedData);
-          toggleEditMode(); // Exit edit mode
+          toggleEditMode();
       }
   };
 
   return (
-    <div className="p-4 lg:p-6 bg-slate-50/50 dark:bg-slate-900 min-h-full overflow-y-auto transition-colors duration-300">
+    <div className="p-4 lg:p-8 bg-slate-50/50 dark:bg-slate-900 min-h-full overflow-y-auto transition-colors duration-300">
       <div className="max-w-[1600px] mx-auto space-y-4">
         
         {/* Dashboard Actions */}
@@ -92,29 +89,81 @@ export const Home = () => {
                 </div>
             </div>
 
-            {/* Widget 2: Metrics Overview (Grouped) */}
-            <div className="grid-stack-item" gs-x="4" gs-y="0" gs-w="8" gs-h="4">
+            {/* Widget 2: Active Campaigns */}
+            <div className="grid-stack-item" gs-x="4" gs-y="0" gs-w="2" gs-h="2">
                 <div className="grid-stack-item-content h-full">
-                    <MetricsOverviewWidget />
+                    <MetricCard 
+                        title="Active Campaigns" 
+                        value="4" 
+                        icon={Briefcase} 
+                        colorClass="text-green-600" 
+                        iconBg="bg-green-50" 
+                    />
                 </div>
             </div>
 
-            {/* Widget 3: Trend Graph */}
-            <div className="grid-stack-item" gs-x="0" gs-y="4" gs-w="6" gs-h="4">
+            {/* Widget 3: Closed Campaigns */}
+            <div className="grid-stack-item" gs-x="6" gs-y="0" gs-w="2" gs-h="2">
+                <div className="grid-stack-item-content h-full">
+                    <MetricCard 
+                        title="Closed Campaigns" 
+                        value="71" 
+                        icon={Briefcase} 
+                        colorClass="text-red-500" 
+                        iconBg="bg-red-50" 
+                    />
+                </div>
+            </div>
+
+            {/* Widget 4: Active Profiles */}
+            <div className="grid-stack-item" gs-x="8" gs-y="0" gs-w="2" gs-h="2">
+                <div className="grid-stack-item-content h-full">
+                    <MetricCard 
+                        title="Active Profiles" 
+                        value="11k" 
+                        icon={Users} 
+                        colorClass="text-blue-600" 
+                        iconBg="bg-blue-50" 
+                    />
+                </div>
+            </div>
+
+            {/* Widget 5: Shortlisted */}
+            <div className="grid-stack-item" gs-x="10" gs-y="0" gs-w="2" gs-h="2">
+                <div className="grid-stack-item-content h-full">
+                    <MetricCard 
+                        title="Shortlisted" 
+                        value="9" 
+                        icon={UserCheck} 
+                        colorClass="text-emerald-600" 
+                        iconBg="bg-emerald-50" 
+                    />
+                </div>
+            </div>
+
+            {/* Widget 6: Alerts & Notifications */}
+            <div className="grid-stack-item" gs-x="4" gs-y="2" gs-w="8" gs-h="2">
+                <div className="grid-stack-item-content h-full">
+                    <AlertsWidget />
+                </div>
+            </div>
+
+            {/* Widget 7: Trend Graph */}
+            <div className="grid-stack-item" gs-x="0" gs-y="4" gs-w="6" gs-h="6">
                 <div className="grid-stack-item-content h-full">
                     <TrendGraph />
                 </div>
             </div>
 
-            {/* Widget 4: Source Distribution */}
-            <div className="grid-stack-item" gs-x="6" gs-y="4" gs-w="6" gs-h="4">
+            {/* Widget 8: Source Distribution */}
+            <div className="grid-stack-item" gs-x="6" gs-y="4" gs-w="6" gs-h="6">
                 <div className="grid-stack-item-content h-full">
                     <SourceDistributionChart />
                 </div>
             </div>
 
-            {/* Widget 5: Upcoming Interviews */}
-            <div className="grid-stack-item" gs-x="0" gs-y="8" gs-w="4" gs-h="3">
+            {/* Widget 9: Upcoming Interviews */}
+            <div className="grid-stack-item" gs-x="0" gs-y="10" gs-w="4" gs-h="4">
                 <div className="grid-stack-item-content h-full">
                     <EmptyWidget 
                         title="Upcoming Interviews" 
@@ -128,15 +177,15 @@ export const Home = () => {
                 </div>
             </div>
 
-            {/* Widget 6: Email Delivery */}
-            <div className="grid-stack-item" gs-x="4" gs-y="8" gs-w="4" gs-h="3">
+            {/* Widget 10: Email Delivery */}
+            <div className="grid-stack-item" gs-x="4" gs-y="10" gs-w="4" gs-h="4">
                 <div className="grid-stack-item-content h-full">
                     <EmailDeliveryReport />
                 </div>
             </div>
 
-            {/* Widget 7: Portal Reports */}
-            <div className="grid-stack-item" gs-x="8" gs-y="8" gs-w="4" gs-h="3">
+            {/* Widget 11: Portal Reports */}
+            <div className="grid-stack-item" gs-x="8" gs-y="10" gs-w="4" gs-h="4">
                 <div className="grid-stack-item-content h-full">
                     <EmptyWidget 
                         title="Portal Sourcing Reports" 
@@ -145,8 +194,8 @@ export const Home = () => {
                 </div>
             </div>
 
-            {/* Widget 8: Pre-Screening */}
-            <div className="grid-stack-item" gs-x="0" gs-y="11" gs-w="12" gs-h="3">
+            {/* Widget 12: Pre-Screening */}
+            <div className="grid-stack-item" gs-x="0" gs-y="14" gs-w="12" gs-h="4">
                 <div className="grid-stack-item-content h-full">
                     <PreScreeningProgress />
                 </div>
