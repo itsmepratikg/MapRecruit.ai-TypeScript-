@@ -3,11 +3,14 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useUserPreferences } from '../../hooks/useUserPreferences';
 import { 
   Monitor, Moon, Sun, Smartphone, Tablet, Layout, Save, RotateCcw, 
-  CheckCircle, Plus, X, GripHorizontal, Trash2, Palette, Edit2, Lock
+  CheckCircle, Plus, X, GripHorizontal, Trash2, Palette, Edit2, Lock, Globe
 } from '../../components/Icons';
 import { GridStack } from 'gridstack';
 import { WIDGET_DEFINITIONS } from '../../components/DashboardWidgets'; // Import Definitions
 import { useToast } from '../../components/Toast';
+
+// --- Constants ---
+const LANGUAGES = ['English (US)', 'English (UK)', 'Spanish', 'French', 'German'];
 
 // --- Components ---
 
@@ -21,7 +24,7 @@ const ThemePreviewCard = ({
     mode: 'light' | 'dark' | 'system', 
     active: boolean, 
     onClick: () => void, 
-    label: string,
+    label: string, 
     disabled: boolean
 }) => {
     return (
@@ -112,7 +115,7 @@ const getWidgetHTML = (widgetId: string, title: string) => {
 // --- Main Component ---
 
 export const Appearance = () => {
-  const { theme, updateTheme, dashboardLayouts, updateDashboardLayout, resetDashboard } = useUserPreferences();
+  const { theme, updateTheme, language, updateLanguage, dashboardLayouts, updateDashboardLayout, resetDashboard } = useUserPreferences();
   const { addToast } = useToast();
   const gridRef = useRef<GridStack | null>(null);
   
@@ -287,37 +290,65 @@ export const Appearance = () => {
 
       {/* 1. Appearance / Theme */}
       {activeSection === 'THEME' && (
-          <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="mb-6 flex justify-between items-end">
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Theme Selection</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Select a color scheme that suits your preference.</p>
+          <section className="animate-in fade-in slide-in-from-bottom-2 duration-300 space-y-8">
+              {/* Language Settings */}
+              <div>
+                  <div className="mb-4 flex justify-between items-end">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2"><Globe size={18} className="text-slate-400"/> Regional Settings</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Set your preferred display language.</p>
+                      </div>
                   </div>
-                  {!isEditing && <div className="text-xs text-slate-400 italic flex items-center gap-1"><Lock size={12}/> Edit to change theme</div>}
+                  
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 max-w-md">
+                      <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">System Language</label>
+                      <select 
+                          className="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
+                          value={language}
+                          onChange={(e) => updateLanguage(e.target.value)}
+                          disabled={!isEditing}
+                      >
+                          {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+                      </select>
+                      {!isEditing && <p className="text-xs text-slate-400 mt-2 italic flex items-center gap-1"><Lock size={10}/> Edit to change language</p>}
+                  </div>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <ThemePreviewCard 
-                      mode="light" 
-                      label="Light Mode" 
-                      active={theme === 'light'} 
-                      onClick={() => updateTheme('light')}
-                      disabled={!isEditing}
-                  />
-                  <ThemePreviewCard 
-                      mode="dark" 
-                      label="Dark Mode" 
-                      active={theme === 'dark'} 
-                      onClick={() => updateTheme('dark')}
-                      disabled={!isEditing}
-                  />
-                  <ThemePreviewCard 
-                      mode="system" 
-                      label="System Default" 
-                      active={theme === 'system'} 
-                      onClick={() => updateTheme('system')}
-                      disabled={!isEditing}
-                  />
+
+              <div className="border-t border-slate-200 dark:border-slate-700"></div>
+
+              {/* Theme Settings */}
+              <div>
+                  <div className="mb-6 flex justify-between items-end">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Theme Selection</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">Select a color scheme that suits your preference.</p>
+                      </div>
+                      {!isEditing && <div className="text-xs text-slate-400 italic flex items-center gap-1"><Lock size={12}/> Edit to change theme</div>}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <ThemePreviewCard 
+                          mode="light" 
+                          label="Light Mode" 
+                          active={theme === 'light'} 
+                          onClick={() => updateTheme('light')}
+                          disabled={!isEditing}
+                      />
+                      <ThemePreviewCard 
+                          mode="dark" 
+                          label="Dark Mode" 
+                          active={theme === 'dark'} 
+                          onClick={() => updateTheme('dark')}
+                          disabled={!isEditing}
+                      />
+                      <ThemePreviewCard 
+                          mode="system" 
+                          label="System Default" 
+                          active={theme === 'system'} 
+                          onClick={() => updateTheme('system')}
+                          disabled={!isEditing}
+                      />
+                  </div>
               </div>
           </section>
       )}

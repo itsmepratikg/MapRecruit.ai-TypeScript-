@@ -30,7 +30,6 @@ interface Holiday {
 interface CalendarConfig {
   timeFormat: '12h' | '24h';
   dateFormat: string;
-  language: string;
   timeZone: string;
   weekends: string[];
   excludeWeekends: boolean;
@@ -54,7 +53,6 @@ const TIME_ZONES = [
   '(GMT+10:00) Sydney'
 ];
 const DATE_FORMATS = ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'];
-const LANGUAGES = ['English (US)', 'English (UK)', 'Spanish', 'French', 'German'];
 
 const INITIAL_SCHEDULE: DaySchedule[] = DAYS_OF_WEEK.map(day => ({
   day,
@@ -278,7 +276,6 @@ export const CalendarSettings = () => {
   const [config, setConfig] = useState<CalendarConfig>({
     timeFormat: '12h',
     dateFormat: 'MM/DD/YYYY',
-    language: 'English (US)',
     timeZone: '(GMT-05:00) Eastern Time (US & Canada)',
     weekends: ['Saturday', 'Sunday'],
     excludeWeekends: true,
@@ -434,7 +431,7 @@ export const CalendarSettings = () => {
                         </button>
                     </>
                 ) : (
-                    <button onClick={() => setIsEditing(true)} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
+                    <button onClick={() => setIsEditing(true)} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
                         <Edit2 size={16} /> Edit
                     </button>
                 )}
@@ -451,7 +448,7 @@ export const CalendarSettings = () => {
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm uppercase tracking-wider">
                     <Globe size={16} className="text-slate-400"/> General Preferences
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Date Format</label>
                         <select 
@@ -477,17 +474,6 @@ export const CalendarSettings = () => {
                                 </button>
                             ))}
                         </div>
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Language</label>
-                        <select 
-                            className="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
-                            value={config.language}
-                            onChange={(e) => setConfig({...config, language: e.target.value})}
-                            disabled={!isEditing}
-                        >
-                            {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
-                        </select>
                     </div>
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 dark:text-slate-400">Time Zone</label>

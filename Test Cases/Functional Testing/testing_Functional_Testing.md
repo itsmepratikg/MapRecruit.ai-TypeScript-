@@ -28,3 +28,12 @@
 | FT-08 | Dark Mode Toggle | 1. Click Moon icon in Sidebar | App background changes to dark slate, text becomes light. |
 | FT-09 | Edit Basic Details | 1. Navigate to My Account > Basic Details<br>2. Click Edit<br>3. Change Phone Number<br>4. Click Save | Form exits edit mode. Toast appears. New number persists. |
 | FT-10 | Select Layout | 1. Navigate to Settings > ReachOut Layouts<br>2. Click "Compact" | Selection highlights. (Future: Dashboard density changes). |
+
+## 4. Advanced Settings (New)
+
+| ID | Flow | Steps | Expected Result |
+|----|------|-------|-----------------|
+| FT-12 | Add Holiday | 1. My Account > Calendar<br>2. Enter Name & Date<br>3. Click Add Date | New holiday appears in the list below. |
+| FT-13 | Copy Schedule | 1. My Account > Calendar<br>2. Click "Copy to..." on Monday<br>3. Select "Tue, Wed"<br>4. Confirm | Tuesday and Wednesday slots update to match Monday. |
+| FT-14 | Update Signature | 1. My Account > Communication<br>2. Edit Rich Text<br>3. Click Bold icon | Text reflects bold formatting. |
+| FT-15 | Network Analytics | 1. Engage AI > Click Analytics Icon on Node | Network Graph Modal opens showing Sankey diagram. |

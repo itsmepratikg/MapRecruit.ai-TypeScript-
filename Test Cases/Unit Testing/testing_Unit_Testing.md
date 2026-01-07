@@ -36,3 +36,12 @@
 |----|-----------|----------|-----------------|
 | UT-13 | Initial Load | `useUserProfile()` | Returns default data if LocalStorage is empty. |
 | UT-14 | Save Profile | `saveProfile({firstName: "New"})` | Updates internal state and calls `localStorage.setItem`. |
+
+## 5. Calendar Utilities (`pages/MyAccount/CalendarSettings.tsx`)
+
+| ID | Test Case | Function | Input | Expected Result |
+|----|-----------|----------|-------|-----------------|
+| UT-15 | Format Time 12h | `formatTimeDisplay` | "13:30", "12h" | Returns "1:30 PM" |
+| UT-16 | Format Time 24h | `formatTimeDisplay` | "13:30", "24h" | Returns "13:30" |
+| UT-17 | Parse Time PM | `parseTimeString` | "02:30 PM", "12h" | Returns "14:30" |
+| UT-18 | Date Display | `formatDateDisplay` | "2025-12-25", "MM/DD/YYYY" | Returns "12/25/2025" |

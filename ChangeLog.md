@@ -3,6 +3,29 @@
 
 All notable changes to the **MapRecruit ATS Dashboard** project will be documented in this file.
 
+## [1.2.0] - 2025-05-21
+
+### Advanced Features & Analytics
+
+#### Campaign Intelligence
+- **Network Flow Analysis**: Implemented complex Sankey diagrams using D3.js to visualize candidate drop-off rates across Announcement, Screening, and Interview stages.
+- **Interactive Analytics**: Added drill-down capabilities to workflow nodes to view conversion metrics (Sent -> Viewed -> Responded).
+
+#### Account Management
+- **Calendar Settings**: 
+  - Comprehensive availability configuration including Work Days, Custom Time Slots, and Global Breaks.
+  - Holiday management system with type categorization (Holiday, Medical, Personal).
+  - Schedule copying utility to replicate hours across multiple days.
+- **Communication Preferences**:
+  - Integrated **Rich Text Editor** for Email Signatures with HTML tag support.
+  - Added configuration for default Sender IDs (Email & SMS) and Auto-Reply logic.
+
+#### Campaign Execution
+- **Interview Panel**: Added a split-view "Live Interview" mode featuring:
+  - Candidate Resume PDF viewer placeholder.
+  - Interactive Scorecard with weighted criteria.
+  - Real-time feedback logging.
+
 ## [1.1.0] - 2025-05-21
 
 ### Major Refactor & New Modules

@@ -20,3 +20,9 @@
 | ID | Scenario | Steps | Success Criteria |
 |----|----------|-------|------------------|
 | ST-03 | User Account Setup | 1. Open User Menu > My Account.<br>2. Update Avatar and Job Title.<br>3. Go to Appearance > Dashboard Layout.<br>4. Move widgets and Save.<br>5. Refresh Page. | Avatar updates globally. Custom dashboard layout loads correctly after refresh. |
+
+## 4. Admin Configuration Flow (New)
+
+| ID | Scenario | Steps | Success Criteria |
+|----|----------|-------|------------------|
+| ST-04 | Recruiter Setup | 1. **Calendar**: Set working hours (9-5), add Lunch break (12-1), set Timezone.<br>2. **Comm**: Set Email Signature using Rich Text.<br>3. **Verify**: Navigate to Engage AI > Node Config > Template Preview. | Calendar settings saved without error. Signature persists. Workflow templates render correctly. |

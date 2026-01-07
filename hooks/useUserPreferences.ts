@@ -127,6 +127,16 @@ export const useUserPreferences = () => {
     }));
   };
 
+  const updateLanguage = (lang: string) => {
+    setUserAccount(prev => ({
+        ...prev,
+        preferences: {
+            ...prev.preferences,
+            language: lang
+        }
+    }));
+  };
+
   const updateDashboardLayout = (widgets: any[], viewMode: 'desktop' | 'tablet' | 'mobile') => {
     setUserAccount(prev => ({
       ...prev,
@@ -156,8 +166,10 @@ export const useUserPreferences = () => {
   return {
     userAccount,
     theme: userAccount.preferences.theme,
+    language: userAccount.preferences.language || "English (US)",
     dashboardLayouts: userAccount.preferences.dashboardConfig.layouts,
     updateTheme,
+    updateLanguage,
     updateDashboardLayout,
     resetDashboard
   };

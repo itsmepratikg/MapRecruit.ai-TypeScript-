@@ -29,3 +29,10 @@
 |----|----------|---------------|-------|-----------------|
 | IT-06 | Profile to Sidebar Sync | Editing My Account | 1. Update First Name in Basic Details<br>2. Click Save | Sidebar User Avatar/Name updates immediately without reload. |
 | IT-07 | Theme Persistence | Dashboard | 1. Change Theme in Modal<br>2. Refresh Page | Theme choice persists (read from LocalStorage). |
+
+## 5. Analytics Integration (New)
+
+| ID | Scenario | Pre-Condition | Steps | Expected Result |
+|----|----------|---------------|-------|-----------------|
+| IT-08 | Workflow to Graph | In Workflow Builder | 1. Click 'Network' icon on an 'Interview' node | Modal opens with `initialRoundType='Interview'`. Sankey displays Interview-specific mock data. |
+| IT-09 | Calendar to Timezone | In Calendar Settings | 1. Change Timezone dropdown | `config` state updates. (Future: System timestamps convert to this zone). |

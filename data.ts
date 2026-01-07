@@ -10,6 +10,7 @@ export const DEFAULT_USER_ACCOUNT = {
   name: "Pratik",
   preferences: {
     theme: "system", // 'light', 'dark', or 'system'
+    language: "English (US)",
     dashboardConfig: {
       rowHeight: 30,
       margin: 15,
@@ -303,7 +304,18 @@ const CLOSED_CAMPAIGNS: Campaign[] = Array.from({ length: 32 }).map((_, i) =>
 );
 
 const ARCHIVED_CAMPAIGNS: Campaign[] = Array.from({ length: 17 }).map((_, i) => 
-  createCampaign(200 + i, i % 3 === 0 ? "Machine Operator" : (i % 2 === 0 ? "Cherry Picker Lift Driver" : "Manager of Accounting"), `40000${400 + i}`, "Archived", "AJ", "bg-red-200 text-red-800", i < 5, false, Math.floor(Math.random() * 5), "05/29/2025")
+  createCampaign(
+    200 + i, 
+    i % 3 === 0 ? "Machine Operator" : (i % 2 === 0 ? "Cherry Picker Lift Driver" : "Manager of Accounting"), 
+    `40000${400 + i}`, 
+    "Archived", 
+    "AJ", 
+    "bg-red-200 text-red-800", 
+    i < 5, 
+    false, 
+    Math.floor(Math.random() * 5), 
+    "05/29/2025"
+  )
 );
 
 export const GLOBAL_CAMPAIGNS = [...ACTIVE_CAMPAIGNS, ...CLOSED_CAMPAIGNS, ...ARCHIVED_CAMPAIGNS];

@@ -158,14 +158,14 @@ export const BasicDetails = () => {
            {!isEditing ? (
              <button 
                onClick={() => setIsEditing(true)}
-               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
              >
                Edit
              </button>
            ) : (
              <button 
                onClick={handleSave}
-               className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
+               className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
              >
                Save
              </button>
