@@ -9,7 +9,7 @@ export const DEFAULT_USER_ACCOUNT = {
   id: "usr_123",
   name: "Pratik",
   preferences: {
-    theme: "light", // 'light' or 'dark'
+    theme: "system", // 'light', 'dark', or 'system'
     dashboardConfig: {
       rowHeight: 30,
       margin: 15,
