@@ -295,14 +295,6 @@ const App = () => {
   
   // Hook for User Profile Data (Synchronized)
   const { userProfile, clients } = useUserProfile();
-
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [theme]);
   
   // Navigation State
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
@@ -352,7 +344,7 @@ const App = () => {
 
   return (
     <ToastProvider>
-      <div className={`flex h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 transition-colors ${theme === 'dark' ? 'dark' : ''}`}>
+      <div className="flex h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-200 transition-colors">
         
         {/* Mobile Sidebar Overlay - Only when fully open */}
         {isSidebarOpen && !isDesktop && (

@@ -78,7 +78,13 @@ export const useUserPreferences = () => {
   // Apply Theme Effect
   useEffect(() => {
     const applyTheme = (t: string) => {
-        const isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        let isDark = false;
+        if (t === 'dark') {
+            isDark = true;
+        } else if (t === 'system') {
+            isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+
         if (isDark) {
             document.documentElement.classList.add('dark');
         } else {
@@ -92,9 +98,21 @@ export const useUserPreferences = () => {
     // Listen for system changes if mode is system
     if (currentTheme === 'system') {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handleChange = () => applyTheme('system');
+        
+        const handleChange = (e: MediaQueryListEvent) => {
+            if (e.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        };
+        
+        // Standard listener
         mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
+        
+        return () => {
+            mediaQuery.removeEventListener('change', handleChange);
+        };
     }
   }, [userAccount.preferences.theme]);
 
