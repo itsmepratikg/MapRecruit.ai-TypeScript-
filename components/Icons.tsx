@@ -12,6 +12,9 @@ const Icon = ({ className = "", size = 24, iconClass, style = {} }: any) => (
 export const Activity = (props: any) => <Icon {...props} iconClass="fa-solid fa-chart-line" />;
 export const AlertCircle = (props: any) => <Icon {...props} iconClass="fa-solid fa-circle-exclamation" />;
 export const AlertTriangle = (props: any) => <Icon {...props} iconClass="fa-solid fa-triangle-exclamation" />;
+export const AlignCenter = (props: any) => <Icon {...props} iconClass="fa-solid fa-align-center" />;
+export const AlignLeft = (props: any) => <Icon {...props} iconClass="fa-solid fa-align-left" />;
+export const AlignRight = (props: any) => <Icon {...props} iconClass="fa-solid fa-align-right" />;
 export const Archive = (props: any) => <Icon {...props} iconClass="fa-solid fa-box-archive" />;
 export const ArrowDown = (props: any) => <Icon {...props} iconClass="fa-solid fa-arrow-down" />;
 export const ArrowRight = (props: any) => <Icon {...props} iconClass="fa-solid fa-arrow-right" />;
@@ -21,6 +24,7 @@ export const Award = (props: any) => <Icon {...props} iconClass="fa-solid fa-awa
 export const BarChart = (props: any) => <Icon {...props} iconClass="fa-solid fa-chart-bar" />;
 export const BarChart2 = (props: any) => <Icon {...props} iconClass="fa-solid fa-chart-bar" />;
 export const Bell = (props: any) => <Icon {...props} iconClass="fa-solid fa-bell" />;
+export const Bold = (props: any) => <Icon {...props} iconClass="fa-solid fa-bold" />;
 export const BookOpen = (props: any) => <Icon {...props} iconClass="fa-solid fa-book-open" />;
 export const Bookmark = (props: any) => <Icon {...props} iconClass="fa-solid fa-bookmark" />;
 export const Brain = (props: any) => <Icon {...props} iconClass="fa-solid fa-brain" />;
@@ -63,11 +67,13 @@ export const History = (props: any) => <Icon {...props} iconClass="fa-solid fa-c
 export const Home = (props: any) => <Icon {...props} iconClass="fa-solid fa-house" />;
 export const Image = (props: any) => <Icon {...props} iconClass="fa-solid fa-image" />;
 export const Info = (props: any) => <Icon {...props} iconClass="fa-solid fa-circle-info" />;
+export const Italic = (props: any) => <Icon {...props} iconClass="fa-solid fa-italic" />;
 export const Layers = (props: any) => <Icon {...props} iconClass="fa-solid fa-layer-group" />;
 export const Layout = (props: any) => <Icon {...props} iconClass="fa-solid fa-table-columns" />;
 export const LayoutDashboard = (props: any) => <Icon {...props} iconClass="fa-solid fa-gauge-high" />;
 export const Link = (props: any) => <Icon {...props} iconClass="fa-solid fa-link" />;
 export const Linkedin = (props: any) => <Icon {...props} iconClass="fa-brands fa-linkedin" />;
+export const List = (props: any) => <Icon {...props} iconClass="fa-solid fa-list" />;
 export const ListChecks = (props: any) => <Icon {...props} iconClass="fa-solid fa-list-check" />;
 export const Loader2 = (props: any) => <Icon {...props} iconClass="fa-solid fa-spinner fa-spin" />;
 export const Lock = (props: any) => <Icon {...props} iconClass="fa-solid fa-lock" />;
@@ -125,6 +131,8 @@ export const ThumbsDown = (props: any) => <Icon {...props} iconClass="fa-solid f
 export const ThumbsUp = (props: any) => <Icon {...props} iconClass="fa-solid fa-thumbs-up" />;
 export const Trash2 = (props: any) => <Icon {...props} iconClass="fa-solid fa-trash" />;
 export const TrendingUp = (props: any) => <Icon {...props} iconClass="fa-solid fa-arrow-trend-up" />;
+export const Type = (props: any) => <Icon {...props} iconClass="fa-solid fa-font" />;
+export const Underline = (props: any) => <Icon {...props} iconClass="fa-solid fa-underline" />;
 export const Undo2 = (props: any) => <Icon {...props} iconClass="fa-solid fa-rotate-left" />;
 export const Upload = (props: any) => <Icon {...props} iconClass="fa-solid fa-upload" />;
 export const User = (props: any) => <Icon {...props} iconClass="fa-solid fa-user" />;

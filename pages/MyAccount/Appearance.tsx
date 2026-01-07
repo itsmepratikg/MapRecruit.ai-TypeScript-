@@ -75,11 +75,8 @@ const WidgetPlaceholder = ({ id, onRemove }: { id: string, onRemove?: () => void
             </div>
             
             {/* Body Placeholder */}
-            <div className="flex-1 flex items-center justify-center bg-slate-50/50 dark:bg-slate-900/30 p-4">
-               <div className="text-center opacity-50">
-                   <div className="w-8 h-8 bg-slate-200 dark:bg-slate-600 rounded-full mx-auto mb-2"></div>
-                   <div className="h-2 w-16 bg-slate-200 dark:bg-slate-600 rounded mx-auto"></div>
-               </div>
+            <div className="flex-1 flex items-center justify-center bg-slate-50/30 dark:bg-slate-900/30">
+                <div className="w-8 h-1 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
             </div>
         </div>
     );
@@ -88,316 +85,261 @@ const WidgetPlaceholder = ({ id, onRemove }: { id: string, onRemove?: () => void
 // --- Main Component ---
 
 export const Appearance = () => {
-  const [activeTab, setActiveTab] = useState<'THEME' | 'DASHBOARD'>('THEME');
   const { theme, updateTheme, dashboardLayouts, updateDashboardLayout, resetDashboard } = useUserPreferences();
   const { addToast } = useToast();
-
-  // Dashboard Editor State
   const gridRef = useRef<GridStack | null>(null);
-  const [editMode, setEditMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [currentWidgets, setCurrentWidgets] = useState<any[]>([]);
+  
+  const [activeTab, setActiveTab] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [availableWidgets, setAvailableWidgets] = useState<string[]>([]);
+  const [layoutState, setLayoutState] = useState<any[]>([]);
 
-  // Sync state with global preferences on load/mode change
+  // Initialize Available Widgets (those not in current layout)
   useEffect(() => {
-      const layouts = dashboardLayouts[editMode] || [];
-      setCurrentWidgets(layouts);
-  }, [dashboardLayouts, editMode]);
+      const currentLayout = dashboardLayouts[activeTab] || [];
+      const currentIds = currentLayout.map((w: any) => w.id);
+      const available = WIDGET_DEFINITIONS.filter(def => !currentIds.includes(def.id)).map(d => d.id);
+      setAvailableWidgets(available);
+      setLayoutState(currentLayout);
+  }, [activeTab, dashboardLayouts]);
 
-  // Derived list of available widgets (not in current layout)
-  const availableWidgets = useMemo(() => {
-      const currentIds = currentWidgets.map(w => w.id);
-      return WIDGET_DEFINITIONS.filter(def => !currentIds.includes(def.id));
-  }, [currentWidgets]);
-
-  // Initialize GridStack for Editor
+  // Init GridStack
   useEffect(() => {
-      if (activeTab !== 'DASHBOARD') return;
-
       if (gridRef.current) {
           gridRef.current.destroy(false);
       }
 
-      const timer = setTimeout(() => {
-          const grid = GridStack.init({
-              column: 12,
-              cellHeight: 30,
-              margin: 10,
-              float: true,
-              animate: true,
-              disableOneColumnMode: true,
-              acceptWidgets: true,
-              dragIn: '.new-widget', // Enable dragging from sidebar
-              dragInOptions: { appendTo: 'body', helper: 'clone' },
-              removable: '#trash', // Optional drop-to-remove zone
-          });
-          
-          gridRef.current = grid;
+      const options = {
+          column: activeTab === 'mobile' ? 1 : (activeTab === 'tablet' ? 6 : 12),
+          cellHeight: 60,
+          margin: 10,
+          animate: true,
+          float: true,
+          disableResize: activeTab === 'mobile',
+          acceptWidgets: true,
+          removable: '.trash-zone',
+      };
 
-          // Event Listener for External Adds
-          grid.on('added', (event: any, items: any[]) => {
-             // When an item is dropped from the sidebar, GridStack adds it.
-             // We need to sync our React state `currentWidgets` to reflect this new item 
-             // so the sidebar updates (removes it) and we track it for saving.
-             const newItems = items.map(item => ({
-                 id: item.id,
-                 x: item.x,
-                 y: item.y,
-                 w: item.w,
-                 h: item.h,
-                 visible: true
-             }));
-             
-             setCurrentWidgets(prev => {
-                 // Prevent duplicates if multiple events fire
-                 const existingIds = prev.map(p => p.id);
-                 const uniqueNew = newItems.filter(n => !existingIds.includes(n.id));
-                 return [...prev, ...uniqueNew];
-             });
-          });
-
-          // Event Listener for Changes (Moves/Resizes)
-          grid.on('change', (event: any, items: any[]) => {
-             // We don't necessarily need to update React state on every drag pixel, 
-             // but we do need the final state on Save.
-             // However, keeping `currentWidgets` somewhat fresh helps if we render based on it.
-             // For performance, we might skip heavy updates here and rely on grid.save() at the end.
-          });
-
+      setTimeout(() => {
+        const gridEl = document.getElementById('grid-stack-editor');
+        if (gridEl) {
+            gridRef.current = GridStack.init(options, gridEl);
+            
+            // Sync changes
+            gridRef.current.on('change', (event: Event, items: any) => {
+                // Update local state is tricky with gridstack, best to read on save
+            });
+        }
       }, 100);
 
       return () => {
-          clearTimeout(timer);
           if (gridRef.current) {
               gridRef.current.destroy(false);
           }
       };
-  }, [activeTab, editMode]);
-
-  // Remove Widget Handler
-  const handleRemoveWidget = (id: string) => {
-      if (gridRef.current) {
-          // Find the element
-          const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
-          if (el) {
-              gridRef.current.removeWidget(el as HTMLElement);
-              setCurrentWidgets(prev => prev.filter(w => w.id !== id));
-          }
-      }
-  };
-
-  // Add Widget Handler (Click)
-  const handleAddWidgetClick = (def: any) => {
-      if (gridRef.current) {
-          // Add to grid
-          const newNode = {
-              id: def.id,
-              x: 0, 
-              y: 0, // Auto placement
-              w: def.defaultW,
-              h: def.defaultH,
-              autoPosition: true
-          };
-          
-          gridRef.current.addWidget(
-              `<div class="grid-stack-item">
-                  <div class="grid-stack-item-content"></div>
-               </div>`, 
-              newNode
-          );
-          // Sync State triggers via 'added' event usually, but manual add might need manual state sync if event doesn't fire same way.
-          // GridStack 'added' event fires on addWidget too.
-      }
-  };
+  }, [activeTab]);
 
   const handleSaveLayout = () => {
-      if (gridRef.current) {
-          const serializedData = gridRef.current.save(false) as any[];
-          const newLayout = serializedData.map((node: any) => ({
-              id: node.id,
-              x: node.x,
-              y: node.y,
-              w: node.w,
-              h: node.h,
-              visible: true
-          }));
-          
-          updateDashboardLayout(newLayout, editMode);
-          addToast(`Layout saved for ${editMode} view`, 'success');
-      }
+      if (!gridRef.current) return;
+      const layout = gridRef.current.save(false) as any[]; // false = content not saved
+      // Map back to our structure (id, x, y, w, h)
+      const cleanLayout = layout.map(item => ({
+          id: item.id,
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h: item.h,
+          visible: true
+      }));
+      
+      updateDashboardLayout(cleanLayout, activeTab);
+      addToast(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} layout saved successfully`, "success");
   };
 
-  const handleResetLayout = () => {
-      if(confirm(`Reset ${editMode} layout to defaults?`)) {
-          resetDashboard();
-          window.location.reload(); 
+  const handleReset = () => {
+      resetDashboard();
+      addToast("Dashboard layouts reset to default", "info");
+  };
+
+  const addWidgetToGrid = (widgetId: string) => {
+      if (!gridRef.current) return;
+      const def = WIDGET_DEFINITIONS.find(w => w.id === widgetId);
+      if (!def) return;
+
+      gridRef.current.addWidget({
+          id: widgetId,
+          w: def.defaultW,
+          h: def.defaultH,
+          minW: def.minW,
+          minH: def.minH,
+          content: `<div class="grid-stack-item-content-placeholder">${def.title}</div>` // Placeholder content, React renders over it via Portal ideally, but for editor simpler is fine
+      });
+      
+      // Update local available list
+      setAvailableWidgets(prev => prev.filter(id => id !== widgetId));
+  };
+
+  const removeWidget = (widgetId: string) => {
+      if (!gridRef.current) return;
+      const el = document.querySelector(`.grid-stack-item[gs-id="${widgetId}"]`);
+      if (el) {
+          gridRef.current.removeWidget(el as HTMLElement);
+          setAvailableWidgets(prev => [...prev, widgetId]);
       }
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div>
-            <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Appearance</h3>
-            <p className="text-slate-500 dark:text-slate-400">Customize the look and feel of your workspace.</p>
-        </div>
+    <div className="p-8 lg:p-12">
+    <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in duration-300 pb-12">
+      
+      {/* 1. Appearance / Theme */}
+      <section>
+          <div className="mb-6">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <Monitor size={20} className="text-emerald-500" /> Interface Theme
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Choose how MapRecruit looks to you.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <ThemePreviewCard 
+                  mode="light" 
+                  label="Light Mode" 
+                  active={theme === 'light'} 
+                  onClick={() => updateTheme('light')} 
+              />
+              <ThemePreviewCard 
+                  mode="dark" 
+                  label="Dark Mode" 
+                  active={theme === 'dark'} 
+                  onClick={() => updateTheme('dark')} 
+              />
+              <ThemePreviewCard 
+                  mode="system" 
+                  label="System Default" 
+                  active={theme === 'system'} 
+                  onClick={() => updateTheme('system')} 
+              />
+          </div>
+      </section>
 
-        {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 dark:border-slate-700">
-            <button 
-                onClick={() => setActiveTab('THEME')}
-                className={`pb-3 px-6 text-sm font-bold transition-all border-b-2 ${activeTab === 'THEME' ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
-            >
-                Theme Preferences
-            </button>
-            <button 
-                onClick={() => setActiveTab('DASHBOARD')}
-                className={`pb-3 px-6 text-sm font-bold transition-all border-b-2 ${activeTab === 'DASHBOARD' ? 'border-emerald-600 text-emerald-700 dark:text-emerald-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
-            >
-                Dashboard Layout
-            </button>
-        </div>
+      <hr className="border-slate-200 dark:border-slate-700" />
 
-        {/* Theme Content */}
-        {activeTab === 'THEME' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in zoom-in-95 duration-200">
-                <ThemePreviewCard 
-                    mode="light" 
-                    label="Light Mode" 
-                    active={theme === 'light'} 
-                    onClick={() => updateTheme('light')} 
-                />
-                <ThemePreviewCard 
-                    mode="dark" 
-                    label="Dark Mode" 
-                    active={theme === 'dark'} 
-                    onClick={() => updateTheme('dark')} 
-                />
-                <ThemePreviewCard 
-                    mode="system" 
-                    label="System Default" 
-                    active={theme === 'system'} 
-                    onClick={() => updateTheme('system')} 
-                />
-            </div>
-        )}
+      {/* 2. Dashboard Layout Editor */}
+      <section>
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
+              <div>
+                  <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                      <Layout size={20} className="text-blue-500" /> Dashboard Layout
+                  </h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Customize your home dashboard widgets.</p>
+              </div>
+              <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg self-start md:self-auto">
+                  <button 
+                    onClick={() => setActiveTab('desktop')}
+                    className={`p-2 rounded-md transition-all ${activeTab === 'desktop' ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                    title="Desktop Layout"
+                  >
+                      <Monitor size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('tablet')}
+                    className={`p-2 rounded-md transition-all ${activeTab === 'tablet' ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                    title="Tablet Layout"
+                  >
+                      <Tablet size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('mobile')}
+                    className={`p-2 rounded-md transition-all ${activeTab === 'mobile' ? 'bg-white dark:bg-slate-600 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                    title="Mobile Layout"
+                  >
+                      <Smartphone size={18} />
+                  </button>
+              </div>
+          </div>
 
-        {/* Dashboard Editor Content */}
-        {activeTab === 'DASHBOARD' && (
-            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
-                {/* Editor Toolbar */}
-                <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
-                        <button 
-                            onClick={() => setEditMode('desktop')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${editMode === 'desktop' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
-                        >
-                            <Monitor size={16} /> Desktop
-                        </button>
-                        <button 
-                            onClick={() => setEditMode('tablet')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${editMode === 'tablet' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
-                        >
-                            <Tablet size={16} /> Tablet
-                        </button>
-                        <button 
-                            onClick={() => setEditMode('mobile')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${editMode === 'mobile' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'}`}
-                        >
-                            <Smartphone size={16} /> Mobile
-                        </button>
-                    </div>
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+              
+              {/* Sidebar: Available Widgets */}
+              <div className="w-full lg:w-64 shrink-0 space-y-4">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                      <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3 flex items-center justify-between">
+                          Available Widgets
+                          <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] px-1.5 py-0.5 rounded-full">{availableWidgets.length}</span>
+                      </h4>
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
+                          {availableWidgets.map(id => {
+                              const def = WIDGET_DEFINITIONS.find(d => d.id === id);
+                              return (
+                                  <div key={id} className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg shadow-sm">
+                                      <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{def?.title}</span>
+                                      <button 
+                                        onClick={() => addWidgetToGrid(id)}
+                                        className="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 p-1 rounded transition-colors"
+                                      >
+                                          <Plus size={14} />
+                                      </button>
+                                  </div>
+                              );
+                          })}
+                          {availableWidgets.length === 0 && (
+                              <p className="text-xs text-slate-400 italic text-center py-4">All widgets added.</p>
+                          )}
+                      </div>
+                  </div>
 
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={handleResetLayout}
-                            className="flex items-center gap-2 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                        >
-                            <RotateCcw size={16} /> Reset Default
-                        </button>
-                        <button 
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                      <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Actions</h4>
+                      <div className="space-y-2">
+                          <button 
                             onClick={handleSaveLayout}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 shadow-sm transition-colors"
-                        >
-                            <Save size={16} /> Save Changes
-                        </button>
-                    </div>
-                </div>
+                            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm flex items-center justify-center gap-2 transition-colors"
+                          >
+                              <Save size={16} /> Save Layout
+                          </button>
+                          <button 
+                            onClick={handleReset}
+                            className="w-full py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center justify-center gap-2 transition-colors"
+                          >
+                              <RotateCcw size={16} /> Reset to Default
+                          </button>
+                      </div>
+                  </div>
+              </div>
 
-                <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Editor Area */}
-                    <div className="flex-1 flex justify-center bg-slate-100/50 dark:bg-black/20 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-8 min-h-[600px]">
-                        <div 
-                            className={`transition-all duration-300 shadow-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden ${
-                                editMode === 'desktop' ? 'w-full max-w-full' : 
-                                editMode === 'tablet' ? 'w-[768px]' : 
-                                'w-[375px]'
-                            }`}
-                        >
-                            {/* Fake Header for context */}
-                            <div className="h-12 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4">
-                                <div className="w-20 h-4 bg-slate-200 dark:bg-slate-700 rounded"></div>
-                            </div>
+              {/* Editor Canvas */}
+              <div className="flex-1 w-full bg-slate-100 dark:bg-slate-900/50 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 min-h-[500px] p-4 relative">
+                  <div id="grid-stack-editor" className="grid-stack">
+                      {layoutState.map(w => (
+                          <div 
+                            key={w.id} 
+                            className="grid-stack-item" 
+                            gs-id={w.id} 
+                            gs-x={w.x} 
+                            gs-y={w.y} 
+                            gs-w={w.w} 
+                            gs-h={w.h}
+                          >
+                              <div className="grid-stack-item-content">
+                                  <WidgetPlaceholder id={w.id} onRemove={() => removeWidget(w.id)} />
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+                  
+                  {/* Empty State */}
+                  {layoutState.length === 0 && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 pointer-events-none">
+                          <Layout size={48} className="mb-2 opacity-50" />
+                          <p className="text-sm">Canvas is empty</p>
+                          <p className="text-xs">Add widgets from the sidebar</p>
+                      </div>
+                  )}
+              </div>
+          </div>
+      </section>
 
-                            {/* GridStack Area */}
-                            <div className="p-4 bg-slate-50/50 dark:bg-slate-900 h-full min-h-[500px]">
-                                <div className="grid-stack editing-mode">
-                                    {currentWidgets.map((widget: any) => (
-                                        <div 
-                                            key={widget.id}
-                                            className="grid-stack-item"
-                                            gs-id={widget.id}
-                                            gs-x={widget.x} 
-                                            gs-y={widget.y} 
-                                            gs-w={widget.w} 
-                                            gs-h={widget.h}
-                                        >
-                                            <div className="grid-stack-item-content">
-                                                <WidgetPlaceholder id={widget.id} onRemove={() => handleRemoveWidget(widget.id)} />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Widget Library Sidebar */}
-                    <div className="w-full lg:w-72 shrink-0 space-y-4">
-                        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                            <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Available Widgets</h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">Drag and drop widgets to add them to your dashboard.</p>
-                            
-                            <div className="space-y-3">
-                                {availableWidgets.length === 0 && (
-                                    <div className="text-center py-8 text-slate-400 text-xs italic bg-slate-50 dark:bg-slate-900/50 rounded-lg">
-                                        All available widgets added.
-                                    </div>
-                                )}
-                                {availableWidgets.map(widget => (
-                                    <div 
-                                        key={widget.id}
-                                        className="new-widget bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg p-3 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing transition-all flex items-center justify-between group"
-                                        gs-id={widget.id}
-                                        gs-w={widget.defaultW}
-                                        gs-h={widget.defaultH}
-                                        onClick={() => handleAddWidgetClick(widget)}
-                                    >
-                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{widget.title}</span>
-                                        <Plus size={16} className="text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        
-                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 p-4">
-                            <h5 className="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase mb-2">Pro Tip</h5>
-                            <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                                You can resize widgets by dragging their bottom-right corner. Use the "Reset Default" button to restore the original layout.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )}
+    </div>
     </div>
   );
 };
