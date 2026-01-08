@@ -1,7 +1,28 @@
 
 import React from 'react';
 
-export type ViewMode = 'SEARCH' | 'FOLDERS' | 'TAGS' | 'CANDIDATE';
+export type ViewMode = 'SEARCH' | 'FOLDERS' | 'TAGS' | 'SHARED' | 'FAVORITES' | 'DUPLICATES' | 'LOCAL' | 'CANDIDATE';
+
+// --- ACCESS CONTROL TYPES ---
+export type AccessLevel = 'PRIVATE' | 'CLIENT' | 'COMPANY'; // User, Client, Company
+export type PermissionType = 'VIEW' | 'EDIT';
+
+export interface ShareRule {
+  entityId: string; // User ID
+  entityName: string;
+  entityType: 'USER'; // Can be expanded to 'TEAM' later
+  avatar?: string;
+  role?: string;
+  permission: PermissionType;
+}
+
+export interface AccessSettings {
+  level: AccessLevel;
+  clientId?: string; // If level is CLIENT
+  ownerId: string; // The creator (always has Edit access)
+  sharedWith: ShareRule[];
+}
+// ---------------------------
 
 export interface Experience {
   id: number;
@@ -111,6 +132,19 @@ export interface Campaign {
   rounds: Round[];
   type?: string; // e.g. Direct Hire
   daysOpen?: number;
+  // Access Control Integration
+  access?: AccessSettings; 
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+  description?: string;
+  profilesCount: number;
+  createdDate: string;
+  updatedDate: string;
+  createdBy: string;
+  access: AccessSettings;
 }
 
 export interface RecommendedJob {

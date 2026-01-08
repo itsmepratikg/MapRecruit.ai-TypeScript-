@@ -1,8 +1,12 @@
 
+
+
+
+
 import { 
   FileText, Settings, Link, Mail, Video, MessageSquare, HelpCircle, Megaphone, GitBranch, ListChecks, CheckCircle2, Pilcrow, MoveRight, Film, MapPin, Map, MinusCircle, Briefcase, Users, UserCheck
 } from './components/Icons';
-import { Candidate, EngageNode, EngageEdge, Question, Campaign, PanelMember, CampaignActivity } from './types';
+import { Candidate, EngageNode, EngageEdge, Question, Campaign, PanelMember, CampaignActivity, Tag } from './types';
 
 // --- NEW USER ACCOUNT JSON STRUCTURE ---
 export const DEFAULT_USER_ACCOUNT = {
@@ -145,6 +149,91 @@ export const DEFAULT_USER_ACCOUNT = {
     }
   }
 };
+
+export const MOCK_USERS_LIST = [
+  { id: 'usr_101', name: 'Sarah Jenkins', role: 'Recruiter', email: 'sarah.j@maprecruit.ai', avatar: null, initials: 'SJ', color: 'bg-indigo-100 text-indigo-700' },
+  { id: 'usr_102', name: 'Mike Ross', role: 'Hiring Manager', email: 'mike.ross@maprecruit.ai', avatar: null, initials: 'MR', color: 'bg-blue-100 text-blue-700' },
+  { id: 'usr_103', name: 'David Chen', role: 'Sourcing Lead', email: 'david.chen@maprecruit.ai', avatar: null, initials: 'DC', color: 'bg-purple-100 text-purple-700' },
+  { id: 'usr_104', name: 'Aleisa Hodgens', role: 'Admin', email: 'aleisa.h@maprecruit.ai', avatar: null, initials: 'AH', color: 'bg-orange-100 text-orange-700' },
+  { id: 'usr_105', name: 'Vinay Kashyap', role: 'Admin', email: 'vinay.k@maprecruit.ai', avatar: null, initials: 'VK', color: 'bg-amber-100 text-amber-700' },
+  { id: 'usr_123', name: 'Pratik Gaurav', role: 'Product Admin', email: 'pratik.gaurav@maprecruit.ai', avatar: null, initials: 'PG', color: 'bg-emerald-100 text-emerald-700' }, // Current User match
+];
+
+export const MOCK_TAGS: Tag[] = [
+  {
+    id: 1,
+    name: "Java Developer",
+    description: "Candidates with strong Java backend experience",
+    profilesCount: 120,
+    createdDate: "2024-03-15",
+    updatedDate: "2024-05-20",
+    createdBy: "Pratik Gaurav",
+    access: { level: 'COMPANY', ownerId: 'usr_123', sharedWith: [] }
+  },
+  {
+    id: 2,
+    name: "Immediate Joiner",
+    description: "Candidates available to join within 15 days",
+    profilesCount: 85,
+    createdDate: "2024-02-10",
+    updatedDate: "2024-05-18",
+    createdBy: "Sarah Jenkins",
+    access: { 
+      level: 'PRIVATE', 
+      ownerId: 'usr_101', 
+      sharedWith: [
+        { entityId: 'usr_123', entityName: 'Pratik Gaurav', entityType: 'USER', permission: 'VIEW', role: 'Product Admin', avatar: 'PG' }
+      ] 
+    }
+  },
+  {
+    id: 3,
+    name: "Warehouse Ops",
+    description: "Experience in warehouse operations and logistics",
+    profilesCount: 210,
+    createdDate: "2024-01-05",
+    updatedDate: "2024-04-22",
+    createdBy: "Mike Ross",
+    access: { level: 'CLIENT', clientId: 'Amazon', ownerId: 'usr_102', sharedWith: [] }
+  },
+  {
+    id: 4,
+    name: "React Frontend",
+    description: "React.js, Redux, and modern frontend stack",
+    profilesCount: 95,
+    createdDate: "2024-04-01",
+    updatedDate: "2024-05-21",
+    createdBy: "Pratik Gaurav",
+    access: { level: 'PRIVATE', ownerId: 'usr_123', sharedWith: [] }
+  },
+  {
+    id: 5,
+    name: "Certified Scrum Master",
+    description: "CSM certification required",
+    profilesCount: 45,
+    createdDate: "2023-11-20",
+    updatedDate: "2024-03-10",
+    createdBy: "David Chen",
+    access: { level: 'COMPANY', ownerId: 'usr_103', sharedWith: [] }
+  },
+  {
+    id: 6,
+    name: "Remote Only",
+    description: "Candidates looking for remote opportunities",
+    profilesCount: 150,
+    createdDate: "2024-01-15",
+    updatedDate: "2024-05-01",
+    createdBy: "Sarah Jenkins",
+    access: { 
+        level: 'PRIVATE', 
+        ownerId: 'usr_101', 
+        sharedWith: [
+            { entityId: 'usr_123', entityName: 'Pratik Gaurav', entityType: 'USER', permission: 'EDIT', role: 'Product Admin', avatar: 'PG' },
+            { entityId: 'usr_102', entityName: 'Mike Ross', entityType: 'USER', permission: 'VIEW', role: 'Hiring Manager', avatar: 'MR' }
+        ] 
+    }
+  }
+];
 
 export const PANEL_MEMBERS: PanelMember[] = [
   { id: 1, name: "QA Team Admin (Product Admin)", role: "QA Team Admin (Product Admin)", subRole: "Owner", initials: "QT", color: "bg-red-800 text-white" },
@@ -519,6 +608,79 @@ export const SIDEBAR_FILTERS = [
   { id: 'status', label: 'Status', options: ['Active', 'Passive', 'Pending Applicant', 'Do Not Contact'] },
   { id: 'availability', label: 'Availability', options: ['Immediate', '2 Weeks', '1 Month'] },
   { id: 'match', label: 'Match Quality', options: ['High Match (>90%)'] }
+];
+
+export const FOLDERS_LIST = [
+  { 
+    id: 1, 
+    name: "Java Developers", 
+    createdDate: "2024-01-15", 
+    totalProfiles: 150, 
+    addedLast30: 12, 
+    noActivity30: 45,
+    pending: 40,
+    applicants: 60,
+    employees: 30,
+    onAssignment: 25,
+    notOnAssignment: 5,
+    type: "Tech"
+  },
+  { 
+    id: 2, 
+    name: "Warehouse Leads", 
+    createdDate: "2024-02-10", 
+    totalProfiles: 85, 
+    addedLast30: 5, 
+    noActivity30: 10,
+    pending: 20,
+    applicants: 35,
+    employees: 25,
+    onAssignment: 20,
+    notOnAssignment: 5,
+    type: "Operations"
+  },
+  { 
+    id: 3, 
+    name: "Sales Representatives", 
+    createdDate: "2024-03-05", 
+    totalProfiles: 210, 
+    addedLast30: 30, 
+    noActivity30: 80,
+    pending: 100,
+    applicants: 80,
+    employees: 10,
+    onAssignment: 10,
+    notOnAssignment: 0,
+    type: "Sales"
+  },
+  { 
+    id: 4, 
+    name: "Q2 Interns", 
+    createdDate: "2024-04-01", 
+    totalProfiles: 300, 
+    addedLast30: 150, 
+    noActivity30: 0,
+    pending: 250,
+    applicants: 50,
+    employees: 0,
+    onAssignment: 0,
+    notOnAssignment: 0,
+    type: "General"
+  },
+  { 
+    id: 5, 
+    name: "Executive Search", 
+    createdDate: "2023-11-20", 
+    totalProfiles: 15, 
+    addedLast30: 1, 
+    noActivity30: 5,
+    pending: 5,
+    applicants: 8,
+    employees: 1,
+    onAssignment: 1,
+    notOnAssignment: 0,
+    type: "Executive"
+  }
 ];
 
 // --- DYNAMIC FULL PROFILE DATA ---

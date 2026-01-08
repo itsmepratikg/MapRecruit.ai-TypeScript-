@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { 
   Search, Filter, Plus, X, Sparkles, Send, MapPin, Briefcase, 
@@ -6,7 +7,8 @@ import {
   Users
 } from '../../../components/Icons';
 import { MOCK_PROFILES, QUICK_FILTERS } from '../../../data';
-import { FilterPopup, filterProfilesEngine, LandingDashboard } from '../../../components/TalentSearchEngine';
+import { FilterPopup, filterProfilesEngine } from '../../../components/TalentSearchEngine';
+import { LandingDashboard } from '../../Profiles/SearchProfile/LandingDashboard';
 import { AdvancedSearchModal } from '../../../components/AdvancedSearchModal';
 import { ChatBubble } from '../../../components/Common';
 import { SearchState } from '../../../types';

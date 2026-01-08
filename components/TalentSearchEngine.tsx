@@ -5,7 +5,7 @@ import {
   SlidersHorizontal, ArrowRight, XCircle, Send, Star, MapPin, Briefcase, CheckCircle, Clock, Sparkles, ThumbsUp, Trash2, Edit2, History, Bookmark, ArrowUpDown, User,
   Eye, Share2, ChevronUp, ChevronDown, MessageSquare
 } from 'lucide-react';
-import { MOCK_PROFILES, RECENT_SEARCHES, SAVED_SEARCHES, RECENT_VISITS, QUICK_FILTERS, SIDEBAR_FILTERS } from '../data';
+import { MOCK_PROFILES, QUICK_FILTERS, SIDEBAR_FILTERS } from '../data';
 import { SearchState } from '../types';
 import { EmptyView, ChatBubble } from './Common';
 import { AdvancedSearchModal } from './AdvancedSearchModal';
@@ -134,204 +134,6 @@ export const ProfileCard: React.FC<{ profile: any, onNavigate: () => void }> = (
   </div>
 );
 
-export const LandingDashboard: React.FC<{ onSearch: (t: string) => void, onModifySearch: (t: string) => void }> = ({ onSearch, onModifySearch }) => {
-  const [activeTab, setActiveTab] = useState<string | null>(null);
-  const [sortOption, setSortOption] = useState('name');
-  const [isSortOpen, setIsSortOpen] = useState(false);
-
-  const toggleTab = (tab: string) => {
-    if (activeTab === tab) {
-      setActiveTab(null);
-    } else {
-      setActiveTab(tab);
-    }
-  };
-
-  const sortedSavedSearches = useMemo(() => {
-    return [...SAVED_SEARCHES].sort((a, b) => {
-      if (sortOption === 'name') {
-        return a.name.localeCompare(b.name);
-      } else {
-        // @ts-ignore
-        return new Date(b.date).getTime() - new Date(a.date).getTime();
-      }
-    });
-  }, [sortOption]);
-
-  return (
-    <div className="w-full max-w-4xl mx-auto mt-12 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex border-b border-gray-100 dark:border-slate-700">
-        <button 
-          onClick={() => toggleTab('recent_visits')}
-          className={`flex-1 py-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors border-b-2 ${activeTab === 'recent_visits' ? 'text-green-600 dark:text-green-400 border-green-600 dark:border-green-400 bg-green-50/50 dark:bg-green-900/20' : 'text-gray-500 dark:text-slate-400 border-transparent hover:bg-gray-50 dark:hover:bg-slate-700'}`}
-        >
-          <Eye size={16} /> Recently Visited Profiles
-        </button>
-        <button 
-          onClick={() => toggleTab('recent_searches')}
-          className={`flex-1 py-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors border-b-2 ${activeTab === 'recent_searches' ? 'text-green-600 dark:text-green-400 border-green-600 dark:border-green-400 bg-green-50/50 dark:bg-green-900/20' : 'text-gray-500 dark:text-slate-400 border-transparent hover:bg-gray-50 dark:hover:bg-slate-700'}`}
-        >
-          <History size={16} /> Recent Searches
-        </button>
-        <button 
-          onClick={() => toggleTab('saved_searches')}
-          className={`flex-1 py-4 text-sm font-medium flex items-center justify-center gap-2 transition-colors border-b-2 ${activeTab === 'saved_searches' ? 'text-green-600 dark:text-green-400 border-green-600 dark:border-green-400 bg-green-50/50 dark:bg-green-900/20' : 'text-gray-500 dark:text-slate-400 border-transparent hover:bg-gray-50 dark:hover:bg-slate-700'}`}
-        >
-          <Bookmark size={16} /> Saved Searches
-        </button>
-      </div>
-
-      {activeTab && (
-        <div className="p-6 min-h-[300px] animate-in fade-in zoom-in-95 duration-200">
-          {activeTab === 'recent_visits' && (
-            <div className="space-y-3">
-              {RECENT_VISITS.map(visit => (
-                <div key={visit.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-lg hover:shadow-md transition-shadow group cursor-pointer">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-400 font-bold text-sm">
-                      <User size={18} />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-gray-800 dark:text-slate-200 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">{visit.name}</h4>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">{visit.role}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-400">{visit.time}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'recent_searches' && (
-            <div className="space-y-3">
-              {RECENT_SEARCHES.map(search => (
-                <div key={search.id} className="flex items-center justify-between p-3 border border-gray-100 dark:border-slate-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-slate-800">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-white shadow-sm">
-                      <Search size={18} />
-                    </div>
-                    <div className="flex gap-2">
-                      {search.terms.map((term, i) => (
-                        <span key={i} className="px-3 py-1 rounded-full border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-medium">
-                          {term}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className="text-xs text-gray-400">{search.date}</span>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => onSearch(search.terms.join(' '))}
-                        className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors" title="Re-run Search"
-                      >
-                        <Search size={16} />
-                      </button>
-                      <button 
-                        onClick={() => onModifySearch(search.terms.join(' '))}
-                        className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Modify Search"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'saved_searches' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <button 
-                      onClick={() => setIsSortOpen(!isSortOpen)}
-                      className="flex items-center gap-1 px-3 py-1.5 border border-gray-200 dark:border-slate-700 rounded-lg text-xs font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
-                    >
-                      <ArrowUpDown size={14} /> Sort: {sortOption === 'name' ? 'Name' : 'Created Date'}
-                    </button>
-                    
-                    {isSortOpen && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setIsSortOpen(false)}></div>
-                        <div className="absolute top-full left-0 mt-1 w-36 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20 overflow-hidden">
-                          <button 
-                            onClick={() => { setSortOption('name'); setIsSortOpen(false); }}
-                            className={`w-full text-left px-4 py-2 text-xs hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-400 ${sortOption === 'name' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium' : 'text-gray-600 dark:text-slate-300'}`}
-                          >
-                            Name (A-Z)
-                          </button>
-                          <button 
-                            onClick={() => { setSortOption('date'); setIsSortOpen(false); }}
-                            className={`w-full text-left px-4 py-2 text-xs hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-700 dark:hover:text-green-400 ${sortOption === 'date' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 font-medium' : 'text-gray-600 dark:text-slate-300'}`}
-                          >
-                            Created Date
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <div className="relative">
-                    <input type="text" placeholder="Filter by name..." className="pl-8 pr-3 py-1.5 border border-gray-200 dark:border-slate-700 rounded-lg text-xs w-48 outline-none focus:border-green-500 bg-white dark:bg-slate-800 dark:text-slate-200" />
-                    <Search size={12} className="absolute left-2.5 top-2 text-gray-400" />
-                  </div>
-                </div>
-                <button className="text-xs text-gray-500 dark:text-slate-400 hover:text-green-600 dark:hover:text-green-400 font-medium">Clear Filters</button>
-              </div>
-
-              {sortedSavedSearches.map(saved => (
-                <div key={saved.id} className="flex items-center justify-between p-4 border border-gray-100 dark:border-slate-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-slate-800 group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-white shadow-sm">
-                      <Search size={18} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-bold text-gray-800 dark:text-slate-200">{saved.name}</h4>
-                        {saved.shared && <span className="text-[10px] bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 flex items-center gap-1"><Share2 size={8} /> Shared</span>}
-                      </div>
-                      <div className="flex gap-2 mt-1">
-                        {saved.tags.map((tag, i) => (
-                          <span key={i} className="text-xs text-purple-600 dark:text-purple-300 border border-purple-100 dark:border-purple-800 px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-900/30">{tag}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={() => onSearch(saved.tags.join(' '))}
-                      className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors" title="Run Search"
-                    >
-                      <Search size={16} />
-                    </button>
-                    <button className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Share">
-                      <Share2 size={16} />
-                    </button>
-                    <button 
-                      onClick={() => onModifySearch(saved.tags.join(' '))}
-                      className="p-2 text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors" title="Edit"
-                    >
-                      <Edit2 size={16} />
-                    </button>
-                    <button 
-                      className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors" title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
 export const FilterGroup: React.FC<{ label: string, options: string[], activeFilters: string[], onToggle: (o: string) => void }> = ({ label, options, activeFilters, onToggle }) => {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -420,8 +222,9 @@ export const FilterPopup: React.FC<{ isOpen: boolean, onClose: () => void, activ
 export const TalentSearchEngine: React.FC<{ 
     searchState: SearchState, 
     setSearchState: (s: any) => void,
-    onNavigateToProfile: () => void 
-}> = ({ searchState, setSearchState, onNavigateToProfile }) => {
+    onNavigateToProfile: () => void,
+    landingComponent?: React.ReactNode // New prop for injecting the dashboard
+}> = ({ searchState, setSearchState, onNavigateToProfile, landingComponent }) => {
   
   const [placeholder, setPlaceholder] = useState("Describe your ideal candidate...");
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -582,33 +385,6 @@ export const TalentSearchEngine: React.FC<{
     }, 1000);
   };
 
-  const onModifySearch = (keywordsString: string) => {
-    if (keywordsString) {
-      const newKeys = keywordsString.split(' ').filter(k => k.trim() !== '');
-      // @ts-ignore
-      setSearchState((prev: any) => ({
-          ...prev,
-          searchKeywords: [...new Set([...prev.searchKeywords, ...newKeys])]
-      }));
-    }
-    setIsAdvancedOpen(true);
-  };
-
-  const onDirectSearch = (keywordsString: string) => {
-    if (keywordsString) {
-      const newKeys = keywordsString.split(' ').filter(k => k.trim() !== '');
-      // @ts-ignore
-      setSearchState((prev: any) => ({
-          ...prev,
-          searchKeywords: [...new Set([...prev.searchKeywords, ...newKeys])],
-          view: 'results'
-      }));
-    } else {
-       // @ts-ignore
-       setSearchState((prev: any) => ({ ...prev, view: 'results' })); 
-    }
-  };
-
   // RENDER INITIAL LANDING
   if (searchState.view === 'initial') {
     return (
@@ -679,7 +455,8 @@ export const TalentSearchEngine: React.FC<{
             </div>
           )}
 
-          <LandingDashboard onSearch={onDirectSearch} onModifySearch={onModifySearch} />
+          {/* RENDER THE INJECTED LANDING COMPONENT */}
+          {landingComponent}
         </div>
       </div>
     );

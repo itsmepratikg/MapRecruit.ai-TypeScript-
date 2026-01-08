@@ -9,11 +9,11 @@ import {
   FileText, Activity, Video, Copy, ClipboardList, FolderOpen,
   Palette, PlusCircle, Shield, CreditCard, Mail, Database, 
   SlidersHorizontal, Tag, Layout, MessageSquare, HelpCircle, LogOut as LogoutIcon, Link as LinkIcon,
-  Calendar, Clock, FolderPlus
+  Calendar, Clock, FolderPlus, Share2, Heart, MapPin
 } from './components/Icons';
 import { ToastProvider, useToast } from './components/Toast';
 import { Home } from './pages/Home';
-import { Profiles } from './pages/Profiles';
+import { Profiles } from './pages/Profiles/index'; // Updated Import
 import { Campaigns } from './pages/Campaigns';
 import { Metrics } from './pages/Metrics';
 import { CandidateProfile } from './pages/CandidateProfile';
@@ -23,6 +23,7 @@ import { MyAccount } from './pages/MyAccount/index';
 import { Login } from './pages/Login/index';
 import { Campaign } from './types';
 import { CreateProfileModal } from './components/CreateProfileModal';
+import { CreateFolderModal } from './pages/Profiles/FoldersMetrics/CreateFolderModal';
 import { PlaceholderModal } from './components/PlaceholderModal';
 import { useScreenSize } from './hooks/useScreenSize';
 import { ThemeSettingsModal } from './components/ThemeSettingsModal';
@@ -47,11 +48,13 @@ const ClientMenuContent = ({ activeClient, clients }: { activeClient: string, cl
 );
 
 const CreateMenuContent = ({ 
-    onCreateProfile, 
+    onCreateProfile,
+    onCreateFolder,
     onOpenPlaceholder, 
     closeMenu 
 }: { 
     onCreateProfile: () => void, 
+    onCreateFolder: () => void,
     onOpenPlaceholder: (title: string, msg: string) => void,
     closeMenu?: () => void 
 }) => {
@@ -78,7 +81,7 @@ const CreateMenuContent = ({
                 <span>Campaign</span>
             </button>
             <button 
-                onClick={() => handleClick(() => onOpenPlaceholder('Create Folder', 'Folder management features including smart filters and sharing permissions are currently under development.'))}
+                onClick={() => handleClick(onCreateFolder)}
                 className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
             >
                 <FolderPlus size={16} className="text-orange-600 dark:text-orange-400" />
@@ -191,7 +194,8 @@ const AccountMenuContent = ({
 
 // Sidebar Footer Component
 const SidebarFooter = ({ 
-  setIsCreateProfileOpen, 
+  setIsCreateProfileOpen,
+  setIsCreateFolderOpen,
   setIsThemeSettingsOpen,
   onOpenPlaceholder,
   onNavigate,
@@ -199,7 +203,8 @@ const SidebarFooter = ({
   userProfile,
   clients
 }: { 
-  setIsCreateProfileOpen: (v: boolean) => void, 
+  setIsCreateProfileOpen: (v: boolean) => void,
+  setIsCreateFolderOpen: (v: boolean) => void,
   setIsThemeSettingsOpen: (v: boolean) => void,
   onOpenPlaceholder: (title: string, msg: string) => void,
   onNavigate: (view: ViewState) => void,
@@ -235,6 +240,7 @@ const SidebarFooter = ({
                     <div className="hidden group-hover/create:block absolute left-full bottom-0 ml-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 animate-in fade-in zoom-in-95 duration-200">
                         <CreateMenuContent 
                             onCreateProfile={() => setIsCreateProfileOpen(true)}
+                            onCreateFolder={() => setIsCreateFolderOpen(true)}
                             onOpenPlaceholder={onOpenPlaceholder}
                         />
                     </div>
@@ -299,6 +305,7 @@ const SidebarFooter = ({
                         {mobileMenuOpen === 'create' && (
                             <CreateMenuContent 
                                 onCreateProfile={() => { setIsCreateProfileOpen(true); setMobileMenuOpen(null); }}
+                                onCreateFolder={() => { setIsCreateFolderOpen(true); setMobileMenuOpen(null); }}
                                 onOpenPlaceholder={(t, m) => { onOpenPlaceholder(t, m); setMobileMenuOpen(null); }}
                                 closeMenu={() => setMobileMenuOpen(null)}
                             />
@@ -367,6 +374,10 @@ const MY_ACCOUNT_MENU = [
 
 const PROFILE_SUBMENU = [
   { id: 'SEARCH', label: 'Search Profiles', icon: Search },
+  { id: 'SHARED', label: 'Shared Profiles', icon: Share2 },
+  { id: 'FAVORITES', label: 'Favorite Profiles', icon: Heart },
+  { id: 'DUPLICATES', label: 'Duplicate Profiles', icon: Copy },
+  { id: 'LOCAL', label: 'New Local Profiles', icon: MapPin },
   { id: 'FOLDERS', label: 'Folder Metrics', icon: FolderOpen },
   { id: 'TAGS', label: 'Tags', icon: Tag },
 ];
@@ -387,7 +398,7 @@ const App = () => {
   // Navigation State
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [activeProfileTab, setActiveProfileTab] = useState('profile');
-  const [activeProfileSubView, setActiveProfileSubView] = useState<'SEARCH' | 'FOLDERS' | 'TAGS'>('SEARCH');
+  const [activeProfileSubView, setActiveProfileSubView] = useState<'SEARCH' | 'FOLDERS' | 'TAGS' | 'SHARED' | 'FAVORITES' | 'DUPLICATES' | 'LOCAL'>('SEARCH');
   
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [activeCampaignTab, setActiveCampaignTab] = useState<string>('Intelligence');
@@ -397,6 +408,7 @@ const App = () => {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
   const [isCreateProfileOpen, setIsCreateProfileOpen] = useState(false);
+  const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
   
   // Placeholder Modal State
@@ -443,6 +455,12 @@ const App = () => {
     setActiveCampaignTab(tab);
   };
   const handleBackToCampaigns = () => setSelectedCampaign(null);
+
+  const handleProfileSubmenuClick = (id: string) => {
+      setActiveView('PROFILES');
+      setActiveProfileSubView(id as any);
+      if (!isDesktop) setIsSidebarOpen(false);
+  }
 
   // Logic for mobile collapsed state
   const isCollapsed = !isDesktop && !isSidebarOpen; 
@@ -508,27 +526,46 @@ const App = () => {
                   )}
                </div>
 
-               <div className={`flex-1 overflow-y-auto py-4 ${isCollapsed ? 'px-2' : 'px-3'} space-y-1`}>
-                  {!selectedCampaign && !selectedCandidateId && activeView !== 'MY_ACCOUNT' ? (
+               <div className={`flex-1 ${!activeView.startsWith('PROFILES') ? 'overflow-visible' : 'overflow-y-auto'} py-4 ${isCollapsed ? 'px-2' : 'px-3'} space-y-1`}>
+                  {!selectedCampaign && !selectedCandidateId && activeView !== 'MY_ACCOUNT' && activeView !== 'PROFILES' ? (
                     <>
                       <NavItem view="DASHBOARD" icon={LayoutDashboard} label="Dashboard" />
                       <NavItem view="CAMPAIGNS" icon={Briefcase} label="Campaigns" />
                       
-                      {/* Profiles Item with Sub-Menu */}
-                      <div>
-                        <NavItem view="PROFILES" icon={Users} label="Profiles" />
-                        {activeView === 'PROFILES' && !isCollapsed && (
-                            <div className="ml-8 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-700 pl-3 animate-in slide-in-from-left-2 duration-200">
-                                {PROFILE_SUBMENU.map(item => (
-                                    <button 
-                                        key={item.id}
-                                        // @ts-ignore
-                                        onClick={() => { setActiveProfileSubView(item.id); if (!isDesktop) setIsSidebarOpen(false); }}
-                                        className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${activeProfileSubView === item.id ? 'text-emerald-700 dark:text-emerald-400 font-medium bg-slate-50 dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                                    >
-                                        {item.label}
-                                    </button>
-                                ))}
+                      {/* Main Sidebar Profile Item with Hover Menu */}
+                      <div className="relative group/profile">
+                        <button 
+                            onClick={() => {
+                                setActiveView('PROFILES');
+                                setActiveProfileSubView('SEARCH');
+                            }}
+                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-md transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <Users size={20} className='text-slate-400 dark:text-slate-500' />
+                                <span className={isCollapsed ? 'hidden' : 'block'}>Profiles</span>
+                            </div>
+                            {!isCollapsed && <ChevronRight size={16} className={`transition-transform`} />}
+                        </button>
+
+                        {/* Desktop Hover Flyout */}
+                        {isDesktop && (
+                            <div className="hidden group-hover/profile:block absolute left-full top-0 ml-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="py-1">
+                                    <div className="px-3 py-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 mb-1">
+                                        Profiles Module
+                                    </div>
+                                    {PROFILE_SUBMENU.map(item => (
+                                        <button 
+                                            key={item.id}
+                                            onClick={(e) => { e.stopPropagation(); setActiveView('PROFILES'); setActiveProfileSubView(item.id as any); }}
+                                            className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 transition-colors text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
+                                        >
+                                            <item.icon size={16} className="text-slate-400" />
+                                            {item.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         )}
                       </div>
@@ -553,6 +590,34 @@ const App = () => {
                         )}
                       </div>
                     </>
+                  ) : activeView === 'PROFILES' && !selectedCandidateId ? (
+                    // PROFILE MODULE DRILL-DOWN SIDEBAR
+                    <div className="animate-in fade-in slide-in-from-left-4 duration-300">
+                      <button 
+                        onClick={() => setActiveView('DASHBOARD')}
+                        className={`w-full flex items-center gap-2 px-3 py-2 mb-4 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                        title="Back to Dashboard"
+                      >
+                        <ChevronLeft size={14} /> <span className={isCollapsed ? 'hidden' : 'inline'}>Back to Dashboard</span>
+                      </button>
+                      
+                      <div className={`px-3 mb-6 ${isCollapsed ? 'hidden' : 'block'}`}>
+                        <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 leading-tight">Profiles Module</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Manage Candidates & Talent Pools</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        {PROFILE_SUBMENU.map(item => (
+                            <NavItem 
+                                key={item.id}
+                                icon={item.icon} 
+                                label={item.label} 
+                                activeTab={activeProfileSubView === item.id} 
+                                onClick={() => { setActiveProfileSubView(item.id as any); if (!isDesktop) setIsSidebarOpen(false); }}
+                            />
+                        ))}
+                      </div>
+                    </div>
                   ) : activeView === 'MY_ACCOUNT' ? (
                     <div className="animate-in fade-in slide-in-from-left-4 duration-300">
                       <button 
@@ -707,6 +772,7 @@ const App = () => {
                {!isCollapsed && (
                    <SidebarFooter 
                      setIsCreateProfileOpen={setIsCreateProfileOpen} 
+                     setIsCreateFolderOpen={setIsCreateFolderOpen}
                      setIsThemeSettingsOpen={setIsThemeSettingsOpen}
                      onOpenPlaceholder={openPlaceholder}
                      onNavigate={(view) => { setActiveView(view); setSelectedCandidateId(null); setSelectedCampaign(null); if (!isDesktop) setIsSidebarOpen(false); }}
@@ -758,6 +824,8 @@ const App = () => {
 
             {/* Create Profile Modal */}
             <CreateProfileModal isOpen={isCreateProfileOpen} onClose={() => setIsCreateProfileOpen(false)} />
+            {/* Create Folder Modal */}
+            <CreateFolderModal isOpen={isCreateFolderOpen} onClose={() => setIsCreateFolderOpen(false)} />
             {/* Theme Settings Modal */}
             <ThemeSettingsModal isOpen={isThemeSettingsOpen} onClose={() => setIsThemeSettingsOpen(false)} />
             {/* Placeholder Modal */}
