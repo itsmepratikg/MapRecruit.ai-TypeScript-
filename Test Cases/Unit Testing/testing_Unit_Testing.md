@@ -29,6 +29,7 @@
 | UT-09 | `StatusBadge` Active | `<StatusBadge status="Active" />` | Renders with green background/text classes |
 | UT-10 | `StatusBadge` Closed | `<StatusBadge status="Closed" />` | Renders with red background/text classes |
 | UT-11 | `MetricCard` props | `<MetricCard title="Test" value="10" />` | Renders Title "Test" and Value "10" correctly |
+| UT-19 | `PlaceholderPage` | `<PlaceholderPage title="T" description="D" />` | Renders Title "T", Description "D", and "Status: Development Placeholder" badge. |
 
 ## 4. User Profile Hook (`hooks/useUserProfile.ts`)
 
@@ -45,3 +46,12 @@
 | UT-16 | Format Time 24h | `formatTimeDisplay` | "13:30", "24h" | Returns "13:30" |
 | UT-17 | Parse Time PM | `parseTimeString` | "02:30 PM", "12h" | Returns "14:30" |
 | UT-18 | Date Display | `formatDateDisplay` | "2025-12-25", "MM/DD/YYYY" | Returns "12/25/2025" |
+
+## 6. Module Navigation State
+
+| ID | Test Case | Component | Action | Expected Result |
+|----|-----------|-----------|--------|-----------------|
+| UT-20 | `CalendarModule` Tab Switch | `<CalendarModule />` | Click "Upcoming" button | State `activeTab` becomes `'UPCOMING'`. `UpcomingEvents` component renders. |
+| UT-21 | `RemindersWrapper` Toggle | `<RemindersWrapper />` | Click "Past" button | State `view` becomes `'PAST'`. `PastReminder` component renders. |
+| UT-22 | `CreateModule` Tab Switch | `<CreateModule />` | Click "Tags" button | State `activeTab` becomes `'TAGS'`. `TagsWrapper` component renders. |
+| UT-23 | `NotesModule` Tab Switch | `<NotesModule />` | Click "Campaign" button | State `activeTab` becomes `'CAMPAIGN'`. `CampaignNotes` component renders. |

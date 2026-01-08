@@ -26,3 +26,9 @@
 | ID | Scenario | Steps | Success Criteria |
 |----|----------|-------|------------------|
 | ST-04 | Recruiter Setup | 1. **Calendar**: Set working hours (9-5), add Lunch break (12-1), set Timezone.<br>2. **Comm**: Set Email Signature using Rich Text.<br>3. **Verify**: Navigate to Engage AI > Node Config > Template Preview. | Calendar settings saved without error. Signature persists. Workflow templates render correctly. |
+
+## 5. System Setup Flow (v1.3.0)
+
+| ID | Scenario | Steps | Success Criteria |
+|----|----------|-------|------------------|
+| ST-05 | New Environment Init | 1. **Sync**: Configure SSO placeholder.<br>2. **Sync**: Check Calendar Sync status.<br>3. **Create**: Define "Profile Tags".<br>4. **Create**: Define "Application Tags".<br>5. **Notes**: Check "User Notes" are empty. | All new placeholder modules load correctly without crashing. Tab navigation works in all new modules. |

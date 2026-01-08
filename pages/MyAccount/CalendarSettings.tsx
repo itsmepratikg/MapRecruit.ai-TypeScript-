@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Calendar, Clock, Globe, Save, Edit2, Plus, Trash2, 
-  Copy, CheckCircle, AlertCircle, X, ChevronDown 
+  Copy, CheckCircle, AlertCircle, X, ChevronDown, Link, RefreshCw, LogOut, Check
 } from '../../components/Icons';
 import { useToast } from '../../components/Toast';
 
@@ -25,6 +25,14 @@ interface Holiday {
   name: string;
   date: string;
   type: 'Holiday' | 'Medical' | 'Personal' | 'Other';
+}
+
+interface ConnectedCalendar {
+  id: string;
+  provider: 'Google' | 'Outlook';
+  email: string;
+  status: 'Connected' | 'Syncing' | 'Error';
+  lastSynced: string;
 }
 
 interface CalendarConfig {
@@ -287,6 +295,8 @@ export const CalendarSettings = () => {
     ]
   });
 
+  const [connectedCalendars, setConnectedCalendars] = useState<ConnectedCalendar[]>([]);
+
   // Temp state for new entries
   const [newHoliday, setNewHoliday] = useState({ name: '', date: '', type: 'Holiday' });
   const [newBreak, setNewBreak] = useState({ start: '12:00', end: '13:00' });
@@ -401,6 +411,38 @@ export const CalendarSettings = () => {
     setConfig(prev => ({ ...prev, holidays: prev.holidays.filter(h => h.id !== id) }));
   };
 
+  // Calendar Sync Handlers
+  const handleConnectCalendar = (provider: 'Google' | 'Outlook') => {
+    if (!isEditing) return;
+    addToast(`Connecting to ${provider}...`, 'info');
+    // Simulate API connection
+    setTimeout(() => {
+        const newCalendar: ConnectedCalendar = {
+            id: Date.now().toString(),
+            provider,
+            email: provider === 'Google' ? 'pratik.gaurav@gmail.com' : 'pratik.gaurav@outlook.com',
+            status: 'Connected',
+            lastSynced: 'Just now'
+        };
+        setConnectedCalendars(prev => [...prev, newCalendar]);
+        addToast(`${provider} Calendar connected successfully`, 'success');
+    }, 1500);
+  };
+
+  const handleDisconnectCalendar = (id: string) => {
+    if (!isEditing) return;
+    setConnectedCalendars(prev => prev.filter(c => c.id !== id));
+    addToast("Calendar disconnected", "info");
+  };
+
+  const handleSyncCalendar = (id: string) => {
+    setConnectedCalendars(prev => prev.map(c => c.id === id ? { ...c, status: 'Syncing' } : c));
+    setTimeout(() => {
+        setConnectedCalendars(prev => prev.map(c => c.id === id ? { ...c, status: 'Connected', lastSynced: 'Just now' } : c));
+        addToast("Calendar synced successfully", "success");
+    }, 2000);
+  };
+
   return (
     <div className="animate-in fade-in duration-300 pb-12">
       {/* Copy Modal */}
@@ -420,7 +462,7 @@ export const CalendarSettings = () => {
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <Calendar size={20} className="text-emerald-500"/> Calendar Settings
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure availability, time zones, and working hours.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure availability, time zones, and calendar integrations.</p>
             </div>
             <div className="flex gap-3">
                 {isEditing ? (
@@ -443,6 +485,85 @@ export const CalendarSettings = () => {
       <div className="px-8 lg:px-12 pt-8">
         <div className="max-w-5xl mx-auto space-y-8">
             
+            {/* 0. Calendar Synchronization */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm uppercase tracking-wider">
+                    <Link size={16} className="text-slate-400"/> Calendar Integration
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <button 
+                        onClick={() => handleConnectCalendar('Google')}
+                        disabled={!isEditing || connectedCalendars.some(c => c.provider === 'Google')}
+                        className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${connectedCalendars.some(c => c.provider === 'Google') ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-60 cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm'}`}
+                    >
+                        <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-xl font-bold text-blue-600 shadow-sm">G</div>
+                        <div className="text-left">
+                            <span className="block font-bold text-slate-700 dark:text-slate-200 text-sm">Google Calendar</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{connectedCalendars.some(c => c.provider === 'Google') ? 'Connected' : 'Connect Account'}</span>
+                        </div>
+                    </button>
+
+                    <button 
+                        onClick={() => handleConnectCalendar('Outlook')}
+                        disabled={!isEditing || connectedCalendars.some(c => c.provider === 'Outlook')}
+                        className={`flex items-center gap-3 p-4 rounded-xl border transition-all ${connectedCalendars.some(c => c.provider === 'Outlook') ? 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-60 cursor-default' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 hover:shadow-sm'}`}
+                    >
+                        <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                            <div className="grid grid-cols-2 gap-0.5 w-4 h-4">
+                                <div className="bg-orange-500 w-1.5 h-1.5"></div>
+                                <div className="bg-green-500 w-1.5 h-1.5"></div>
+                                <div className="bg-blue-500 w-1.5 h-1.5"></div>
+                                <div className="bg-yellow-500 w-1.5 h-1.5"></div>
+                            </div>
+                        </div>
+                        <div className="text-left">
+                            <span className="block font-bold text-slate-700 dark:text-slate-200 text-sm">Outlook Calendar</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{connectedCalendars.some(c => c.provider === 'Outlook') ? 'Connected' : 'Connect Account'}</span>
+                        </div>
+                    </button>
+                </div>
+
+                {connectedCalendars.length > 0 && (
+                    <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+                        <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Connected Accounts</h4>
+                        <div className="space-y-2">
+                            {connectedCalendars.map(cal => (
+                                <div key={cal.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-2 h-2 rounded-full ${cal.status === 'Connected' ? 'bg-emerald-500' : cal.status === 'Syncing' ? 'bg-blue-500 animate-pulse' : 'bg-red-500'}`}></div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{cal.provider} ({cal.email})</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                                {cal.status === 'Syncing' ? 'Syncing...' : `Last synced: ${cal.lastSynced}`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => handleSyncCalendar(cal.id)} 
+                                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors" 
+                                            title="Sync Now"
+                                        >
+                                            <RefreshCw size={14} className={cal.status === 'Syncing' ? 'animate-spin' : ''} />
+                                        </button>
+                                        {isEditing && (
+                                            <button 
+                                                onClick={() => handleDisconnectCalendar(cal.id)} 
+                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors" 
+                                                title="Disconnect"
+                                            >
+                                                <LogOut size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* 1. General Preferences */}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <h3 className="font-bold text-slate-800 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm uppercase tracking-wider">

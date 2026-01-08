@@ -37,3 +37,12 @@
 | FT-13 | Copy Schedule | 1. My Account > Calendar<br>2. Click "Copy to..." on Monday<br>3. Select "Tue, Wed"<br>4. Confirm | Tuesday and Wednesday slots update to match Monday. |
 | FT-14 | Update Signature | 1. My Account > Communication<br>2. Edit Rich Text<br>3. Click Bold icon | Text reflects bold formatting. |
 | FT-15 | Network Analytics | 1. Engage AI > Click Analytics Icon on Node | Network Graph Modal opens showing Sankey diagram. |
+
+## 5. New Modules (v1.3.0)
+
+| ID | Flow | Steps | Expected Result |
+|----|------|-------|-----------------|
+| FT-16 | Create Profile | 1. Navigate to **Create** module.<br>2. Verify "Profile" tab is active.<br>3. Check Placeholder content. | "Create Profile" placeholder view is displayed correctly. |
+| FT-17 | Tag Management | 1. Navigate to **Create** module.<br>2. Click "Tags" tab.<br>3. Switch between "Application Tags" and "Profile Tags" sub-tabs. | Content area updates to show respective tag management placeholders. |
+| FT-18 | Calendar Views | 1. Navigate to **Calendar** module.<br>2. Click "Reminders".<br>3. Click "Past (24h)". | View switches from Upcoming to Past reminders placeholder. |
+| FT-19 | Sync Navigation | 1. Navigate to **Synchronizations** module.<br>2. Click "Chat". | View updates to Chat Integration placeholder. |

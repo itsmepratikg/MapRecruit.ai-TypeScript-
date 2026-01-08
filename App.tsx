@@ -9,7 +9,7 @@ import {
   FileText, Activity, Video, Copy, ClipboardList, FolderOpen,
   Palette, PlusCircle, Shield, CreditCard, Mail, Database, 
   SlidersHorizontal, Tag, Layout, MessageSquare, HelpCircle, LogOut as LogoutIcon, Link as LinkIcon,
-  Calendar, Clock
+  Calendar, Clock, FolderPlus
 } from './components/Icons';
 import { ToastProvider, useToast } from './components/Toast';
 import { Home } from './pages/Home';
@@ -23,6 +23,7 @@ import { MyAccount } from './pages/MyAccount/index';
 import { Login } from './pages/Login/index';
 import { Campaign } from './types';
 import { CreateProfileModal } from './components/CreateProfileModal';
+import { PlaceholderModal } from './components/PlaceholderModal';
 import { useScreenSize } from './hooks/useScreenSize';
 import { ThemeSettingsModal } from './components/ThemeSettingsModal';
 import { useUserPreferences } from './hooks/useUserPreferences';
@@ -44,6 +45,55 @@ const ClientMenuContent = ({ activeClient, clients }: { activeClient: string, cl
     </div>
   </>
 );
+
+const CreateMenuContent = ({ 
+    onCreateProfile, 
+    onOpenPlaceholder, 
+    closeMenu 
+}: { 
+    onCreateProfile: () => void, 
+    onOpenPlaceholder: (title: string, msg: string) => void,
+    closeMenu?: () => void 
+}) => {
+    const handleClick = (action: () => void) => {
+        action();
+        if (closeMenu) closeMenu();
+    };
+
+    return (
+        <div className="py-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 w-full">
+            <div className="px-3 py-2 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Create New</div>
+            <button 
+                onClick={() => handleClick(onCreateProfile)}
+                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
+            >
+                <UserPlus size={16} className="text-emerald-600 dark:text-emerald-400" />
+                <span>Profile</span>
+            </button>
+            <button 
+                onClick={() => handleClick(() => onOpenPlaceholder('Create Campaign', 'The Campaign creation wizard involves multiple steps including Job Description AI generation. We are working on this module.'))}
+                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
+            >
+                <Briefcase size={16} className="text-blue-600 dark:text-blue-400" />
+                <span>Campaign</span>
+            </button>
+            <button 
+                onClick={() => handleClick(() => onOpenPlaceholder('Create Folder', 'Folder management features including smart filters and sharing permissions are currently under development.'))}
+                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
+            >
+                <FolderPlus size={16} className="text-orange-600 dark:text-orange-400" />
+                <span>Folder</span>
+            </button>
+            <button 
+                onClick={() => handleClick(() => onOpenPlaceholder('Create Tag', 'Global tag management and AI-suggested tagging features will be available in the next release.'))}
+                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors"
+            >
+                <Tag size={16} className="text-purple-600 dark:text-purple-400" />
+                <span>Tag</span>
+            </button>
+        </div>
+    );
+};
 
 const AccountMenuContent = ({ 
     setIsThemeSettingsOpen,
@@ -143,6 +193,7 @@ const AccountMenuContent = ({
 const SidebarFooter = ({ 
   setIsCreateProfileOpen, 
   setIsThemeSettingsOpen,
+  onOpenPlaceholder,
   onNavigate,
   onLogout,
   userProfile,
@@ -150,17 +201,18 @@ const SidebarFooter = ({
 }: { 
   setIsCreateProfileOpen: (v: boolean) => void, 
   setIsThemeSettingsOpen: (v: boolean) => void,
+  onOpenPlaceholder: (title: string, msg: string) => void,
   onNavigate: (view: ViewState) => void,
   onLogout: () => void,
   userProfile: any,
   clients: string[]
 }) => {
     const { isDesktop } = useScreenSize();
-    const [mobileMenuOpen, setMobileMenuOpen] = useState<'client' | 'account' | null>(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState<'client' | 'account' | 'create' | null>(null);
     
     const userColorObj = COLORS.find(c => c.name === userProfile.color) || COLORS[0];
 
-    const handleMenuClick = (menu: 'client' | 'account') => {
+    const handleMenuClick = (menu: 'client' | 'account' | 'create') => {
         if (!isDesktop) {
             setMobileMenuOpen(menu);
         }
@@ -168,14 +220,26 @@ const SidebarFooter = ({
 
     return (
         <div className="p-2 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 mt-auto space-y-1 shrink-0 transition-colors pb-4 lg:pb-2" onClick={(e) => e.stopPropagation()}>
-            {/* Create Profile */}
-            <button 
-                onClick={() => setIsCreateProfileOpen(true)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors group"
-            >
-                <UserPlus size={18} className="text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
-                <span className="text-sm font-medium">Create</span>
-            </button>
+            {/* Create Dropdown */}
+            <div className="relative group/create">
+                <button 
+                    onClick={() => handleMenuClick('create')}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors group"
+                >
+                    <PlusCircle size={18} className="text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
+                    <span className="text-sm font-medium">Create</span>
+                </button>
+
+                {/* Desktop Create Menu - Hover */}
+                {isDesktop && (
+                    <div className="hidden group-hover/create:block absolute left-full bottom-0 ml-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 animate-in fade-in zoom-in-95 duration-200">
+                        <CreateMenuContent 
+                            onCreateProfile={() => setIsCreateProfileOpen(true)}
+                            onOpenPlaceholder={onOpenPlaceholder}
+                        />
+                    </div>
+                )}
+            </div>
     
             {/* Switch Client */}
             <div className="relative group/client">
@@ -232,6 +296,13 @@ const SidebarFooter = ({
             {!isDesktop && mobileMenuOpen && (
                 <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setMobileMenuOpen(null)}>
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                        {mobileMenuOpen === 'create' && (
+                            <CreateMenuContent 
+                                onCreateProfile={() => { setIsCreateProfileOpen(true); setMobileMenuOpen(null); }}
+                                onOpenPlaceholder={(t, m) => { onOpenPlaceholder(t, m); setMobileMenuOpen(null); }}
+                                closeMenu={() => setMobileMenuOpen(null)}
+                            />
+                        )}
                         {mobileMenuOpen === 'client' && <ClientMenuContent activeClient={userProfile.activeClient} clients={clients} />}
                         {mobileMenuOpen === 'account' && (
                             <AccountMenuContent 
@@ -320,6 +391,13 @@ const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
   const [isCreateProfileOpen, setIsCreateProfileOpen] = useState(false);
   const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
+  
+  // Placeholder Modal State
+  const [placeholderConfig, setPlaceholderConfig] = useState<{isOpen: boolean, title: string, message: string}>({
+      isOpen: false,
+      title: '',
+      message: ''
+  });
 
   // Check Authentication on Mount
   useEffect(() => {
@@ -340,6 +418,10 @@ const App = () => {
       setActiveView('DASHBOARD');
       setSelectedCandidateId(null);
       setSelectedCampaign(null);
+  };
+
+  const openPlaceholder = (title: string, message: string) => {
+      setPlaceholderConfig({ isOpen: true, title, message });
   };
 
   // Sub-navigation handlers
@@ -600,6 +682,7 @@ const App = () => {
                    <SidebarFooter 
                      setIsCreateProfileOpen={setIsCreateProfileOpen} 
                      setIsThemeSettingsOpen={setIsThemeSettingsOpen}
+                     onOpenPlaceholder={openPlaceholder}
                      onNavigate={(view) => { setActiveView(view); setSelectedCandidateId(null); setSelectedCampaign(null); if (!isDesktop) setIsSidebarOpen(false); }}
                      onLogout={handleLogout}
                      userProfile={userProfile}
@@ -651,6 +734,13 @@ const App = () => {
             <CreateProfileModal isOpen={isCreateProfileOpen} onClose={() => setIsCreateProfileOpen(false)} />
             {/* Theme Settings Modal */}
             <ThemeSettingsModal isOpen={isThemeSettingsOpen} onClose={() => setIsThemeSettingsOpen(false)} />
+            {/* Placeholder Modal */}
+            <PlaceholderModal 
+                isOpen={placeholderConfig.isOpen} 
+                onClose={() => setPlaceholderConfig({ isOpen: false, title: '', message: '' })} 
+                title={placeholderConfig.title} 
+                message={placeholderConfig.message} 
+            />
           </div>
       )}
     </ToastProvider>

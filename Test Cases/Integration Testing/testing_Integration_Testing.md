@@ -36,3 +36,10 @@
 |----|----------|---------------|-------|-----------------|
 | IT-08 | Workflow to Graph | In Workflow Builder | 1. Click 'Network' icon on an 'Interview' node | Modal opens with `initialRoundType='Interview'`. Sankey displays Interview-specific mock data. |
 | IT-09 | Calendar to Timezone | In Calendar Settings | 1. Change Timezone dropdown | `config` state updates. (Future: System timestamps convert to this zone). |
+
+## 6. Routing Integration (v1.3.0)
+
+| ID | Scenario | Pre-Condition | Steps | Expected Result |
+|----|----------|---------------|-------|-----------------|
+| IT-10 | Sidebar to Create Module | Dashboard | 1. (Hypothetical) Click "Create" Link in Sidebar | `CreateModule` loads with default "Profile" tab active. |
+| IT-11 | Sidebar to Sync Module | Dashboard | 1. (Hypothetical) Click "Sync" Link in Sidebar | `SynchronizationsModule` loads with default "SSO" tab active. |

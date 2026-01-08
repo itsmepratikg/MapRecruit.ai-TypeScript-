@@ -3,6 +3,20 @@
 
 All notable changes to the **MapRecruit ATS Dashboard** project will be documented in this file.
 
+## [1.3.0] - 2025-05-22
+
+### Architecture & Scaffolding
+- **Module Expansion**: Established folder structure and entry points for 9 major system areas to support future development.
+  - **Calendar**: Added views for My Events, Candidate Availability, Upcoming Events, and a Reminder system (Upcoming/Past).
+  - **Create Hub**: Centralized creation center for Profiles, Campaigns, Folders, Templates, and Tags (Application/Profile).
+  - **Communication**: Added dedicated modules for Messages, Chatbot Configuration, and TalentChat (Unified Inbox).
+  - **Notes**: Contextual note-taking system separated by User, Candidate, and Campaign contexts.
+  - **Synchronizations**: Configuration hubs for SSO, Calendar, Chat, and Drive integrations.
+  - **Utilities**: Added Notifications center and Previous History logs.
+- **UI Components**:
+  - Implemented reusable `PlaceholderPage` component for consistent "Under Construction" states.
+  - Created tabbed navigation wrappers for `Calendar`, `Notes`, `Create`, and `Synchronizations` modules.
+
 ## [1.2.0] - 2025-05-21
 
 ### Advanced Features & Analytics

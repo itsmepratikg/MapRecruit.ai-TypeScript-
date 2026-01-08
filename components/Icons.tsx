@@ -59,6 +59,7 @@ export const Filter = (props: any) => <Icon {...props} iconClass="fa-solid fa-fi
 export const Fingerprint = (props: any) => <Icon {...props} iconClass="fa-solid fa-fingerprint" />;
 export const Folder = (props: any) => <Icon {...props} iconClass="fa-solid fa-folder" />;
 export const FolderOpen = (props: any) => <Icon {...props} iconClass="fa-solid fa-folder-open" />;
+export const FolderPlus = (props: any) => <Icon {...props} iconClass="fa-solid fa-folder-plus" />;
 export const GitBranch = (props: any) => <Icon {...props} iconClass="fa-solid fa-code-branch" />;
 export const GitGraph = (props: any) => <Icon {...props} iconClass="fa-solid fa-diagram-project" />;
 export const Globe = (props: any) => <Icon {...props} iconClass="fa-solid fa-globe" />;
