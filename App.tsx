@@ -365,6 +365,12 @@ const MY_ACCOUNT_MENU = [
     { id: 'LAST_LOGIN', label: 'Last Login Sessions', icon: Clock },
 ];
 
+const PROFILE_SUBMENU = [
+  { id: 'SEARCH', label: 'Search Profiles', icon: Search },
+  { id: 'FOLDERS', label: 'Folder Metrics', icon: FolderOpen },
+  { id: 'TAGS', label: 'Tags', icon: Tag },
+];
+
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeView, setActiveView] = useState<ViewState>('DASHBOARD');
@@ -381,6 +387,7 @@ const App = () => {
   // Navigation State
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
   const [activeProfileTab, setActiveProfileTab] = useState('profile');
+  const [activeProfileSubView, setActiveProfileSubView] = useState<'SEARCH' | 'FOLDERS' | 'TAGS'>('SEARCH');
   
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [activeCampaignTab, setActiveCampaignTab] = useState<string>('Intelligence');
@@ -506,7 +513,26 @@ const App = () => {
                     <>
                       <NavItem view="DASHBOARD" icon={LayoutDashboard} label="Dashboard" />
                       <NavItem view="CAMPAIGNS" icon={Briefcase} label="Campaigns" />
-                      <NavItem view="PROFILES" icon={Users} label="Profiles" />
+                      
+                      {/* Profiles Item with Sub-Menu */}
+                      <div>
+                        <NavItem view="PROFILES" icon={Users} label="Profiles" />
+                        {activeView === 'PROFILES' && !isCollapsed && (
+                            <div className="ml-8 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-700 pl-3 animate-in slide-in-from-left-2 duration-200">
+                                {PROFILE_SUBMENU.map(item => (
+                                    <button 
+                                        key={item.id}
+                                        // @ts-ignore
+                                        onClick={() => { setActiveProfileSubView(item.id); if (!isDesktop) setIsSidebarOpen(false); }}
+                                        className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${activeProfileSubView === item.id ? 'text-emerald-700 dark:text-emerald-400 font-medium bg-slate-50 dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                                    >
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                      </div>
+
                       <NavItem view="METRICS" icon={BarChart2} label="Metrics" />
                       
                       {/* Settings Item with Sub-Menu */}
@@ -709,7 +735,7 @@ const App = () => {
                        <CandidateProfile activeTab={activeProfileTab} />
                     </div>
                  ) : (
-                    <Profiles onNavigateToProfile={handleNavigateToProfile} view="SEARCH" />
+                    <Profiles onNavigateToProfile={handleNavigateToProfile} view={activeProfileSubView} />
                  )
                )}
 

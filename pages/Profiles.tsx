@@ -1,14 +1,14 @@
 
 import React, { useState } from 'react';
-import { FolderOpen, Tag as TagIcon } from '../components/Icons';
+import { FolderOpen, Tag as TagIcon, Search } from '../components/Icons';
 import { SearchState } from '../types';
 import { EmptyView } from '../components/Common';
 import { TalentSearchEngine } from '../components/TalentSearchEngine';
 
 const FoldersView = () => (
   <EmptyView 
-    title="Candidate Folders" 
-    message="Organize candidates into folders for better management." 
+    title="Folder Metrics" 
+    message="Analyze candidate distribution across your folders." 
     icon={FolderOpen} 
   />
 );
@@ -16,7 +16,7 @@ const FoldersView = () => (
 const TagsView = () => (
   <EmptyView 
     title="Tags Management" 
-    message="Manage tags to categorize candidates effectively." 
+    message="Manage global tags and analyze tag usage across the candidate pool." 
     icon={TagIcon} 
   />
 );
