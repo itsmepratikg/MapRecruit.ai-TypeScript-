@@ -87,7 +87,7 @@ const RichTextEditor = ({
       </div>
       <textarea
         ref={textareaRef}
-        className="w-full h-40 p-4 text-sm bg-transparent outline-none resize-none dark:text-slate-200 placeholder:text-slate-400 font-mono"
+        className="w-full h-40 p-4 text-sm bg-transparent outline-none resize-none dark:text-slate-200 placeholder:text-slate-400 font-mono custom-scrollbar"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -338,7 +338,7 @@ export const Communication = () => {
 
                 <div className={`relative ${!isEditing ? 'opacity-60 pointer-events-none' : ''}`}>
                     <textarea 
-                        className="w-full h-32 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all dark:text-slate-200 resize-none"
+                        className="w-full h-32 p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all dark:text-slate-200 resize-none custom-scrollbar"
                         value={prefs.autoReplyText}
                         onChange={(e) => setPrefs({...prefs, autoReplyText: e.target.value})}
                         placeholder="Type your auto-reply message..."

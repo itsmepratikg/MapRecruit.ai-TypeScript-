@@ -269,7 +269,7 @@ export const TalentChatView = () => (
          </div>
          <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-400 px-2 py-0.5 rounded-full font-medium">Online</span>
       </div>
-      <div className="flex-1 p-6 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/30 space-y-6">
+      <div className="flex-1 p-6 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/30 space-y-6 custom-scrollbar">
          <div className="flex justify-center"><span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded-full">Today, 9:41 AM</span></div>
          <div className="flex gap-3">
             <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 text-xs">R</div>

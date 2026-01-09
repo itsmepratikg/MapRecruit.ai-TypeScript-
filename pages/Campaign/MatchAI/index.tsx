@@ -110,7 +110,7 @@ export const MatchAI = () => {
                         <button className="hover:text-indigo-600 dark:hover:text-indigo-400"><Filter size={14}/></button>
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {MATCH_CANDIDATES.map(candidate => (
                         <CandidateListCard 
                             key={candidate.id} 
@@ -124,7 +124,7 @@ export const MatchAI = () => {
 
             {/* Main Content */}
             <div className={`flex-1 flex flex-col h-full overflow-hidden ${!isMobileListOpen ? 'w-full' : 'hidden lg:flex'}`}>
-                <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 p-4 lg:p-6 transition-colors">
+                <div className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-900 p-4 lg:p-6 transition-colors custom-scrollbar">
                     <div className="max-w-5xl mx-auto space-y-6">
                         
                         <button onClick={() => setIsMobileListOpen(true)} className="lg:hidden flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-2">

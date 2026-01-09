@@ -2,7 +2,7 @@
 import React from 'react';
 
 export const Integrations = () => (
-  <div className="p-8 h-full overflow-y-auto bg-white dark:bg-slate-900">
+  <div className="p-8 h-full overflow-y-auto bg-white dark:bg-slate-900 custom-scrollbar">
      <h3 className="text-xl font-bold mb-6 text-slate-800 dark:text-slate-200">Source Integrations</h3>
      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {['LinkedIn Recruiter', 'Indeed', 'ZipRecruiter', 'Monster', 'Dice', 'CareerBuilder'].map(platform => (

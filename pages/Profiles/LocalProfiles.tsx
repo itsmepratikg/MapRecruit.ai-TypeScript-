@@ -43,7 +43,7 @@ export const LocalProfiles = () => {
                 <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">Based on your location: <strong>Hyderabad, India</strong></span>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-8">
+            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                 {/* Mock Content for Local Profiles */}
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {[1, 2, 3, 4, 5, 6].map(i => (
@@ -78,7 +78,7 @@ export const LocalProfiles = () => {
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900 space-y-4 custom-scrollbar">
                 {chatMessages.map((msg: any, idx: number) => (
                     <ChatBubble key={idx} message={msg} isBot={!msg.text.includes("Expand") && idx % 2 === 0} />
                 ))}

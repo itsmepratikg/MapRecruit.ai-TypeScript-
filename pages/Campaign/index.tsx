@@ -123,7 +123,7 @@ export const CampaignDashboard = ({ campaign, activeTab, onBack }: { campaign: C
   return (
     <div className="flex flex-col h-full bg-slate-50/50 dark:bg-slate-900 transition-colors overflow-hidden">
        <CampaignHeader campaign={campaign} isScrolled={isScrolled} onBack={onBack} />
-       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
           {renderContent()}
        </div>
     </div>

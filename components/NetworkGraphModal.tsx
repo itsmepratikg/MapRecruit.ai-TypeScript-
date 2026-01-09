@@ -390,8 +390,8 @@ export const NetworkGraphModal = ({ isOpen, onClose, initialRoundType = 'Screeni
           
           <div className="flex-1 p-6 overflow-hidden flex flex-col bg-slate-50 dark:bg-slate-900">
              {/* Stats Bar */}
-             <div className="flex justify-between items-center mb-4">
-                <div className="flex gap-2">
+             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 overflow-x-auto custom-scrollbar pb-2 sm:pb-0">
+                <div className="flex gap-2 shrink-0">
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-medium border border-indigo-100 dark:border-indigo-800">
                         Total Profiles: 1,000
                     </div>
@@ -401,7 +401,7 @@ export const NetworkGraphModal = ({ isOpen, onClose, initialRoundType = 'Screeni
                         </div>
                     )}
                 </div>
-                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400 shrink-0">
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-indigo-500 rounded-sm"></span> <span>Normal Flow</span></div>
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-red-500 rounded-sm"></span> <span>Drop-off</span></div>
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-emerald-500 rounded-sm"></span> <span>Success</span></div>

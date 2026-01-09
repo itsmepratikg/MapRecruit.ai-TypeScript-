@@ -98,204 +98,197 @@ export const TagsView = () => {
   };
 
   const confirmDelete = () => {
-      if (!deletingTag) return;
-      setTags(prev => prev.filter(t => t.id !== deletingTag.id));
-      addToast(`Tag "${deletingTag.name}" deleted successfully`, "success");
-      setDeletingTag(null);
+      if (deletingTag) {
+          setTags(prev => prev.filter(t => t.id !== deletingTag.id));
+          addToast(`Tag "${deletingTag.name}" deleted`, "success");
+          setDeletingTag(null);
+      }
   };
 
   const handleShareClick = (tag: TagType) => {
-      // Check permissions logic: View-only users can't modify sharing
-      const user = { id: userProfile.id || 'usr_123' };
-      if (!canEdit(user, tag.access)) {
-          addToast("You do not have permission to modify access settings for this tag.", "error");
+       if (!canEdit({ id: userProfile.id || 'usr_123' }, tag.access)) {
+          addToast("You do not have permission to share this tag.", "error");
           return;
       }
       setSharingModalTag(tag);
   };
 
-  const handleShareSave = (settings: any) => {
+  const handleUpdateAccess = (newAccess: any) => {
       if (sharingModalTag) {
-          setTags(prev => prev.map(t => t.id === sharingModalTag.id ? { ...t, access: settings } : t));
-          addToast("Tag access updated", "success");
+          setTags(prev => prev.map(t => t.id === sharingModalTag.id ? { ...t, access: newAccess } : t));
+          addToast("Sharing settings updated", "success");
       }
   };
+
+  // --- Render ---
 
   if (selectedTag) {
       return <TagDetailView tag={selectedTag} onBack={() => setSelectedTag(null)} />;
   }
 
   return (
-    <div className="h-full flex flex-col bg-slate-50/50 dark:bg-slate-900/50 p-6 lg:p-8 overflow-y-auto">
-        
-        {/* Create/Edit Modal */}
-        <CreateTagModal 
-            isOpen={isCreateModalOpen} 
-            onClose={() => { setIsCreateModalOpen(false); setEditingTag(null); }} 
-            onSubmit={handleCreateOrUpdate}
-            initialData={editingTag}
-        />
-        
-        {/* Share Modal */}
-        {sharingModalTag && (
-            <AccessControlModal 
-                isOpen={!!sharingModalTag}
-                onClose={() => setSharingModalTag(null)}
-                entityName={`Tag: ${sharingModalTag.name}`}
-                currentSettings={sharingModalTag.access}
-                onSave={handleShareSave}
-                currentUser={{ id: userProfile.id || 'usr_123', name: `${userProfile.firstName} ${userProfile.lastName}` }}
-            />
-        )}
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 overflow-y-auto custom-scrollbar p-6 lg:p-8">
+      
+      {/* MODALS */}
+      <CreateTagModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => { setIsCreateModalOpen(false); setEditingTag(null); }}
+        onSubmit={handleCreateOrUpdate}
+        initialData={editingTag}
+      />
 
-        {/* Delete Confirmation Modal */}
-        <ConfirmationModal 
-            isOpen={!!deletingTag}
-            onClose={() => setDeletingTag(null)}
-            onConfirm={confirmDelete}
-            title="Delete Tag?"
-            message={`Are you sure you want to delete "${deletingTag?.name}"? This action cannot be undone and will remove the tag from all associated profiles.`}
-            confirmText="Delete Tag"
-            isDelete={true}
-        />
+      <ConfirmationModal 
+        isOpen={!!deletingTag}
+        onClose={() => setDeletingTag(null)}
+        onConfirm={confirmDelete}
+        title="Delete Tag?"
+        message={`Are you sure you want to delete the tag "${deletingTag?.name}"? This action cannot be undone.`}
+        isDelete
+      />
 
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                    <TagIcon size={24} className="text-emerald-600 dark:text-emerald-400" /> Tags Management
-                </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Organize and track candidates using custom tags.</p>
-            </div>
-            <button 
-                onClick={() => { setEditingTag(null); setIsCreateModalOpen(true); }}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-sm transition-colors text-sm"
-            >
-                <PlusCircle size={16} /> Create Tag
-            </button>
+      {sharingModalTag && (
+          <AccessControlModal 
+            isOpen={!!sharingModalTag}
+            onClose={() => setSharingModalTag(null)}
+            entityName={sharingModalTag.name}
+            currentSettings={sharingModalTag.access}
+            onSave={handleUpdateAccess}
+            currentUser={{ id: userProfile.id || 'usr_123', name: `${userProfile.firstName} ${userProfile.lastName}` }}
+          />
+      )}
+
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
+            <TagIcon size={24} className="text-emerald-600 dark:text-emerald-400" /> 
+            Tags Management
+          </h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Organize candidates with custom tags and manage access permissions.</p>
         </div>
+        <button 
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-sm transition-colors text-sm"
+        >
+          <PlusCircle size={16} /> Create Tag
+        </button>
+      </div>
 
-        {/* Metrics */}
-        <div className="mb-2">
-            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <BarChart2 size={14} /> Top Utilized Tags
+      {/* METRICS */}
+      <TagsMetricView tags={tags} />
+
+      {/* MAIN CONTENT */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+         
+         {/* Search Bar */}
+         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50 dark:bg-slate-900/50">
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
+                <BarChart2 size={16} className="text-slate-400" /> All Tags
             </h3>
-            <TagsMetricView tags={tags} />
-        </div>
-
-        {/* Table Section */}
-        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden flex flex-col min-h-[400px]">
-            {/* Search Bar */}
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50">
-                <div className="relative max-w-md">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <input 
-                        type="text" 
-                        placeholder="Search tags..." 
-                        className="w-full pl-9 pr-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-slate-200 text-sm"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
+            <div className="relative">
+               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+               <input 
+                 type="text" 
+                 placeholder="Search tags..." 
+                 className="pl-9 pr-4 py-1.5 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-slate-200 w-64 transition-all"
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+               />
             </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                    <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
-                        <tr>
-                            <th className="px-6 py-4">Tag Name</th>
-                            <th className="px-6 py-4 text-center">Profiles Count</th>
-                            <th className="px-6 py-4">Created By</th>
-                            <th className="px-6 py-4">Created Date</th>
-                            <th className="px-6 py-4">Updated Date</th>
-                            <th className="px-6 py-4">Shared With</th>
-                            <th className="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                        {filteredTags.map(tag => (
-                            <tr key={tag.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
-                                <td className="px-6 py-4">
-                                    <button 
-                                        onClick={() => setSelectedTag(tag)}
-                                        className="font-bold text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline flex items-center gap-2"
-                                    >
-                                        <Tag size={14} className="text-slate-400" /> {tag.name}
-                                    </button>
-                                    {tag.description && <p className="text-xs text-slate-400 mt-0.5 truncate max-w-[200px]">{tag.description}</p>}
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                    <span className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded-full text-xs font-mono font-bold">{tag.profilesCount}</span>
-                                </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 flex items-center justify-center text-[10px] font-bold">
-                                            {tag.createdBy.split(' ').map((n: string) => n[0]).join('')}
-                                        </div>
-                                        <span className="text-slate-600 dark:text-slate-300">{tag.createdBy}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{tag.createdDate}</td>
-                                <td className="px-6 py-4 text-slate-500 dark:text-slate-400">{tag.updatedDate}</td>
-                                <td className="px-6 py-4">
-                                    <button 
-                                        onClick={() => handleShareClick(tag)}
-                                        className="flex items-center -space-x-2 hover:opacity-80 transition-opacity"
-                                        title="Manage Access"
-                                    >
-                                        {/* Mocking specific shared users visualization based on access level */}
-                                        {tag.access.level === 'COMPANY' && (
-                                            <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 flex items-center justify-center text-xs font-bold z-10">
-                                                ALL
-                                            </div>
-                                        )}
-                                        {tag.access.level === 'PRIVATE' && (
-                                            <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center text-xs font-bold z-10">
-                                                <User size={14} />
-                                            </div>
-                                        )}
-                                        {tag.access.sharedWith.slice(0, 2).map((user: any, i: number) => (
-                                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 flex items-center justify-center text-xs font-bold z-[5]">
-                                                {user.avatar || user.entityName.charAt(0)}
-                                            </div>
-                                        ))}
-                                        {(tag.access.sharedWith.length > 2) && (
-                                            <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center text-xs font-bold z-0">
-                                                +{tag.access.sharedWith.length - 2}
-                                            </div>
-                                        )}
-                                    </button>
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button 
-                                            onClick={() => handleEditClick(tag)}
-                                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
-                                            title="Edit Tag"
-                                        >
-                                            <Edit2 size={16} />
-                                        </button>
-                                        <button 
-                                            onClick={() => handleDeleteClick(tag)}
-                                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
-                                            title="Delete Tag"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {filteredTags.length === 0 && (
-                            <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-slate-400">No tags found matching your search.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+         </div>
+         
+         {/* List */}
+         <div className="overflow-x-auto flex-1 custom-scrollbar">
+            <table className="w-full text-sm text-left whitespace-nowrap">
+               <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
+                  <tr>
+                     <th className="px-6 py-3">Tag Name</th>
+                     <th className="px-6 py-3">Description</th>
+                     <th className="px-6 py-3 text-center">Profiles</th>
+                     <th className="px-6 py-3">Created By</th>
+                     <th className="px-6 py-3">Last Updated</th>
+                     <th className="px-6 py-3 text-right">Actions</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                  {filteredTags.map((tag) => (
+                     <tr 
+                        key={tag.id} 
+                        className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer"
+                        onClick={() => setSelectedTag(tag)}
+                     >
+                        <td className="px-6 py-4">
+                           <div className="flex items-center gap-3">
+                              <div className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-500 dark:text-slate-400">
+                                 <Tag size={14} />
+                              </div>
+                              <span className="font-bold text-slate-800 dark:text-slate-200">{tag.name}</span>
+                              {tag.access.level !== 'COMPANY' && (
+                                  <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 rounded border border-slate-200 dark:border-slate-600">
+                                      {tag.access.level === 'PRIVATE' ? 'Private' : 'Client'}
+                                  </span>
+                              )}
+                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 max-w-[200px] truncate">{tag.description || '-'}</td>
+                        <td className="px-6 py-4 text-center">
+                           <span className="inline-block px-2 py-0.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded-full text-xs font-bold border border-emerald-100 dark:border-emerald-800">
+                              {tag.profilesCount}
+                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                           <div className="flex items-center gap-2">
+                              <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-bold">
+                                 {tag.createdBy.charAt(0)}
+                              </div>
+                              <span className="text-slate-600 dark:text-slate-300">{tag.createdBy}</span>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs">{tag.updatedDate}</td>
+                        <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
+                           <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                onClick={() => handleShareClick(tag)}
+                                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                title="Share"
+                              >
+                                 <User size={14} />
+                              </button>
+                              <button 
+                                onClick={() => handleEditClick(tag)}
+                                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                                title="Edit"
+                              >
+                                 <Edit2 size={14} />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteClick(tag)}
+                                className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-slate-400 hover:text-red-500 transition-colors"
+                                title="Delete"
+                              >
+                                 <Trash2 size={14} />
+                              </button>
+                           </div>
+                        </td>
+                     </tr>
+                  ))}
+                  {filteredTags.length === 0 && (
+                     <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center">
+                           <div className="flex flex-col items-center gap-2">
+                              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
+                                 <Search size={24} />
+                              </div>
+                              <p className="text-sm font-medium text-slate-600 dark:text-slate-300">No tags found</p>
+                              <p className="text-xs text-slate-400">Create a new tag or adjust your search.</p>
+                           </div>
+                        </td>
+                     </tr>
+                  )}
+               </tbody>
+            </table>
+         </div>
+      </div>
     </div>
   );
 };

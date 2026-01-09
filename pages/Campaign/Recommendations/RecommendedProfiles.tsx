@@ -4,9 +4,9 @@ import { MapPin } from '../../../components/Icons';
 import { CANDIDATE } from '../../../data';
 
 export const RecommendedProfiles = () => (
-  <div className="p-8 h-full">
+  <div className="p-8 h-full overflow-y-auto custom-scrollbar">
      <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-6">Recommended Profiles</h2>
-     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden">
+     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden custom-scrollbar overflow-x-auto">
         <table className="w-full text-sm text-left">
            <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-700">
               <tr>

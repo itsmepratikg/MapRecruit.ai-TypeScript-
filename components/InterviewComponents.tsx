@@ -133,42 +133,44 @@ export const AssessmentQuestion: React.FC<{ question: any }> = ({ question }) =>
 };
 
 export const TemplateSelector = ({ onSelect, onClose }: { onSelect: (t: any) => void, onClose: () => void }) => (
-  <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 text-center animate-in fade-in zoom-in duration-200 relative">
+  <div className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-6 text-center animate-in fade-in zoom-in duration-200 relative flex flex-col max-h-[80vh]">
      <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 bg-white dark:bg-slate-700 p-1 rounded-full border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600"><X size={16} /></button>
      
-     <div className="flex justify-between items-center mb-6">
+     <div className="flex justify-between items-center mb-6 shrink-0">
         <h4 className="font-bold text-slate-700 dark:text-slate-200">Select Interview Template</h4>
         <div className="flex gap-2">
            <input type="text" placeholder="Search..." className="text-sm px-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:border-green-500 dark:text-slate-200" />
            <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center gap-1"><Plus size={14}/> Create</button>
         </div>
      </div>
-     <div className="bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 overflow-hidden text-left">
-        <table className="w-full text-sm">
-           <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-              <tr><th className="px-4 py-2 font-medium">Title</th><th className="px-4 py-2 font-medium">Created Date</th><th className="px-4 py-2 font-medium">Created By</th><th className="px-4 py-2 font-medium">Access</th></tr>
-           </thead>
-           <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
-              {INTERVIEW_TEMPLATES.map(t => (
-                 <tr key={t.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/20 group transition-colors">
-                    <td className="px-4 py-3">
-                       <div className="flex justify-between items-center">
-                          <span className="font-medium text-slate-700 dark:text-slate-200">{t.title}</span>
-                          <div className="hidden group-hover:flex gap-1">
-                             <button onClick={() => onSelect(t)} className="p-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50" title="Select"><CheckCircle size={14}/></button>
-                             <button className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-600" title="Edit"><Edit3 size={14}/></button>
-                             <button className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-600" title="Copy"><CopyIcon size={14}/></button>
-                             <button className="p-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/50" title="Delete"><Trash2 size={14}/></button>
-                          </div>
-                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{t.created}</td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{t.author}</td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{t.access}</td>
-                 </tr>
-              ))}
-           </tbody>
-        </table>
+     <div className="bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-700 overflow-hidden text-left flex-1 flex flex-col">
+        <div className="overflow-y-auto custom-scrollbar flex-1">
+            <table className="w-full text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
+                <tr><th className="px-4 py-2 font-medium">Title</th><th className="px-4 py-2 font-medium">Created Date</th><th className="px-4 py-2 font-medium">Created By</th><th className="px-4 py-2 font-medium">Access</th></tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900">
+                {INTERVIEW_TEMPLATES.map(t => (
+                    <tr key={t.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/20 group transition-colors">
+                        <td className="px-4 py-3">
+                        <div className="flex justify-between items-center">
+                            <span className="font-medium text-slate-700 dark:text-slate-200">{t.title}</span>
+                            <div className="hidden group-hover:flex gap-1">
+                                <button onClick={() => onSelect(t)} className="p-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50" title="Select"><CheckCircle size={14}/></button>
+                                <button className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-600" title="Edit"><Edit3 size={14}/></button>
+                                <button className="p-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-600" title="Copy"><CopyIcon size={14}/></button>
+                                <button className="p-1.5 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/50" title="Delete"><Trash2 size={14}/></button>
+                            </div>
+                        </div>
+                        </td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{t.created}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{t.author}</td>
+                        <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{t.access}</td>
+                    </tr>
+                ))}
+            </tbody>
+            </table>
+        </div>
      </div>
   </div>
 );
@@ -210,7 +212,7 @@ export const InterviewFormContent = ({ template, roundName, onClose, onMaximize,
        </div>
 
        <div className="flex flex-1 overflow-hidden">
-          <div className={`flex-1 overflow-y-auto p-6 space-y-6 ${showResume ? 'border-r border-slate-200 dark:border-slate-700' : ''}`}>
+          <div className={`flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar ${showResume ? 'border-r border-slate-200 dark:border-slate-700' : ''}`}>
              <div className="space-y-4">
                 <div>
                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Current Location</label>
@@ -220,7 +222,7 @@ export const InterviewFormContent = ({ template, roundName, onClose, onMaximize,
                           <button className="px-2 py-0.5 border border-slate-200 dark:border-slate-600 rounded text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">B</button>
                           <button className="px-2 py-0.5 border border-slate-200 dark:border-slate-600 rounded text-xs underline text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">U</button>
                       </div>
-                      <textarea className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded text-sm h-16 resize-none focus:ring-1 focus:ring-green-500 outline-none bg-white dark:bg-slate-700 dark:text-slate-200" defaultValue={CANDIDATE.location}></textarea>
+                      <textarea className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded text-sm h-16 resize-none focus:ring-1 focus:ring-green-500 outline-none bg-white dark:bg-slate-700 dark:text-slate-200 custom-scrollbar" defaultValue={CANDIDATE.location}></textarea>
                      </>
                    ) : (
                       <p className="text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700 rounded">{CANDIDATE.location}</p>
@@ -229,7 +231,7 @@ export const InterviewFormContent = ({ template, roundName, onClose, onMaximize,
                 <div>
                    <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Education Qualification</label>
                    {!readOnly ? (
-                      <textarea className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded text-sm h-16 resize-none focus:ring-1 focus:ring-green-500 outline-none bg-white dark:bg-slate-700 dark:text-slate-200" defaultValue="Bachelor of Science, Georgia Southern University"></textarea>
+                      <textarea className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded text-sm h-16 resize-none focus:ring-1 focus:ring-green-500 outline-none bg-white dark:bg-slate-700 dark:text-slate-200 custom-scrollbar" defaultValue="Bachelor of Science, Georgia Southern University"></textarea>
                    ) : (
                       <p className="text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 p-3 border border-slate-200 dark:border-slate-700 rounded">Bachelor of Science, Georgia Southern University</p>
                    )}

@@ -188,7 +188,7 @@ export const FilterPopup: React.FC<{ isOpen: boolean, onClose: () => void, activ
             </button>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-slate-600">
+        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
              {SIDEBAR_FILTERS.map(category => (
                <FilterGroup 
                  key={category.id}
@@ -541,7 +541,7 @@ export const TalentSearchEngine: React.FC<{
       </header>
 
       <div className="flex flex-1 overflow-hidden relative">
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 scroll-smooth bg-gray-50/50 dark:bg-slate-900/50">
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8 scroll-smooth bg-gray-50/50 dark:bg-slate-900/50 custom-scrollbar">
           <div className="max-w-4xl mx-auto">
             <div className="mb-6 space-y-4">
               <div className="flex items-start justify-between">
@@ -653,7 +653,7 @@ export const TalentSearchEngine: React.FC<{
             <button onClick={() => setIsChatOpen(false)} className="lg:hidden text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"><X size={18}/></button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-slate-900 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-slate-900 space-y-4 custom-scrollbar">
              {searchState.chatMessages.length === 0 && (
                <div className="text-center mt-10 opacity-60">
                  <p className="text-sm text-gray-500 dark:text-slate-400">I'm here to help you refine your search. Ask me anything about the candidates.</p>

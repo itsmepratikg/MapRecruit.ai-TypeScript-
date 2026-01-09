@@ -131,7 +131,7 @@ export const AdvancedSearchModal: React.FC<AdvancedSearchModalProps> = ({ isOpen
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-slate-600 bg-white dark:bg-slate-800 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-800 space-y-8 custom-scrollbar">
           <section>
             <h3 className="text-sm font-bold text-gray-900 dark:text-slate-100 bg-gray-100 dark:bg-slate-700 px-3 py-2 rounded-lg mb-4 inline-block">General</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

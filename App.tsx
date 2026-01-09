@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOM from 'react-dom/client';
 import { 
@@ -13,7 +14,7 @@ import {
 import { useToast } from './components/Toast';
 import { Home } from './pages/Home';
 import { Profiles } from './pages/Profiles/index'; 
-import { Campaigns } from './pages/Campaigns';
+import { Campaigns } from './pages/Campaigns/index'; // Updated Import
 import { Metrics } from './pages/Metrics';
 import { CandidateProfile } from './pages/CandidateProfile';
 import { CampaignDashboard } from './pages/Campaign/index'; 
@@ -31,13 +32,15 @@ import { useUserProfile } from './hooks/useUserProfile';
 import { COLORS } from './data/profile';
 import { SIDEBAR_CAMPAIGN_DATA, GLOBAL_CAMPAIGNS } from './data';
 
+// ... (Rest of App.tsx logic remains unchanged, but I must return the FULL content for the file being replaced. Since I cannot see the full content of App.tsx right now in my context window beyond the provided block, I will assume the provided file content is accurate and I just change the import line. Actually, looking at the provided files, I have the full content of App.tsx.)
+
 // --- Reusable Menu Contents ---
 
 const ClientMenuContent = ({ activeClient, clients, onSwitchClient, onClose }: { activeClient: string, clients: string[], onSwitchClient: (client: string) => void, onClose: () => void }) => (
   <>
     <div className="flex justify-between items-center px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-t mb-1">
         <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Switch Client</div>
-        <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"><X size={14}/></button>
+        <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors lg:hidden"><X size={14}/></button>
     </div>
     <div className="p-1 space-y-1 max-h-60 overflow-y-auto custom-scrollbar">
         {clients.map(client => (
@@ -74,7 +77,7 @@ const CreateMenuContent = ({
         <div className="py-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 w-full relative">
             <div className="flex justify-between items-center px-3 py-2">
                 <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Create New</div>
-                {closeMenu && <button onClick={(e) => { e.stopPropagation(); closeMenu(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"><X size={14}/></button>}
+                {closeMenu && <button onClick={(e) => { e.stopPropagation(); closeMenu(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded lg:hidden"><X size={14}/></button>}
             </div>
             <button 
                 onClick={() => handleClick(onCreateProfile)}
@@ -127,7 +130,7 @@ const AccountMenuContent = ({
       <>
         <div className="p-5 border-b border-slate-100 dark:border-slate-700 flex flex-col items-center text-center bg-white dark:bg-slate-800 rounded-t-lg relative">
             {closeMenu && (
-                <button onClick={(e) => { e.stopPropagation(); closeMenu(); }} className="absolute top-2 right-2 p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300 rounded-full">
+                <button onClick={(e) => { e.stopPropagation(); closeMenu(); }} className="absolute top-2 right-2 p-1 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-300 rounded-full lg:hidden">
                     <X size={20} />
                 </button>
             )}
@@ -507,7 +510,7 @@ const CampaignMenuContent = ({
             <div className="p-3 border-b border-slate-100 dark:border-slate-700 shrink-0">
                 <div className="flex items-center gap-2 mb-2 justify-between">
                     <span className="text-xs font-bold text-slate-400 uppercase">Campaigns</span>
-                    <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"><X size={14}/></button>
+                    <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded lg:hidden"><X size={14}/></button>
                 </div>
                 <div className="relative">
                     <input 
@@ -620,7 +623,7 @@ const SettingsMenuContent = ({
         <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh] overflow-hidden">
             <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 shrink-0 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                 <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Administration</span>
-                <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"><X size={14}/></button>
+                <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors lg:hidden"><X size={14}/></button>
             </div>
             
             <div className="flex-1 overflow-y-auto custom-scrollbar p-1">
@@ -671,7 +674,7 @@ const ProfilesMenuContent = ({ onNavigate, onClose }: { onNavigate: (view: strin
             <div className="py-1">
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 mb-1 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                     <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Profiles Module</span>
-                    <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors"><X size={14}/></button>
+                    <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors lg:hidden"><X size={14}/></button>
                 </div>
                 {PROFILE_SUBMENU.map(item => (
                     <button 
@@ -726,24 +729,40 @@ const App = () => {
       message: ''
   });
 
-  // Popover Logic with Delay and Strict Closing
+  // Popover Logic with Delay and Graceful Closing
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePopoverEnter = (id: string) => {
+    // If we are entering a popover (or the trigger), clear any pending close timer
+    if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+        closeTimeoutRef.current = null;
+    }
+
     if (activePopover === id) return; // Already open
-    // Clear any pending open timers
+
+    // Clear any pending open timers for other items
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     
-    // Set timer for 1 second delay
+    // Set timer for opening
     hoverTimeoutRef.current = setTimeout(() => {
         setActivePopover(id);
-    }, 1000);
+    }, 500); // 500ms delay for opening
   };
 
   const handlePopoverLeave = () => {
-    // Only clear pending timer. Do NOT close existing popover (strict requirement: "nothing else" closes it)
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    // Clear pending open timer
+    if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+    }
+    
+    // Set close timer with grace period
+    closeTimeoutRef.current = setTimeout(() => {
+        setActivePopover(null);
+    }, 300); // 300ms gap allowance
   };
 
   const closePopover = () => setActivePopover(null);
@@ -891,7 +910,7 @@ const App = () => {
                   )}
                </div>
 
-               <div className={`flex-1 ${!activeView.startsWith('PROFILES') && !activeView.startsWith('SETTINGS') ? 'overflow-visible' : 'overflow-y-auto'} py-4 ${isCollapsed ? 'px-2' : 'px-3'} space-y-1`}>
+               <div className={`flex-1 ${!activeView.startsWith('PROFILES') && !activeView.startsWith('SETTINGS') ? 'overflow-visible' : 'overflow-y-auto custom-scrollbar'} py-4 ${isCollapsed ? 'px-2' : 'px-3'} space-y-1`}>
                   {!selectedCampaign && !selectedCandidateId && activeView !== 'MY_ACCOUNT' && activeView !== 'PROFILES' && activeView !== 'SETTINGS' ? (
                     <>
                       <NavItem view="DASHBOARD" icon={LayoutDashboard} label="Dashboard" />
@@ -911,7 +930,11 @@ const App = () => {
 
                         {/* Desktop Flyout Content */}
                         {isDesktop && (
-                            <div className={getPopoverClass('campaigns')}>
+                            <div 
+                                className={getPopoverClass('campaigns')}
+                                onMouseEnter={() => handlePopoverEnter('campaigns')} // Keep open when hovering content
+                                onMouseLeave={handlePopoverLeave}
+                            >
                                 <CampaignMenuContent 
                                     onNavigate={handleNavigateToCampaignList}
                                     onNavigateToCampaign={handleNavigateToCampaign}
@@ -941,7 +964,11 @@ const App = () => {
 
                         {/* Desktop Hover Flyout */}
                         {isDesktop && (
-                            <div className={getPopoverClass('profiles')}>
+                            <div 
+                                className={getPopoverClass('profiles')}
+                                onMouseEnter={() => handlePopoverEnter('profiles')}
+                                onMouseLeave={handlePopoverLeave}
+                            >
                                 <ProfilesMenuContent 
                                     onNavigate={(id) => {
                                         setActiveView('PROFILES');
@@ -973,7 +1000,11 @@ const App = () => {
 
                         {/* Desktop Hover Flyout */}
                         {isDesktop && (
-                            <div className={getPopoverClass('settings')}>
+                            <div 
+                                className={getPopoverClass('settings')}
+                                onMouseEnter={() => handlePopoverEnter('settings')}
+                                onMouseLeave={handlePopoverLeave}
+                            >
                                 <SettingsMenuContent 
                                     onNavigate={(tabId) => {
                                         setActiveView('SETTINGS');
@@ -1226,7 +1257,7 @@ const App = () => {
 
             {/* Main Content */}
             <div className={`flex-1 flex flex-col h-full overflow-hidden w-full relative bg-slate-50 dark:bg-slate-950 transition-colors ${!isDesktop && !isSidebarOpen ? 'pl-16' : ''}`}>
-               {activeView === 'DASHBOARD' && <Home />}
+               {activeView === 'DASHBOARD' && <Home onNavigate={handleNavigateToCampaignList} />}
                
                {activeView === 'PROFILES' && (
                  selectedCandidateId ? (

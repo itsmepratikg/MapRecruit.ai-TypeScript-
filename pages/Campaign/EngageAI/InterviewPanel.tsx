@@ -16,7 +16,7 @@ export const InterviewPanel = () => (
               <button className="hover:text-white">Pop-out</button>
            </div>
         </div>
-        <div className="flex-1 bg-slate-500 dark:bg-slate-700/50 p-8 overflow-y-auto">
+        <div className="flex-1 bg-slate-500 dark:bg-slate-700/50 p-8 overflow-y-auto custom-scrollbar">
            <div className="bg-white shadow-2xl min-h-[800px] w-full max-w-2xl mx-auto rounded-sm p-12 relative">
               <div className="w-full h-6 bg-slate-200 mb-8"></div>
               <div className="w-2/3 h-4 bg-slate-300 mb-2"></div>
@@ -41,7 +41,7 @@ export const InterviewPanel = () => (
            </div>
            <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded font-medium border border-blue-200 dark:border-blue-800">In Progress</span>
         </div>
-        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 custom-scrollbar">
            {/* Criteria */}
            <div>
               <div className="flex justify-between mb-2">

@@ -14,7 +14,7 @@ export const ActivityLog = () => (
             <button className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Export</button>
         </div>
     </div>
-    <div className="flex-1 overflow-y-auto p-6 space-y-8">
+    <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
         {CAMPAIGN_ACTIVITIES.map((group) => (
             <div key={group.id} className="relative pl-6 border-l border-slate-200 dark:border-slate-700">
                 <div className="absolute -left-1.5 top-0 w-3 h-3 rounded-full bg-slate-300 dark:bg-slate-600 border-2 border-white dark:border-slate-900"></div>

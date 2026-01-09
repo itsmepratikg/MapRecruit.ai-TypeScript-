@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { COLORS } from '../data/profile';
+import { SIDEBAR_CAMPAIGN_DATA } from '../data';
 
 // --- MOCK DATA ---
 
@@ -68,7 +69,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // --- WIDGET COMPONENTS ---
 
-export const WelcomeHeader = () => {
+export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
   const { userProfile } = useUserProfile();
   const [timeData, setTimeData] = useState({ 
     greeting: 'Good Evening', 
@@ -149,7 +150,10 @@ export const WelcomeHeader = () => {
       </div>
       
       <div className="z-10 mt-auto pt-3 border-t border-white/10 grid grid-cols-2 gap-4">
-          <div className="text-left group cursor-pointer hover:bg-white/10 rounded p-2 transition-colors -ml-2">
+          <div 
+            className="text-left group cursor-pointer hover:bg-white/10 rounded p-2 transition-colors -ml-2"
+            onClick={() => onNavigate && onNavigate('Active')}
+          >
               <span className="block text-2xl font-bold text-white group-hover:text-green-300 transition-colors">1</span>
               <span className="text-[9px] text-white/60 uppercase tracking-wider font-semibold group-hover:text-white">New Campaigns</span>
           </div>
@@ -162,8 +166,11 @@ export const WelcomeHeader = () => {
   );
 };
 
-export const MetricCard = ({ title, value, subValue, icon: Icon, colorClass, iconBg }: any) => (
-  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition-all h-full">
+export const MetricCard = ({ title, value, subValue, icon: Icon, colorClass, iconBg, onClick }: any) => (
+  <div 
+    className={`bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-5 shadow-sm flex flex-col justify-between transition-all h-full ${onClick ? 'cursor-pointer hover:shadow-md hover:border-emerald-200 dark:hover:border-emerald-800' : ''}`}
+    onClick={onClick}
+  >
      <div className="flex justify-between items-start">
         <div className={`text-3xl font-bold ${colorClass}`}>{value}</div>
         <div className={`p-3 rounded-xl ${iconBg} dark:bg-opacity-20`}>
@@ -454,14 +461,28 @@ export const WIDGET_DEFINITIONS = [
   { id: 'pre_screening', title: 'Pre-Screening Report', defaultW: 6, defaultH: 10, minW: 4, minH: 5 },
 ];
 
-// Registry Export for Dynamic Loading
-export const WIDGET_REGISTRY: Record<string, React.ReactNode> = {
-  'welcome': <WelcomeHeader />,
+// Registry Factory for Dynamic Loading
+export const createWidgetRegistry = (onNavigate: (tab: string) => void): Record<string, React.ReactNode> => ({
+  'welcome': <WelcomeHeader onNavigate={onNavigate} />,
   'active_campaigns': (
-    <MetricCard title="Active Campaigns" value="4" icon={Briefcase} colorClass="text-green-600" iconBg="bg-green-50" />
+    <MetricCard 
+        title="Active Campaigns" 
+        value={SIDEBAR_CAMPAIGN_DATA.activeCount} 
+        icon={Briefcase} 
+        colorClass="text-green-600" 
+        iconBg="bg-green-50" 
+        onClick={() => onNavigate('Active')}
+    />
   ),
   'closed_campaigns': (
-    <MetricCard title="Closed Campaigns" value="71" icon={Briefcase} colorClass="text-red-500" iconBg="bg-red-50" />
+    <MetricCard 
+        title="Closed Campaigns" 
+        value={SIDEBAR_CAMPAIGN_DATA.closedCount} 
+        icon={Briefcase} 
+        colorClass="text-red-500" 
+        iconBg="bg-red-50" 
+        onClick={() => onNavigate('Closed')}
+    />
   ),
   'active_profiles': (
     <MetricCard title="Active Profiles" value="11k" icon={Users} colorClass="text-blue-600" iconBg="bg-blue-50" />
@@ -491,4 +512,4 @@ export const WIDGET_REGISTRY: Record<string, React.ReactNode> = {
     />
   ),
   'pre_screening': <PreScreeningProgress />
-};
+});

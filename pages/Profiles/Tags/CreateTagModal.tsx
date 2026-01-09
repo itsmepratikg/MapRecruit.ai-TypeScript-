@@ -137,7 +137,7 @@ export const CreateTagModal = ({ isOpen, onClose, onSubmit, initialData }: Creat
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Briefly describe what this tag represents..."
                     rows={3}
-                    className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200 transition-all resize-none"
+                    className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200 transition-all resize-none custom-scrollbar"
                 />
             </div>
 

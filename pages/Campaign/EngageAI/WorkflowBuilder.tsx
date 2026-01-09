@@ -586,7 +586,7 @@ export const WorkflowBuilder = () => {
       
       <div 
           ref={containerRef}
-          className="flex-1 overflow-auto relative cursor-grab active:cursor-grabbing"
+          className="flex-1 overflow-auto relative cursor-grab active:cursor-grabbing custom-scrollbar"
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -634,11 +634,11 @@ export const WorkflowBuilder = () => {
       </div>
 
       {/* BOTTOM TOOLBAR (Unified Bar) */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 animate-in slide-in-from-bottom-6 duration-300">
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 animate-in slide-in-from-bottom-6 duration-300 max-w-[90vw] overflow-x-auto custom-scrollbar">
           
           {/* Node Palette Section */}
           <div className="flex items-center gap-1 px-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase mr-2 tracking-wider">Add Step</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase mr-2 tracking-wider whitespace-nowrap">Add Step</span>
               {Object.keys(NODE_TYPES).map(type => {
                   const conf = NODE_TYPES[type];
                   const Icon = conf.icon;
@@ -656,20 +656,20 @@ export const WorkflowBuilder = () => {
           </div>
 
           {/* Divider */}
-          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-2 shrink-0"></div>
 
           {/* View Controls Section */}
-          <div className="flex items-center gap-1 px-2">
+          <div className="flex items-center gap-1 px-2 shrink-0">
               <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.5))} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 transition-colors"><ZoomOut size={18}/></button>
               <button onClick={() => setZoom(1)} className="px-2 text-xs font-bold text-slate-500 dark:text-slate-400 min-w-[3rem] text-center">{Math.round(zoom * 100)}%</button>
               <button onClick={() => setZoom(z => Math.min(z + 0.1, 2))} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 transition-colors"><ZoomIn size={18}/></button>
           </div>
 
           {/* Divider */}
-          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-2 shrink-0"></div>
 
           {/* History & Layout Section */}
-          <div className="flex items-center gap-1 px-2">
+          <div className="flex items-center gap-1 px-2 shrink-0">
               <button onClick={handleUndo} disabled={historyStep === 0} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 disabled:opacity-30 transition-colors"><Undo2 size={18}/></button>
               <button onClick={handleRedo} disabled={historyStep === history.length - 1} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 disabled:opacity-30 transition-colors"><Redo2 size={18}/></button>
               <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>

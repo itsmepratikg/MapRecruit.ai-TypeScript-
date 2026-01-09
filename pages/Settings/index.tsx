@@ -45,7 +45,7 @@ export const SettingsPage = ({ activeTab }: { activeTab: string }) => {
 
   return (
     <div className="flex h-full bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
-      <div className="flex-1 overflow-y-auto p-8 lg:p-12">
+      <div className="flex-1 overflow-y-auto p-8 lg:p-12 custom-scrollbar">
          <div className="max-w-6xl mx-auto">
             {renderContent()}
          </div>

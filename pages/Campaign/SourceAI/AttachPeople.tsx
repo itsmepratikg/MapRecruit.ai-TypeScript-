@@ -1,6 +1,5 @@
 
-
-import React from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Search, Filter, Plus, X, Sparkles, Send, MapPin, Briefcase, 
   CheckCircle, Clock, ThumbsUp, XCircle, ArrowRight, MessageSquare,
@@ -13,7 +12,6 @@ import { AdvancedSearchModal } from '../../../components/AdvancedSearchModal';
 import { ChatBubble } from '../../../components/Common';
 import { SearchState } from '../../../types';
 import { useToast } from '../../../components/Toast';
-import { useState, useRef, useEffect, useMemo } from 'react';
 
 const SourceProfileCard: React.FC<{ profile: any, onAdd: () => void }> = ({ profile, onAdd }) => (
   <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 hover:shadow-md transition-all duration-200 flex flex-col md:flex-row gap-4 group relative">
@@ -270,7 +268,7 @@ export const AttachPeople = () => {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             {/* SEARCH VIEW (INITIAL) */}
             {searchState.view === 'initial' ? (
-                <div className="flex flex-col items-center justify-center h-full p-8 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/30">
+                <div className="flex flex-col items-center justify-center h-full p-8 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/30 custom-scrollbar">
                     <div className="w-full max-w-2xl text-center space-y-8 animate-in fade-in zoom-in duration-500">
                     {/* Simplified Initial View without Header */}
                     <form onSubmit={handleSearch} className="relative w-full max-w-xl mx-auto group">
@@ -363,7 +361,7 @@ export const AttachPeople = () => {
                         </div>
                     </div>
 
-                    <main className="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth bg-gray-50/30 dark:bg-slate-900/50">
+                    <main className="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth bg-gray-50/30 dark:bg-slate-900/50 custom-scrollbar">
                         <div className="max-w-5xl mx-auto">
                             {/* Filters & Count */}
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
@@ -443,7 +441,7 @@ export const AttachPeople = () => {
                 </div>
                 <button onClick={() => setIsChatOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300"><X size={18}/></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-slate-900 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-slate-900 space-y-4 custom-scrollbar">
                 {searchState.chatMessages.length === 0 && (
                     <div className="text-center mt-10 opacity-60 px-4">
                         <p className="text-sm text-gray-500 dark:text-slate-400">I can help you find candidates for this campaign. Try searching for specific skills or experience.</p>

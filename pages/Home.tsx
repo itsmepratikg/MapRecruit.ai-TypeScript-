@@ -1,12 +1,16 @@
 
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { WIDGET_REGISTRY } from '../components/DashboardWidgets';
+import { createWidgetRegistry } from '../components/DashboardWidgets';
 import { GridStack } from 'gridstack';
 import { Layout } from '../components/Icons';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import { useScreenSize } from '../hooks/useScreenSize';
 
-export const Home = () => {
+interface HomeProps {
+    onNavigate: (tab: string) => void;
+}
+
+export const Home = ({ onNavigate }: HomeProps) => {
   const gridRef = useRef<GridStack | null>(null);
   const { dashboardLayouts } = useUserPreferences();
   const { isMobile, isTablet } = useScreenSize();
@@ -27,6 +31,9 @@ export const Home = () => {
       }
       return dashboardLayouts['desktop'] || [];
   }, [dashboardLayouts, currentMode]);
+
+  // Create widget registry with navigation handler
+  const widgetRegistry = useMemo(() => createWidgetRegistry(onNavigate), [onNavigate]);
 
   useEffect(() => {
     // Destroy previous instance if re-initializing to prevent artifacts
@@ -57,7 +64,7 @@ export const Home = () => {
   const visibleWidgets = activeWidgets.filter((w: any) => w.visible);
 
   return (
-    <div className="p-4 lg:p-8 bg-slate-50/50 dark:bg-slate-900 min-h-full overflow-y-auto transition-colors duration-300">
+    <div className="p-4 lg:p-8 bg-slate-50/50 dark:bg-slate-900 min-h-full overflow-y-auto custom-scrollbar transition-colors duration-300">
       <div className="max-w-[1600px] mx-auto space-y-4">
         
         {/* GridStack Container */}
@@ -73,7 +80,7 @@ export const Home = () => {
                     gs-h={widget.h}
                 >
                     <div className="grid-stack-item-content h-full relative group/widget shadow-sm hover:shadow-md transition-shadow">
-                        {WIDGET_REGISTRY[widget.id] || <div className="p-4 bg-white dark:bg-slate-800 rounded-lg">Widget {widget.id} not found</div>}
+                        {widgetRegistry[widget.id] || <div className="p-4 bg-white dark:bg-slate-800 rounded-lg">Widget {widget.id} not found</div>}
                     </div>
                 </div>
             ))}

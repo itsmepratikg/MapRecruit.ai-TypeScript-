@@ -63,7 +63,7 @@ const ColorDropdown = ({ selected, onSelect }: { selected: string, onSelect: (c:
               />
             </div>
           </div>
-          <div className="max-h-48 overflow-y-auto">
+          <div className="max-h-48 overflow-y-auto custom-scrollbar">
             {filteredColors.map(color => (
               <button
                 key={color.name}

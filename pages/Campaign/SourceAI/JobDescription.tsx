@@ -3,7 +3,7 @@ import React from 'react';
 import { FileText } from '../../../components/Icons';
 
 export const JobDescription = () => (
-  <div className="p-8 h-full overflow-y-auto max-w-5xl bg-white dark:bg-slate-900">
+  <div className="p-8 h-full overflow-y-auto max-w-5xl bg-white dark:bg-slate-900 custom-scrollbar">
      <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">Job Description</h3>
         <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded-lg font-medium transition-colors">

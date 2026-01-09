@@ -4,7 +4,7 @@ import { Campaign } from '../../../types';
 import { UserPlus, Trash2 } from '../../../components/Icons';
 
 export const CampaignSettings = ({ campaign }: { campaign: Campaign }) => (
-  <div className="p-8 max-w-5xl mx-auto h-full overflow-y-auto">
+  <div className="p-8 max-w-5xl mx-auto h-full overflow-y-auto custom-scrollbar">
     <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-6">Campaign Settings</h2>
     
     <div className="space-y-8 pb-10">
@@ -35,7 +35,7 @@ export const CampaignSettings = ({ campaign }: { campaign: Campaign }) => (
             </div>
             <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Description</label>
-                <textarea className="w-full h-32 px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"></textarea>
+                <textarea className="w-full h-32 px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none custom-scrollbar"></textarea>
             </div>
         </div>
 

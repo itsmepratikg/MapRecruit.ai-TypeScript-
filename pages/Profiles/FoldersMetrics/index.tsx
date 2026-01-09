@@ -37,7 +37,7 @@ export const FolderMetricsView = () => {
 
   // Main Dashboard View
   return (
-    <div className="h-full flex flex-col overflow-y-auto p-6 lg:p-8 bg-white dark:bg-slate-900 transition-colors">
+    <div className="h-full flex flex-col overflow-y-auto p-6 lg:p-8 bg-white dark:bg-slate-900 transition-colors custom-scrollbar">
       
       <CreateFolderModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
 
@@ -130,7 +130,7 @@ export const FolderMetricsView = () => {
             </div>
          </div>
          
-         <div className="overflow-x-auto flex-1">
+         <div className="overflow-x-auto flex-1 custom-scrollbar">
             <table className="w-full text-sm text-left whitespace-nowrap">
                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
                   <tr>

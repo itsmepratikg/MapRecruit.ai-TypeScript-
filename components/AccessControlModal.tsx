@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Globe, Lock, Building2, User, X, ChevronDown, 
@@ -225,7 +226,7 @@ export const AccessControlModal = ({
         </div>
 
         {/* Content Body with Large Bottom Padding for Dropdowns */}
-        <div className="p-6 flex-1 overflow-y-auto pb-40">
+        <div className="p-6 flex-1 overflow-y-auto pb-40 custom-scrollbar">
             
             {/* User Search Input */}
             <div className="mb-6 relative">
@@ -242,7 +243,7 @@ export const AccessControlModal = ({
 
                 {/* Search Dropdown Results */}
                 {searchQuery && (
-                    <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto">
+                    <div className="absolute top-full left-0 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-20 max-h-60 overflow-y-auto custom-scrollbar">
                         {searchResults.length > 0 ? searchResults.map(user => (
                             <button 
                                 key={user.id}
