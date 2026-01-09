@@ -4,6 +4,7 @@ import { Settings } from '../../components/Icons';
 import { SETTINGS_CONTENT } from './constants';
 import { PlaceholderView } from './components/PlaceholderView';
 import { ReachOutLayouts } from './ReachOutLayouts';
+import { CompanyInfo } from './CompanyInfo';
 
 export const SettingsPage = ({ activeTab }: { activeTab: string }) => {
   
@@ -11,6 +12,10 @@ export const SettingsPage = ({ activeTab }: { activeTab: string }) => {
   const renderContent = () => {
     if (activeTab === 'REACHOUT_LAYOUTS') {
         return <ReachOutLayouts />;
+    }
+
+    if (activeTab === 'COMPANY_INFO') {
+        return <CompanyInfo />;
     }
 
     // Default to Placeholder for other sections
