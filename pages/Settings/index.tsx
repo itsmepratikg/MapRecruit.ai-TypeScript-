@@ -8,7 +8,12 @@ import { CompanyInfo } from './CompanyInfo';
 import { RolesPermissions } from './Roles/RolesPermissions';
 import { UsersSettings } from './Users/Users';
 
-export const SettingsPage = ({ activeTab }: { activeTab: string }) => {
+interface SettingsPageProps {
+    activeTab: string;
+    onSelectUser?: (user: any) => void;
+}
+
+export const SettingsPage = ({ activeTab, onSelectUser }: SettingsPageProps) => {
   
   // Render Specific Modules based on activeTab
   const renderContent = () => {
@@ -25,7 +30,7 @@ export const SettingsPage = ({ activeTab }: { activeTab: string }) => {
     }
 
     if (activeTab === 'USERS') {
-        return <UsersSettings />;
+        return <UsersSettings onSelectUser={onSelectUser} />;
     }
 
     // Default to Placeholder for other sections

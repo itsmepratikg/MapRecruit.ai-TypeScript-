@@ -30,52 +30,72 @@ const USERS_DATA = [
     }
 ];
 
-export const UsersSettings = () => {
+interface UsersSettingsProps {
+    onSelectUser?: (user: any) => void;
+}
+
+export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
   const { addToast } = useToast();
-  const [view, setView] = useState<'LIST' | 'EDIT'>('LIST');
+  const [view, setView] = useState<'LIST' | 'CREATE'>('LIST');
   const [users, setUsers] = useState(USERS_DATA);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [editingUser, setEditingUser] = useState<any>(null);
+  
+  // Local state for CREATE mode only (Edit is handled globally)
+  const [newUser, setNewUser] = useState<any>(null);
 
   // --- Handlers ---
 
   const handleEditUser = (user: any) => {
-      setEditingUser(user);
-      setView('EDIT');
+      // If parent handler exists, use it to open global edit view
+      if (onSelectUser) {
+          // Transform to match BasicDetails schema which expects firstName/lastName
+          const nameParts = user.name ? user.name.split(' ') : [''];
+          const firstName = user.firstName || nameParts[0] || '';
+          const lastName = user.lastName || nameParts.slice(1).join(' ') || '';
+          
+          const preparedUser = {
+              ...user,
+              firstName,
+              lastName,
+              // Map 'mobile' from table data to 'phone' for profile form if needed
+              phone: user.phone || (user.mobile ? user.mobile.replace(/^\+1\s/, '') : ''), 
+              countryCode: user.countryCode || 'US',
+              activeClient: user.activeClient || 'TRC Talent Solutions',
+              // Ensure color is a valid name (like 'Blue') instead of a tailwind class string if possible, or default
+              color: (user.color && !user.color.includes('bg-')) ? user.color : 'Blue'
+          };
+          
+          onSelectUser(preparedUser);
+      }
   };
 
   const handleCreateUser = () => {
       // Initialize empty user
-      setEditingUser({
+      setNewUser({
           firstName: '', lastName: '', email: '', phone: '', 
           role: 'Recruiter', status: 'Active', color: 'Blue',
           countryCode: 'US', jobTitle: '', location: '', activeClient: ''
       });
-      setView('EDIT');
+      setView('CREATE');
   };
 
   const handleSaveUser = (userData: any) => {
-      if (editingUser.id) {
-          // Update
-          setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...userData, name: `${userData.firstName} ${userData.lastName}` } : u));
-          addToast(`User ${userData.firstName} updated successfully`, 'success');
-      } else {
-          // Create
-          const newUser = {
-              ...userData,
-              id: `usr_${Date.now()}`,
-              name: `${userData.firstName} ${userData.lastName}`,
-              initials: (userData.firstName[0] + userData.lastName[0]).toUpperCase(),
-              createdDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-              updatedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-              status: 'Active'
-          };
-          setUsers(prev => [...prev, newUser]);
-          addToast(`User ${newUser.name} created successfully`, 'success');
-      }
+      // Create Logic
+      const createdUser = {
+          ...userData,
+          id: `usr_${Date.now()}`,
+          name: `${userData.firstName} ${userData.lastName}`,
+          initials: (userData.firstName[0] + userData.lastName[0]).toUpperCase(),
+          createdDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          updatedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          status: 'Active'
+      };
+      setUsers(prev => [...prev, createdUser]);
+      addToast(`User ${createdUser.name} created successfully`, 'success');
+      
       setView('LIST');
-      setEditingUser(null);
+      setNewUser(null);
   };
 
   const toggleSelection = (id: string) => {
@@ -110,23 +130,12 @@ export const UsersSettings = () => {
       );
   }, [users, searchQuery]);
 
-  // --- RENDER: EDIT VIEW ---
-  if (view === 'EDIT') {
-      // Transform flat user object to BasicDetails format if needed
-      // BasicDetails expects firstName, lastName etc. 
-      // If editing existing user, we need to split name if firstName/lastName missing
-      const prepUser = editingUser.firstName ? editingUser : {
-          ...editingUser,
-          firstName: editingUser.name.split(' ')[0],
-          lastName: editingUser.name.split(' ').slice(1).join(' '),
-          phone: editingUser.mobile ? editingUser.mobile.replace(/^\+1\s/, '') : '', // strip code for demo
-          countryCode: 'US' // default
-      };
-
+  // --- RENDER: CREATE VIEW ---
+  if (view === 'CREATE') {
       return (
           <div className="animate-in fade-in slide-in-from-right-4 duration-300">
               <BasicDetails 
-                  userOverride={prepUser} 
+                  userOverride={newUser} 
                   onSaveOverride={handleSaveUser}
                   onBack={() => setView('LIST')}
               />

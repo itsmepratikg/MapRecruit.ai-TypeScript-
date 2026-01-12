@@ -15,29 +15,32 @@ import { UserNotifications } from './UserNotifications';
 
 interface MyAccountProps {
   activeTab: string;
+  userOverride?: any; // User object if editing another user
 }
 
-export const MyAccount = ({ activeTab }: MyAccountProps) => {
+export const MyAccount = ({ activeTab, userOverride }: MyAccountProps) => {
   const renderContent = () => {
     switch (activeTab) {
       case 'BASIC_DETAILS':
-        return <BasicDetails />;
+        return <BasicDetails userOverride={userOverride} />;
       case 'COMM_PREFS':
+        // For now, these components don't explicitly handle overrides but could be extended
         return <Communication />;
       case 'USER_PREFS':
         return <Appearance />;
       case 'CALENDAR':
         return <CalendarSettings />;
       case 'ROLES_PERMISSIONS':
+        // Could show effective permissions for the user
         return <RolesPermissions />;
       case 'AUTH_SYNC':
         return <AuthSync />;
       case 'USER_NOTIFICATIONS':
         return <UserNotifications />;
       case 'LAST_LOGIN':
-        return <div className="p-8 lg:p-12"><AccountPlaceholder title="Last Login Sessions" description="Review your recent login activity, IP addresses, and device history for security." icon={Clock} /></div>;
+        return <div className="p-8 lg:p-12"><AccountPlaceholder title="Last Login Sessions" description={`Review recent login activity for ${userOverride ? userOverride.name : 'your account'}.`} icon={Clock} /></div>;
       default:
-        return <div className="p-8 lg:p-12"><AccountPlaceholder title="My Account" description="Select a category from the sidebar to manage your account settings." icon={User} /></div>;
+        return <div className="p-8 lg:p-12"><AccountPlaceholder title="Account Settings" description="Select a category from the sidebar to manage account settings." icon={User} /></div>;
     }
   };
 

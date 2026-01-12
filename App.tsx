@@ -395,6 +395,17 @@ const PROFILE_TABS = [
   { id: 'similar', label: 'Similar', icon: Copy },
 ];
 
+const USER_MANAGEMENT_MENU = [
+    { id: 'BASIC_DETAILS', label: 'Basic Details', icon: User },
+    { id: 'COMM_PREFS', label: 'Communication', icon: MessageSquare },
+    { id: 'USER_PREFS', label: 'Appearance', icon: SlidersHorizontal },
+    { id: 'CALENDAR', label: 'Calendar', icon: Calendar },
+    { id: 'ROLES_PERMISSIONS', label: 'Roles & Permissions', icon: Shield },
+    { id: 'AUTH_SYNC', label: 'Password & Auth', icon: Lock },
+    { id: 'USER_NOTIFICATIONS', label: 'Notifications', icon: Bell },
+    { id: 'LAST_LOGIN', label: 'Login History', icon: Clock },
+];
+
 // Categorized Settings for Accordion Menu
 const SETTINGS_CATEGORIES = [
   {
@@ -790,6 +801,10 @@ export const App = () => {
   const [activeSettingsTab, setActiveSettingsTab] = useState('COMPANY_INFO');
   const [activeAccountTab, setActiveAccountTab] = useState('BASIC_DETAILS'); 
 
+  // Admin User Management State
+  const [selectedAdminUser, setSelectedAdminUser] = useState<any>(null);
+  const [activeAdminUserTab, setActiveAdminUserTab] = useState('BASIC_DETAILS');
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
   const [isCreateProfileOpen, setIsCreateProfileOpen] = useState(false);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
@@ -868,6 +883,7 @@ export const App = () => {
       setActiveView('DASHBOARD');
       setSelectedCandidateId(null);
       setSelectedCampaign(null);
+      setSelectedAdminUser(null);
   };
 
   const openPlaceholder = (title: string, message: string) => {
@@ -909,6 +925,18 @@ export const App = () => {
       if (!isDesktop) setIsSidebarOpen(false);
   }
 
+  // --- User Admin Handlers ---
+  const handleUserSelect = (user: any) => {
+      setSelectedAdminUser(user);
+      setActiveAdminUserTab('BASIC_DETAILS');
+      if (!isDesktop) setIsSidebarOpen(false);
+  };
+
+  const handleBackToUsers = () => {
+      setSelectedAdminUser(null);
+      // We are already in SETTINGS view, Users tab will be shown
+  };
+
   // Logic for mobile collapsed state
   const isCollapsed = !isDesktop && !isSidebarOpen; 
 
@@ -925,15 +953,21 @@ export const App = () => {
   // Using 100 shade for selected background instead of 50 for better visibility
   const NavItem: React.FC<{ view?: ViewState, icon: any, label: string, activeTab?: boolean, onClick?: () => void }> = ({ view, icon: Icon, label, activeTab, onClick }) => (
     <button 
-      onClick={onClick ? onClick : () => { if(view) setActiveView(view); setSelectedCandidateId(null); setSelectedCampaign(null); if (!isDesktop) setIsSidebarOpen(false); }}
+      onClick={onClick ? onClick : () => { 
+        if(view) setActiveView(view); 
+        setSelectedCandidateId(null); 
+        setSelectedCampaign(null); 
+        setSelectedAdminUser(null);
+        if (!isDesktop) setIsSidebarOpen(false); 
+      }}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${
-        (view && activeView === view && !selectedCampaign && !selectedCandidateId) || activeTab 
+        (view && activeView === view && !selectedCampaign && !selectedCandidateId && !selectedAdminUser) || activeTab 
           ? 'bg-emerald-100 text-emerald-900 font-bold shadow-sm' 
           : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
       } ${isCollapsed ? 'justify-center' : ''}`}
       title={isCollapsed ? label : ''}
     >
-      <Icon size={20} className={(view && activeView === view && !selectedCampaign && !selectedCandidateId) || activeTab ? 'text-emerald-700' : 'text-slate-400 dark:text-slate-500'} />
+      <Icon size={20} className={(view && activeView === view && !selectedCampaign && !selectedCandidateId && !selectedAdminUser) || activeTab ? 'text-emerald-700' : 'text-slate-400 dark:text-slate-500'} />
       <span className={isCollapsed ? 'hidden' : 'block'}>{label}</span>
     </button>
   );
@@ -984,7 +1018,7 @@ export const App = () => {
                </div>
 
                <div className={`flex-1 ${!activeView.startsWith('PROFILES') && !activeView.startsWith('SETTINGS') ? 'overflow-visible' : 'overflow-y-auto custom-scrollbar'} py-4 ${isCollapsed ? 'px-2' : 'px-3'} space-y-1`}>
-                  {!selectedCampaign && !selectedCandidateId && activeView !== 'MY_ACCOUNT' && activeView !== 'PROFILES' && activeView !== 'SETTINGS' ? (
+                  {!selectedCampaign && !selectedCandidateId && !selectedAdminUser && activeView !== 'MY_ACCOUNT' && activeView !== 'PROFILES' && activeView !== 'SETTINGS' ? (
                     <>
                       <NavItem view="DASHBOARD" icon={LayoutDashboard} label="Dashboard" />
                       
@@ -1030,7 +1064,7 @@ export const App = () => {
                         >
                             <div className="flex items-center gap-3">
                                 <Users size={20} className={activePopover === 'profiles' ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 dark:text-slate-500'} />
-                                <span className={isCollapsed ? 'hidden' : 'block'}>Profiles</span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Manage Candidates & Talent Pools</span>
                             </div>
                             {!isCollapsed && <ChevronRight size={16} className={`transition-transform duration-200 ${activePopover === 'profiles' ? 'rotate-90 text-emerald-600' : ''}`} />}
                         </button>
@@ -1128,7 +1162,7 @@ export const App = () => {
                         ))}
                       </div>
                     </div>
-                  ) : activeView === 'SETTINGS' ? (
+                  ) : activeView === 'SETTINGS' && !selectedAdminUser ? (
                     // SETTINGS MODULE DRILL-DOWN SIDEBAR
                     <div className="animate-in slide-in-from-left duration-300 ease-out">
                       <button 
@@ -1188,6 +1222,35 @@ export const App = () => {
                                     label={item.label} 
                                     activeTab={activeAccountTab === item.id} 
                                     onClick={() => { setActiveAccountTab(item.id); if (!isDesktop) setIsSidebarOpen(false); }}
+                                />
+                            </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : selectedAdminUser ? (
+                    // USER MANAGEMENT SIDEBAR
+                    <div className="animate-in slide-in-from-left duration-300 ease-out">
+                      <button 
+                        onClick={handleBackToUsers}
+                        className={`w-full flex items-center gap-2 px-3 py-2 mb-4 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors ${isCollapsed ? 'justify-center' : ''}`}
+                        title="Back to Users"
+                      >
+                        <ChevronLeft size={14} /> <span className={isCollapsed ? 'hidden' : 'inline'}>Back to Users</span>
+                      </button>
+                      
+                      <div className={`px-3 mb-6 ${isCollapsed ? 'hidden' : 'block'}`}>
+                        <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 leading-tight">Manage User</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{selectedAdminUser.name}</p>
+                      </div>
+
+                      <div className="space-y-1">
+                        {USER_MANAGEMENT_MENU.map((item, index) => (
+                            <div key={item.id} className="animate-in fade-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${index * 50}ms` }}>
+                                <NavItem 
+                                    icon={item.icon} 
+                                    label={item.label} 
+                                    activeTab={activeAdminUserTab === item.id} 
+                                    onClick={() => { setActiveAdminUserTab(item.id); if (!isDesktop) setIsSidebarOpen(false); }}
                                 />
                             </div>
                         ))}
@@ -1324,7 +1387,7 @@ export const App = () => {
                      setIsCreateFolderOpen={setIsCreateFolderOpen}
                      setIsThemeSettingsOpen={setIsThemeSettingsOpen}
                      onOpenPlaceholder={openPlaceholder}
-                     onNavigate={(view) => { setActiveView(view); setSelectedCandidateId(null); setSelectedCampaign(null); if (!isDesktop) setIsSidebarOpen(false); }}
+                     onNavigate={(view) => { setActiveView(view); setSelectedCandidateId(null); setSelectedCampaign(null); setSelectedAdminUser(null); if (!isDesktop) setIsSidebarOpen(false); }}
                      onLogout={handleLogout}
                      userProfile={userProfile}
                      clients={clients}
@@ -1372,7 +1435,14 @@ export const App = () => {
 
                {activeView === 'METRICS' && <Metrics />}
                
-               {activeView === 'SETTINGS' && <SettingsPage activeTab={activeSettingsTab} />}
+               {activeView === 'SETTINGS' && (
+                 selectedAdminUser ? (
+                    // In Settings -> User Management -> Edit Mode
+                    <MyAccount activeTab={activeAdminUserTab} userOverride={selectedAdminUser} />
+                 ) : (
+                    <SettingsPage activeTab={activeSettingsTab} onSelectUser={handleUserSelect} />
+                 )
+               )}
 
                {activeView === 'MY_ACCOUNT' && <MyAccount activeTab={activeAccountTab} />}
             </div>
