@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 // Wrapper for FontAwesome Icons to mimic Lucide API
@@ -42,6 +43,7 @@ export const ClipboardList = (props: any) => <Icon {...props} iconClass="fa-soli
 export const Clock = (props: any) => <Icon {...props} iconClass="fa-solid fa-clock" />;
 export const Command = (props: any) => <Icon {...props} iconClass="fa-solid fa-terminal" />;
 export const Copy = (props: any) => <Icon {...props} iconClass="fa-solid fa-copy" />;
+export const CornerDownLeft = (props: any) => <Icon {...props} iconClass="fa-solid fa-arrow-turn-down" style={{ transform: 'scaleX(-1)', ...props.style }} />;
 export const CreditCard = (props: any) => <Icon {...props} iconClass="fa-solid fa-credit-card" />;
 export const Database = (props: any) => <Icon {...props} iconClass="fa-solid fa-database" />;
 export const Download = (props: any) => <Icon {...props} iconClass="fa-solid fa-download" />;
