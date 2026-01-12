@@ -2,49 +2,202 @@
 import React, { useState } from 'react';
 import { 
   Bell, MessageCircle, Monitor, XCircle, CheckCircle, 
-  Moon, Zap, AlertCircle
+  Moon, Zap, AlertCircle, ChevronDown, ChevronUp, Info,
+  Edit2, Save
 } from '../../components/Icons';
 import { useToast } from '../../components/Toast';
 
+// --- Constants & Schema ---
+
 const NOTIFICATION_MODES = [
-  { 
-    id: 'ALL', 
-    label: 'All Channels', 
-    description: 'Receive notifications in both the application and via connected chat apps (Google Chat/Teams).',
-    icon: Zap 
+  { id: 'ALL', label: 'All Channels', icon: Zap, color: 'text-amber-500' },
+  { id: 'CHAT', label: 'In Chat Only', icon: MessageCircle, color: 'text-indigo-500' },
+  { id: 'APP', label: 'In App Only', icon: Monitor, color: 'text-blue-500' },
+  { id: 'NONE', label: 'None', icon: XCircle, color: 'text-slate-400' }
+];
+
+const NOTIFICATION_SCHEMA = [
+  {
+    id: 'INTERVIEWS',
+    label: 'Interviews & Scheduling',
+    description: 'Updates regarding candidate interview logistics and status changes.',
+    items: [
+      { id: 'int_reminder_person', label: 'In-person Interview Reminder' },
+      { id: 'int_completed', label: 'Interview Completed' },
+      { id: 'slot_booked', label: 'Slot Booked' },
+      { id: 'slot_cancelled', label: 'Slot Cancelled' },
+      { id: 'slot_rescheduled', label: 'Slot Rescheduled' },
+      { id: 'resched_new_host', label: 'Rescheduled to New Host' },
+      { id: 'slot_booked_no_camp', label: 'Slot Booked without Campaign' },
+      { id: 'int_reminder_video', label: 'Video Interview Reminder' },
+      { id: 'int_reminder_phone', label: 'Phone Interview Reminder' }
+    ]
   },
-  { 
-    id: 'CHAT', 
-    label: 'In Chat Only', 
-    description: 'Direct notifications to your connected workspace chat. No in-app toasts.',
-    icon: MessageCircle 
+  {
+    id: 'SOURCE_AI',
+    label: 'Source AI',
+    description: 'Alerts related to sourcing engine activities and integrations.',
+    items: [
+      { id: 'job_board_search', label: 'JobBoards Search Executed' }
+    ]
   },
-  { 
-    id: 'APP', 
-    label: 'In Application', 
-    description: 'Show toast notifications and badges within the MapRecruit dashboard only.',
-    icon: Monitor 
+  {
+    id: 'CAMPAIGNS',
+    label: 'Campaign Management',
+    description: 'Notifications about campaign health, capacity, and member activity.',
+    items: [
+      { id: 'camp_user_added', label: 'User added to Campaign' },
+      { id: 'camp_slots_expiring', label: 'Campaign Slots expiring soon' },
+      { id: 'camp_slots_exhausted', label: 'Campaign Slots Exhausted' },
+      { id: 'camp_closed', label: 'Campaign Closed' },
+      { id: 'camp_created', label: 'Campaign Created' },
+      { id: 'camp_link', label: 'Link Campaign' },
+      { id: 'camp_folder_link', label: 'Link Campaign Folder' },
+      { id: 'camp_unlink', label: 'Unlinked from Campaign' }
+    ]
   },
-  { 
-    id: 'NONE', 
-    label: 'None', 
-    description: 'Mute all proactive notifications. You can still check the Notification Center manually.',
-    icon: XCircle 
+  {
+    id: 'PROFILES',
+    label: 'Profiles & Candidates',
+    description: 'Updates on candidate data parsing and sharing.',
+    items: [
+      { id: 'prof_uploaded', label: 'Profiles Uploaded' },
+      { id: 'resume_parsed', label: 'Resumes Parsed' },
+      { id: 'prof_shared', label: 'Profile Shared' }
+    ]
+  },
+  {
+    id: 'FOLDERS',
+    label: 'Folder Organization',
+    description: 'Activity related to candidate folders and grouping.',
+    items: [
+      { id: 'folder_shared', label: 'Folder Shared' },
+      { id: 'folder_linked', label: 'Link Folder' },
+      { id: 'folder_unlinked', label: 'Unlinked from Campaign Folder' }
+    ]
   }
 ];
 
+// --- Sub-Components ---
+
+interface NotificationRowProps {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  disabled?: boolean;
+}
+
+const NotificationRow: React.FC<NotificationRowProps> = ({ label, value, onChange, disabled }) => {
+  return (
+    <div className={`flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0 px-3 rounded-lg transition-colors ${disabled ? 'opacity-70' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+      <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{label}</span>
+      
+      <div className={`flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1 gap-1 ${disabled ? 'pointer-events-none' : ''}`}>
+        {NOTIFICATION_MODES.map((mode) => {
+          const Icon = mode.icon;
+          const isActive = value === mode.id;
+          
+          return (
+            <button
+              key={mode.id}
+              onClick={() => onChange(mode.id)}
+              disabled={disabled}
+              className={`p-1.5 rounded-md transition-all relative group ${isActive ? 'bg-white dark:bg-slate-700 shadow-sm' : disabled ? '' : 'hover:bg-slate-200 dark:hover:bg-slate-800'}`}
+              title={mode.label}
+            >
+              <Icon size={16} className={isActive ? mode.color : 'text-slate-400'} />
+              {/* Tooltip */}
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] bg-slate-800 text-white rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap transition-opacity z-10">
+                {mode.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+interface CategorySectionProps {
+  category: typeof NOTIFICATION_SCHEMA[0];
+  settings: Record<string, string>;
+  onUpdate: (id: string, val: string) => void;
+  disabled?: boolean;
+}
+
+const CategorySection: React.FC<CategorySectionProps> = ({ category, settings, onUpdate, disabled }) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm transition-all h-full flex flex-col">
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between px-6 py-4 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors shrink-0"
+      >
+        <div className="text-left">
+          <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">{category.label}</h4>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{category.description}</p>
+        </div>
+        <div className="text-slate-400">
+          {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </div>
+      </button>
+      
+      {isExpanded && (
+        <div className="p-4 space-y-1 flex-1">
+          {category.items.map(item => (
+            <NotificationRow 
+              key={item.id} 
+              label={item.label} 
+              value={settings[item.id] || 'APP'} // Default to In-App if not set
+              onChange={(val) => onUpdate(item.id, val)}
+              disabled={disabled}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const UserNotifications = () => {
   const { addToast } = useToast();
-  const [mode, setMode] = useState('ALL');
+  const [isEditing, setIsEditing] = useState(false);
+  
   const [dnd, setDnd] = useState(false);
+  // State for all individual settings
+  const [settings, setSettings] = useState<Record<string, string>>({});
+
+  // Backup state for cancel
+  const [originalDnd, setOriginalDnd] = useState(false);
+  const [originalSettings, setOriginalSettings] = useState<Record<string, string>>({});
+
+  const handleEdit = () => {
+    setOriginalDnd(dnd);
+    setOriginalSettings({ ...settings });
+    setIsEditing(true);
+  };
+
+  const handleCancel = () => {
+    setDnd(originalDnd);
+    setSettings(originalSettings);
+    setIsEditing(false);
+    addToast("Changes discarded", "info");
+  };
+
+  const handleUpdateSetting = (id: string, val: string) => {
+    setSettings(prev => ({ ...prev, [id]: val }));
+  };
 
   const handleSave = () => {
-    addToast("Notification preferences updated", "success");
+    console.log("Saving Notification Preferences:", { dnd, settings });
+    addToast("Notification preferences updated successfully", "success");
+    setIsEditing(false);
   };
 
   return (
     <div className="p-8 lg:p-12">
-      <div className="max-w-5xl mx-auto animate-in fade-in duration-300 pb-12">
+      <div className="max-w-7xl mx-auto animate-in fade-in duration-300 pb-12">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 gap-4">
@@ -56,16 +209,44 @@ export const UserNotifications = () => {
                  Control how and where you receive alerts, updates, and system messages.
                </p>
            </div>
-           <button 
-             onClick={handleSave}
-             className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm"
-           >
-             Save Preferences
-           </button>
+           
+           <div className="flex gap-3">
+             {!isEditing ? (
+               <button 
+                 onClick={handleEdit}
+                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+               >
+                 <Edit2 size={16} /> Edit Settings
+               </button>
+             ) : (
+               <>
+                   <button 
+                     onClick={handleCancel}
+                     className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                   >
+                     Cancel
+                   </button>
+                   <button 
+                     onClick={handleSave}
+                     className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2"
+                   >
+                     <Save size={16} /> Save Changes
+                   </button>
+               </>
+             )}
+           </div>
         </div>
 
         <div className="space-y-8">
             
+            {/* Legend / Info Note - Moved to Top */}
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-xl flex items-start gap-3">
+                <Info size={20} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-800 dark:text-blue-300 leading-relaxed">
+                    <strong>Note:</strong> "All Channels" includes Email, SMS (if enabled), Workspace Chat (Teams/Slack), and In-App notifications. "In Chat Only" suppresses email and in-app toasts.
+                </p>
+            </div>
+
             {/* Do Not Disturb */}
             <div className={`p-6 rounded-xl border transition-all ${dnd ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm'}`}>
                 <div className="flex items-center justify-between">
@@ -80,58 +261,42 @@ export const UserNotifications = () => {
                             </p>
                         </div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label className={`relative inline-flex items-center ${isEditing ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
                         <input 
                             type="checkbox" 
                             className="sr-only peer" 
                             checked={dnd} 
-                            onChange={(e) => setDnd(e.target.checked)} 
+                            onChange={(e) => isEditing && setDnd(e.target.checked)} 
+                            disabled={!isEditing}
                         />
                         <div className="w-14 h-7 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
                     </label>
                 </div>
             </div>
 
-            {/* Delivery Channels */}
+            {/* Granular Settings */}
             <div className={dnd ? 'opacity-50 pointer-events-none filter grayscale transition-all duration-300' : 'transition-all duration-300'}>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">Delivery Channels</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {NOTIFICATION_MODES.map((option) => (
-                        <div 
-                            key={option.id}
-                            onClick={() => setMode(option.id)}
-                            className={`p-5 rounded-xl border-2 cursor-pointer transition-all flex items-start gap-4 group ${mode === option.id ? 'border-emerald-500 bg-emerald-50/10 dark:bg-emerald-900/10 ring-1 ring-emerald-500' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-emerald-300 dark:hover:border-emerald-700'}`}
-                        >
-                            <div className={`p-3 rounded-full shrink-0 ${mode === option.id ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'}`}>
-                                <option.icon size={20} />
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex justify-between items-center mb-1">
-                                    <h4 className={`font-bold ${mode === option.id ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-200'}`}>{option.label}</h4>
-                                    {mode === option.id && <CheckCircle size={18} className="text-emerald-500" />}
-                                </div>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                                    {option.description}
-                                </p>
-                            </div>
+                
+                {/* Legend */}
+                <div className="flex flex-wrap gap-4 mb-6 px-2">
+                    {NOTIFICATION_MODES.map(mode => (
+                        <div key={mode.id} className="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm">
+                            <mode.icon size={14} className={mode.color} />
+                            <span>{mode.label}</span>
                         </div>
                     ))}
                 </div>
-            </div>
 
-            {/* Placeholder for Granular Settings */}
-            <div className="border-t border-slate-200 dark:border-slate-700 pt-8">
-                <div className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center border-dashed">
-                    <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-slate-400">
-                        <AlertCircle size={24} />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">Individual Settings</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-4">
-                        Granular controls for specific event types (e.g., New Applications, Interview Reminders, Workflow Alerts) will be available here.
-                    </p>
-                    <span className="inline-flex items-center gap-2 px-3 py-1 bg-slate-200 dark:bg-slate-800 rounded-full text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                        Coming Soon
-                    </span>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {NOTIFICATION_SCHEMA.map(cat => (
+                        <CategorySection 
+                            key={cat.id} 
+                            category={cat} 
+                            settings={settings} 
+                            onUpdate={handleUpdateSetting} 
+                            disabled={!isEditing}
+                        />
+                    ))}
                 </div>
             </div>
 
