@@ -7,6 +7,7 @@ import { MOCK_CONVERSATIONS } from './data';
 import { useScreenSize } from '../../hooks/useScreenSize';
 import { MessageSquare, Key, Calendar, BarChart2 } from '../../components/Icons';
 import { PlaceholderPage } from '../../components/PlaceholderPage';
+import { ChatAnalytics } from './components/ChatAnalytics'; // New Import
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { useToast } from '../../components/Toast';
 import { ChannelType } from './types';
@@ -78,9 +79,6 @@ export const TalentChat = ({ activeTab = 'CONVERSATIONS' }: TalentChatProps) => 
   };
 
   // Logic to simulate incoming message and check for auto-reply
-  // For demo, we just verify the logic if a "Simulate Incoming" existed, 
-  // but here we ensure the plumbing is ready.
-  // In a real app, this runs on the backend or via socket listener.
   const checkAutoReply = (convId: string) => {
       const conv = conversations.find(c => c.id === convId);
       if (!conv) return;
@@ -88,9 +86,7 @@ export const TalentChat = ({ activeTab = 'CONVERSATIONS' }: TalentChatProps) => 
       // Check 1: Auto Reply Enabled
       if (!MOCK_SETTINGS.autoReplyEnabled) return;
 
-      // Check 2: Assignment (Must be assigned to send specific reply? Or general?)
-      // Prompt said: "The Candidate should also be assigned to the recruiter to send a auto-reply"
-      // Assuming this means ONLY assigned candidates get the personalized/specific auto-reply logic
+      // Check 2: Assignment
       if (!conv.assigneeId) return; 
 
       // Check 3: Business Hours
@@ -141,15 +137,16 @@ export const TalentChat = ({ activeTab = 'CONVERSATIONS' }: TalentChatProps) => 
       return <PlaceholderPage title="Chat Schedules" description="Manage availability schedules for automated chat responses." icon={Calendar} />;
   }
 
+  // UPDATED: Render the actual Analytics Component
   if (activeTab === 'ANALYTICS') {
-      return <PlaceholderPage title="Chat Analytics" description="View performance metrics and conversation trends." icon={BarChart2} />;
+      return <ChatAnalytics />;
   }
 
   return (
     <div className="flex h-full overflow-hidden bg-white dark:bg-slate-900">
         
         {/* Left Sidebar - List */}
-        <div className={`${(!isDesktop && activeConversationId) ? 'hidden' : 'w-full md:w-auto flex-shrink-0'}`}>
+        <div className={`${(!isDesktop && activeConversationId) ? 'hidden' : 'w-full md:w-80 flex-shrink-0'}`}>
             <ConversationSidebar 
                 conversations={conversations} 
                 activeId={activeConversationId} 
