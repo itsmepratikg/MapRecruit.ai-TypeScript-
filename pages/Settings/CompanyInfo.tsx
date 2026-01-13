@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Building2, Globe, Save, Upload, MapPin, Clock, 
-  Settings, ImageIcon, AlertCircle, CheckCircle, Moon,
+  Settings, Image, AlertCircle, CheckCircle, Moon,
   Edit2, X, Plus, Search, ChevronDown, Check
 } from '../../components/Icons';
 import { useToast } from '../../components/Toast';
@@ -334,7 +334,7 @@ export const CompanyInfo = () => {
                 {/* Branding Card */}
                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition-opacity duration-300">
                     <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-6 flex items-center gap-2">
-                        <ImageIcon size={16} className="text-slate-400" /> Branding & Logos
+                        <Image size={16} className="text-slate-400" /> Branding & Logos
                     </h4>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">

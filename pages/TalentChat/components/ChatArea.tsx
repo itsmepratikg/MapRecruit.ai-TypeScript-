@@ -1,17 +1,14 @@
-
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { 
-  MoreHorizontal, CheckCircle, 
-  Clock, Phone, Video, Search, ChevronLeft, UserPlus, Tag, Trash2, Edit2,
+  Smile, Paperclip, Send, MoreHorizontal, CheckCircle, 
+  Clock, Phone, Video, Search, ChevronLeft, Lock, UserPlus, Tag, Trash2, Edit2,
   X, User, Mail, MessageSquare, ChevronDown, AlertTriangle, AlertCircle, ChevronUp, Check, Layers,
-  ChevronRight, File, ImageIcon, Download, Shield, EyeOff, Edit3
+  ChevronRight, File, Image as ImageIcon, Download, ExternalLink
 } from '../../../components/Icons';
 import { Conversation, Message, ChannelType, Attachment } from '../types';
 import { useUserProfile } from '../../../hooks/useUserProfile';
 import { useToast } from '../../../components/Toast';
 import { MOCK_USERS_LIST } from '../../../data';
-import { ConfirmationModal } from '../../../components/ConfirmationModal';
-import { ComposeModal } from '../../../components/Common/Compose/ComposeModal';
 
 interface ChatAreaProps {
   conversation: Conversation;
@@ -24,118 +21,41 @@ interface ChatAreaProps {
 
 const AVAILABLE_LABELS = ['Priority', 'Negotiation', 'Technical', 'Culture Fit', 'Offer Sent'];
 
-type AttachmentActionType = 'CREATE_PROFILE' | 'MARK_SENSITIVE' | 'DOWNLOAD';
-
 // Reusable Attachment Card Component
-const AttachmentItem: React.FC<{ 
-    attachment: Attachment, 
-    onAction: (action: AttachmentActionType, att: Attachment) => void,
-    onDelete: () => void 
-}> = ({ attachment, onAction, onDelete }) => {
-    const [showMenu, setShowMenu] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setShowMenu(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const isSensitive = attachment.isSensitive;
-
+const AttachmentItem: React.FC<{ attachment: Attachment, onDelete: () => void }> = ({ attachment, onDelete }) => {
     return (
         <div className="group relative flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:border-emerald-500 transition-colors min-w-[180px] max-w-[220px]">
             {/* Preview/Icon */}
-            <div className={`w-10 h-10 shrink-0 rounded bg-white dark:bg-slate-700 overflow-hidden flex items-center justify-center border border-slate-100 dark:border-slate-600 relative ${isSensitive ? 'bg-slate-100 dark:bg-slate-800' : ''}`}>
-                {isSensitive ? (
-                    <div className="flex items-center justify-center w-full h-full text-slate-400" title="Sensitive Content">
-                        <EyeOff size={16} />
-                    </div>
+            <div className="w-10 h-10 shrink-0 rounded bg-white dark:bg-slate-700 overflow-hidden flex items-center justify-center border border-slate-100 dark:border-slate-600">
+                {attachment.type === 'image' && attachment.url ? (
+                    <img src={attachment.url} alt={attachment.name} className="w-full h-full object-cover" />
                 ) : (
-                    attachment.type === 'image' && attachment.url ? (
-                        <img src={attachment.url} alt={attachment.name} className="w-full h-full object-cover" />
-                    ) : (
-                        <div className="text-slate-400">
-                            {attachment.type === 'image' ? <ImageIcon size={20} /> : <File size={20} />}
-                        </div>
-                    )
+                    <div className="text-slate-400">
+                         {attachment.type === 'image' ? <ImageIcon size={20} /> : <File size={20} />}
+                    </div>
                 )}
             </div>
             
             {/* Info */}
             <div className="min-w-0 flex-1">
-                <p className={`text-xs font-medium truncate ${isSensitive ? 'text-slate-400 italic' : 'text-slate-700 dark:text-slate-200'}`} title={attachment.name}>
-                    {isSensitive ? 'Hidden Content' : attachment.name}
-                </p>
+                <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate" title={attachment.name}>{attachment.name}</p>
                 <p className="text-[10px] text-slate-400">{attachment.size}</p>
             </div>
 
-            {/* Action Menu Trigger */}
-            <div className="relative" ref={menuRef}>
-                <button 
-                    onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
-                    className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-slate-400 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                >
-                    <MoreHorizontal size={14} />
-                </button>
-
-                {showMenu && (
-                    <div className="absolute right-0 top-6 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-                        {!isSensitive && (
-                            <button 
-                                onClick={(e) => { e.stopPropagation(); onAction('CREATE_PROFILE', attachment); setShowMenu(false); }}
-                                className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-200"
-                            >
-                                <UserPlus size={12} className="text-blue-500" /> Create Profile
-                            </button>
-                        )}
-                        
-                        {!isSensitive && (
-                             <button 
-                                onClick={(e) => { e.stopPropagation(); onAction('DOWNLOAD', attachment); setShowMenu(false); }}
-                                className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-200"
-                            >
-                                <Download size={12} className="text-green-500" /> Download
-                            </button>
-                        )}
-
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onAction('MARK_SENSITIVE', attachment); setShowMenu(false); }}
-                            className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 text-slate-700 dark:text-slate-200"
-                        >
-                            <Shield size={12} className={isSensitive ? "text-slate-400" : "text-amber-500"} /> 
-                            {isSensitive ? 'Unmark Sensitive' : 'Mark as Sensitive'}
-                        </button>
-
-                        <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>
-                        
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); onDelete(); setShowMenu(false); }}
-                            className="w-full text-left px-3 py-2 text-xs hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 text-red-600 dark:text-red-400"
-                        >
-                            <Trash2 size={12} /> Delete
-                        </button>
-                    </div>
-                )}
-            </div>
+            {/* Delete Action */}
+            <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:border-red-200 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                title="Remove attachment"
+            >
+                <X size={10} />
+            </button>
         </div>
     );
 };
 
 // --- EMAIL THREAD MODAL COMPONENT ---
-const EmailThreadModal = ({ 
-    message, 
-    onClose, 
-    onDeleteAttachment 
-}: { 
-    message: Message, 
-    onClose: () => void, 
-    onDeleteAttachment: (msgId: string, attId: string) => void 
-}) => {
+const EmailThreadModal = ({ message, onClose, onDeleteAttachment }: { message: Message, onClose: () => void, onDeleteAttachment: (msgId: string, attId: string) => void }) => {
     // Generate Mock History for demonstration
     const threadMessages = useMemo(() => {
         const count = message.threadCount || 1;
@@ -146,7 +66,7 @@ const EmailThreadModal = ({
             history.push({
                 ...message,
                 id: `${message.id}_hist_${i}`,
-                subject: i === 0 ? message.subject?.replace('Re: ', '') : message.subject, 
+                subject: i === 0 ? message.subject?.replace('Re: ', '') : message.subject, // Original subject for first
                 content: `<p>This is a previous message in the thread sequence (${i + 1}). It contains context relevant to the conversation.</p><p>Best,<br/>Sender ${i+1}</p>`,
                 timestamp: new Date(new Date(message.timestamp).getTime() - (count - i) * 86400000).toISOString(),
                 attachments: i === 0 ? [{ id: `att_h_${i}`, name: 'Original_Req.pdf', size: '2.1 MB', type: 'file' }] : [],
@@ -158,7 +78,7 @@ const EmailThreadModal = ({
         return history;
     }, [message]);
 
-    const [currentIndex, setCurrentIndex] = useState(threadMessages.length - 1); 
+    const [currentIndex, setCurrentIndex] = useState(threadMessages.length - 1); // Default to latest
     const currentMsg = threadMessages[currentIndex];
 
     // Collect all attachments for the right panel
@@ -166,81 +86,8 @@ const EmailThreadModal = ({
         return threadMessages.flatMap(m => (m.attachments || []).map(att => ({ msgId: m.id, att })));
     }, [threadMessages]);
 
-    // Handle Actions inside modal (Local state for simplicity in this demo view)
-    const [modalAttachments, setModalAttachments] = useState(allAttachments);
-    const [actionState, setActionState] = useState<{ type: AttachmentActionType, attachment: Attachment, msgId: string } | null>(null);
-    const { addToast } = useToast();
-
-    // Sync if props change (though this is a static demo mostly)
-    useEffect(() => {
-        setModalAttachments(allAttachments);
-    }, [allAttachments]);
-
-    const handleConfirmAction = () => {
-        if (!actionState) return;
-
-        const { type, attachment } = actionState;
-        
-        if (type === 'CREATE_PROFILE') {
-            addToast(`Profile creation started for ${attachment.name}`, 'success');
-            addToast(`Activity Logged: User sent ${attachment.name} to parser`, 'info');
-        } else if (type === 'MARK_SENSITIVE') {
-            const isNowSensitive = !attachment.isSensitive;
-            // Update local state to reflect change visually in the modal
-            setModalAttachments(prev => prev.map(item => 
-                item.att.id === attachment.id ? { ...item, att: { ...item.att, isSensitive: isNowSensitive } } : item
-            ));
-            addToast(isNowSensitive ? "Attachment marked as sensitive" : "Attachment unmarked as sensitive", "success");
-            addToast(`Activity Logged: User marked ${attachment.name} as ${isNowSensitive ? 'Sensitive' : 'Normal'}`, 'info');
-        } else if (type === 'DOWNLOAD') {
-            addToast(`Downloading ${attachment.name}...`, 'success');
-            addToast(`Activity Logged: User downloaded ${attachment.name}`, 'info');
-        }
-
-        setActionState(null);
-    };
-
-    const getConfirmationDetails = () => {
-        if (!actionState) return { title: '', message: '', confirmText: '' };
-        switch (actionState.type) {
-            case 'CREATE_PROFILE':
-                return {
-                    title: 'Create Candidate Profile?',
-                    message: `This will send "${actionState.attachment.name}" to our parsing engine to automatically create a new candidate profile. An activity log will be created.`,
-                    confirmText: 'Create Profile'
-                };
-            case 'MARK_SENSITIVE':
-                const isCurrentlySensitive = actionState.attachment.isSensitive;
-                return {
-                    title: isCurrentlySensitive ? 'Unmark as Sensitive?' : 'Mark as Sensitive Content?',
-                    message: isCurrentlySensitive 
-                        ? `This will make "${actionState.attachment.name}" visible to all users with access to this conversation. Access activity will be logged.`
-                        : `This will block preview and download access for "${actionState.attachment.name}" to protect sensitive data. You can unmark it later. An activity log will be created.`,
-                    confirmText: isCurrentlySensitive ? 'Unmark' : 'Mark Sensitive'
-                };
-            case 'DOWNLOAD':
-                return {
-                    title: 'Download Attachment?',
-                    message: `You are about to download "${actionState.attachment.name}". This action will be logged in the candidate's activity history for compliance.`,
-                    confirmText: 'Download File'
-                };
-        }
-    };
-
-    const confirmDetails = getConfirmationDetails();
-
     return (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-            
-            <ConfirmationModal 
-                isOpen={!!actionState}
-                onClose={() => setActionState(null)}
-                onConfirm={handleConfirmAction}
-                title={confirmDetails.title}
-                message={confirmDetails.message}
-                confirmText={confirmDetails.confirmText}
-            />
-
             <div className="bg-white dark:bg-slate-900 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-slate-200 dark:border-slate-700 animate-in zoom-in-95 duration-200">
                 
                 {/* COLUMN 1: Email Reader (Carousel) */}
@@ -291,15 +138,15 @@ const EmailThreadModal = ({
                             <div dangerouslySetInnerHTML={{ __html: currentMsg.content }} />
                         </div>
                         
-                        {modalAttachments.filter(item => item.msgId === currentMsg.id).length > 0 && (
+                        {/* Attachments for THIS message */}
+                        {currentMsg.attachments && currentMsg.attachments.length > 0 && (
                             <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
                                 <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Attachments in this email</h5>
                                 <div className="flex flex-wrap gap-3">
-                                    {modalAttachments.filter(item => item.msgId === currentMsg.id).map(({ att }, idx) => (
+                                    {currentMsg.attachments.map((att, idx) => (
                                         <AttachmentItem 
                                             key={idx} 
                                             attachment={att} 
-                                            onAction={(type, a) => setActionState({ type, attachment: a, msgId: currentMsg.id })}
                                             onDelete={() => onDeleteAttachment(currentMsg.id, att.id)} 
                                         />
                                     ))}
@@ -307,13 +154,23 @@ const EmailThreadModal = ({
                             </div>
                         )}
                     </div>
+
+                    {/* Footer Actions */}
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+                        <button className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-sm font-medium transition-colors">
+                            Reply to this email
+                        </button>
+                        <button className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 transition-colors">
+                            <Send size={16} /> Reply
+                        </button>
+                    </div>
                 </div>
 
                 {/* COLUMN 2: Thread Attachments */}
                 <div className="w-full md:w-80 bg-slate-50 dark:bg-slate-950/50 flex flex-col border-l border-slate-200 dark:border-slate-800 md:h-auto h-1/3">
                     <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-900">
                         <h4 className="font-bold text-slate-700 dark:text-slate-200 text-sm flex items-center gap-2">
-                            <File size={16} /> Thread Attachments ({modalAttachments.length})
+                            <Paperclip size={16} /> Thread Attachments ({allAttachments.length})
                         </h4>
                         <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 transition-colors">
                             <X size={20} />
@@ -321,20 +178,48 @@ const EmailThreadModal = ({
                     </div>
                     
                     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar space-y-3">
-                        {modalAttachments.length > 0 ? modalAttachments.map(({ msgId, att }, idx) => (
-                            <AttachmentItem 
-                                key={idx} 
-                                attachment={att} 
-                                onAction={(type, a) => setActionState({ type, attachment: a, msgId })}
-                                onDelete={() => onDeleteAttachment(msgId, att.id)}
-                            />
+                        {allAttachments.length > 0 ? allAttachments.map(({ msgId, att }, idx) => (
+                            <div key={idx} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 group hover:shadow-md transition-all relative">
+                                <div className="flex items-start gap-3">
+                                    <div className="w-10 h-10 rounded bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 shrink-0 border border-slate-200 dark:border-slate-600 overflow-hidden">
+                                        {att.type === 'image' && att.url ? <img src={att.url} alt="prev" className="w-full h-full object-cover" /> : (att.type === 'image' ? <ImageIcon size={20} /> : <File size={20} />)}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate mb-1" title={att.name}>{att.name}</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{att.size}</p>
+                                        <div className="flex gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
+                                            <button className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                                                <Download size={12} /> Download
+                                            </button>
+                                            <button className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1">
+                                                <ExternalLink size={12} /> View
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); onDeleteAttachment(msgId, att.id); }}
+                                    className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Remove"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </div>
                         )) : (
                             <div className="text-center py-10 text-slate-400">
-                                <File size={32} className="mx-auto mb-2 opacity-50" />
+                                <Paperclip size={32} className="mx-auto mb-2 opacity-50" />
                                 <p className="text-sm">No attachments in this thread</p>
                             </div>
                         )}
                     </div>
+                    
+                    {allAttachments.length > 0 && (
+                        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+                            <button className="w-full py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                                Download All ({allAttachments.length})
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -352,79 +237,88 @@ export const ChatArea = ({
   const { userProfile } = useUserProfile();
   const { addToast } = useToast();
   
-  // Compose Workflow State
-  const [isComposeOpen, setIsComposeOpen] = useState(false);
-
+  const [inputText, setInputText] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  
+  // Controls
+  const [isInputExpanded, setIsInputExpanded] = useState(false); // Collapsed by default
+  const [inputMode, setInputMode] = useState<'REPLY' | 'NOTE'>('REPLY');
+  const [replyChannel, setReplyChannel] = useState<ChannelType>('Email');
+  const [showChannelDropdown, setShowChannelDropdown] = useState(false);
+  
   // Thread View State
   const [expandedThreadId, setExpandedThreadId] = useState<string | null>(null);
   const [viewingThread, setViewingThread] = useState<Message | null>(null); // For Modal
-
-  // Action State for Confirmation Modal in main view
-  const [pendingAction, setPendingAction] = useState<{ type: AttachmentActionType, attachment: Attachment, msgId: string } | null>(null);
 
   // UI States
   const [isLabelMenuOpen, setIsLabelMenuOpen] = useState(false);
   const [isAssignMenuOpen, setIsAssignMenuOpen] = useState(false);
   const [assignSearch, setAssignSearch] = useState('');
   
+  // Mention States
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [cursorPosition, setCursorPosition] = useState(0);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Determine default channel based on conversation status
+  useEffect(() => {
+     if (conversation.communicationStatus === 'ALL_BLOCKED') {
+         // Keep default or set to Note if needed, but UI will block input anyway
+     } else if (conversation.communicationStatus === 'PARTIAL_BLOCKED') {
+         // If current channel blocked, switch to available one
+         if (conversation.blockedChannels?.includes(replyChannel)) {
+             setReplyChannel(replyChannel === 'Email' ? 'SMS' : 'Email'); // Simple toggle fallback for now
+         }
+     } else {
+         if (conversation.channel) {
+             setReplyChannel(conversation.channel);
+         }
+     }
+  }, [conversation.id, conversation.communicationStatus]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversation.messages, expandedThreadId]); 
+  }, [conversation.messages, isInputExpanded, expandedThreadId]); 
+
+  // Auto-focus input when expanded
+  useEffect(() => {
+    if (isInputExpanded && inputRef.current) {
+        inputRef.current.focus();
+    }
+  }, [isInputExpanded]);
+
+  const handleSend = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!inputText.trim()) return;
+    
+    // Check Blocked Status
+    if (inputMode === 'REPLY') {
+        if (conversation.communicationStatus === 'ALL_BLOCKED') {
+            addToast("Communication blocked for this candidate.", "error");
+            return;
+        }
+        if (conversation.communicationStatus === 'PARTIAL_BLOCKED' && conversation.blockedChannels?.includes(replyChannel)) {
+            addToast(`${replyChannel} is blocked for this candidate.`, "error");
+            return;
+        }
+    }
+
+    const subjectToSend = inputMode === 'REPLY' && replyChannel === 'Email' 
+        ? (emailSubject || `Re: Conversation with ${conversation.contact.name}`) 
+        : undefined;
+
+    onSendMessage(inputText, inputMode === 'NOTE', replyChannel, subjectToSend);
+    setInputText('');
+    setEmailSubject(''); 
+  };
 
   const handleDeleteAttachment = (msgId: string, attId: string) => {
       // Mock deletion
       addToast("Attachment deleted", "success");
+      // In a real app, this would dispatch an update to the conversation state to remove the attachment.
   };
-
-  const confirmAttachmentAction = () => {
-      if (!pendingAction) return;
-      const { type, attachment } = pendingAction;
-
-      if (type === 'CREATE_PROFILE') {
-          addToast(`Profile creation started for ${attachment.name}`, 'success');
-          addToast(`Activity Logged: User sent ${attachment.name} to parser`, 'info');
-      } else if (type === 'MARK_SENSITIVE') {
-          const isNowSensitive = !attachment.isSensitive;
-          addToast(isNowSensitive ? "Attachment marked as sensitive" : "Attachment unmarked as sensitive", "success");
-          addToast(`Activity Logged: User marked ${attachment.name} as ${isNowSensitive ? 'Sensitive' : 'Normal'}`, 'info');
-      } else if (type === 'DOWNLOAD') {
-          addToast(`Downloading ${attachment.name}...`, 'success');
-          addToast(`Activity Logged: User downloaded ${attachment.name}`, 'info');
-      }
-
-      setPendingAction(null);
-  };
-
-  const getConfirmationDetails = () => {
-        if (!pendingAction) return { title: '', message: '', confirmText: '' };
-        switch (pendingAction.type) {
-            case 'CREATE_PROFILE':
-                return {
-                    title: 'Create Candidate Profile?',
-                    message: `This will send "${pendingAction.attachment.name}" to our parsing engine to automatically create a new candidate profile. An activity log will be created.`,
-                    confirmText: 'Create Profile'
-                };
-            case 'MARK_SENSITIVE':
-                const isCurrentlySensitive = pendingAction.attachment.isSensitive;
-                return {
-                    title: isCurrentlySensitive ? 'Unmark as Sensitive?' : 'Mark as Sensitive Content?',
-                    message: isCurrentlySensitive 
-                        ? `This will make "${pendingAction.attachment.name}" visible to all users with access to this conversation. Access activity will be logged.`
-                        : `This will block preview and download access for "${pendingAction.attachment.name}" to protect sensitive data. You can unmark it later. An activity log will be created.`,
-                    confirmText: isCurrentlySensitive ? 'Unmark' : 'Mark Sensitive'
-                };
-            case 'DOWNLOAD':
-                return {
-                    title: 'Download Attachment?',
-                    message: `You are about to download "${pendingAction.attachment.name}". This action will be logged in the candidate's activity history for compliance.`,
-                    confirmText: 'Download File'
-                };
-        }
-    };
-
-  const confirmDetails = getConfirmationDetails();
 
   const handleLabelToggle = (label: string) => {
       const currentLabels = conversation.labels || [];
@@ -455,6 +349,52 @@ export const ChatArea = ({
       addToast("Note deleted", "success");
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const text = e.target.value;
+      const pos = e.target.selectionStart || 0;
+      setInputText(text);
+      setCursorPosition(pos);
+
+      if (inputMode === 'NOTE') {
+          const textBeforeCursor = text.slice(0, pos);
+          const lastAtPos = textBeforeCursor.lastIndexOf('@');
+          
+          if (lastAtPos !== -1) {
+              const prevChar = textBeforeCursor[lastAtPos - 1];
+              if (!prevChar || prevChar === ' ' || prevChar === '\n') {
+                  const query = textBeforeCursor.slice(lastAtPos + 1);
+                  if (!query.includes(' ')) {
+                      setMentionQuery(query);
+                      return;
+                  }
+              }
+          }
+      }
+      setMentionQuery(null);
+  };
+
+  const handleSelectMention = (userName: string) => {
+      if (mentionQuery === null) return;
+      
+      const textBeforeCursor = inputText.slice(0, cursorPosition);
+      const textAfterCursor = inputText.slice(cursorPosition);
+      const lastAtPos = textBeforeCursor.lastIndexOf('@');
+      
+      const newText = textBeforeCursor.slice(0, lastAtPos) + `@${userName} ` + textAfterCursor;
+      setInputText(newText);
+      setMentionQuery(null);
+      
+      setTimeout(() => {
+          if (inputRef.current) {
+              inputRef.current.focus();
+          }
+      }, 0);
+  };
+
+  const mentionResults = mentionQuery !== null 
+      ? MOCK_USERS_LIST.filter(u => u.name.toLowerCase().includes(mentionQuery.toLowerCase()))
+      : [];
+
   const assignmentResults = MOCK_USERS_LIST.filter(u => 
       u.name.toLowerCase().includes(assignSearch.toLowerCase()) || 
       u.role.toLowerCase().includes(assignSearch.toLowerCase())
@@ -462,6 +402,7 @@ export const ChatArea = ({
 
   // Status Checks
   const isAllBlocked = conversation.communicationStatus === 'ALL_BLOCKED';
+  const isChannelBlocked = conversation.blockedChannels?.includes(replyChannel);
 
   // --- RENDER HELPERS ---
 
@@ -481,7 +422,7 @@ export const ChatArea = ({
         <div className={`mb-6 flex ${isUser ? 'justify-end' : 'justify-start'} w-full`}>
             <div className={`relative max-w-[90%] w-full md:w-[500px] group transition-all duration-300 ${isExpanded ? 'z-20' : 'z-0'}`}>
                 
-                {/* Stacking Effect */}
+                {/* Stacking Effect - Visible even in collapsed preview as per user request */}
                 {threadCount > 1 && !isExpanded && (
                     <>
                         <div className="absolute top-2 left-2 right-[-8px] bottom-[-8px] bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg -z-10 shadow-sm transform rotate-1"></div>
@@ -509,7 +450,7 @@ export const ChatArea = ({
                                  <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate pr-2">
                                      {msg.subject || 'No Subject'}
                                  </h4>
-                                 {/* Thread Count Badge */}
+                                 {/* Thread Count Badge - CLICKABLE to Open Thread Modal */}
                                  {threadCount > 1 && (
                                      <button 
                                         onClick={(e) => {
@@ -542,7 +483,7 @@ export const ChatArea = ({
                     {/* Content Preview */}
                     <div className="p-4 bg-white dark:bg-slate-800 relative">
                         {isExpanded ? (
-                             // Expanded View
+                             // Expanded View (Full HTML content placeholder or rendered)
                              <div className="animate-in fade-in duration-300">
                                 <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: msg.content }} />
                                 
@@ -552,7 +493,6 @@ export const ChatArea = ({
                                             <AttachmentItem 
                                                 key={i} 
                                                 attachment={att} 
-                                                onAction={(type, a) => setPendingAction({ type, attachment: a, msgId: msg.id })}
                                                 onDelete={() => handleDeleteAttachment(msg.id, att.id)} 
                                             />
                                         ))}
@@ -612,15 +552,6 @@ export const ChatArea = ({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50/50 dark:bg-slate-900/50 relative">
-        {/* Compose Modal */}
-        <ComposeModal 
-            isOpen={isComposeOpen}
-            onClose={() => setIsComposeOpen(false)}
-            onSend={(type, content, subject, isPrivate) => {
-                onSendMessage(content, isPrivate || false, type as ChannelType, subject);
-            }}
-        />
-
         {/* Thread Modal */}
         {viewingThread && (
             <EmailThreadModal 
@@ -629,16 +560,6 @@ export const ChatArea = ({
                 onDeleteAttachment={handleDeleteAttachment}
             />
         )}
-
-        {/* Action Confirmation Modal */}
-        <ConfirmationModal 
-            isOpen={!!pendingAction}
-            onClose={() => setPendingAction(null)}
-            onConfirm={confirmAttachmentAction}
-            title={confirmDetails.title}
-            message={confirmDetails.message}
-            confirmText={confirmDetails.confirmText}
-        />
 
         {/* Header */}
         <div className="px-6 py-3 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center shadow-sm z-10 shrink-0">
@@ -669,6 +590,7 @@ export const ChatArea = ({
                         
                         {/* Status Label in Header */}
                         {isAllBlocked && <span className="text-red-500 flex items-center gap-1 ml-2 font-bold"><AlertTriangle size={10}/> Blocked</span>}
+                        {!isAllBlocked && isChannelBlocked && <span className="text-amber-500 flex items-center gap-1 ml-2 font-bold"><AlertCircle size={10}/> Partial Block</span>}
                     </div>
                 </div>
             </div>
@@ -680,7 +602,7 @@ export const ChatArea = ({
                         onClick={() => setIsAssignMenuOpen(!isAssignMenuOpen)}
                         className={`p-2 rounded-lg transition-colors ${conversation.assigneeId ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                         title="Assign User"
-                    >
+                     >
                          <UserPlus size={18} />
                      </button>
                      {isAssignMenuOpen && (
@@ -768,7 +690,7 @@ export const ChatArea = ({
         </div>
 
         {/* Message List */}
-        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-100/50 dark:bg-slate-900/50 pb-20">
+        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-100/50 dark:bg-slate-900/50">
             {conversation.messages.map((msg) => {
                 const isUser = msg.senderId === 'user';
                 const isPrivate = msg.isPrivate;
@@ -814,16 +736,187 @@ export const ChatArea = ({
             <div ref={messagesEndRef} />
         </div>
 
-        {/* FAB Compose Button */}
-        <div className="absolute bottom-6 right-6 z-20">
-             <button 
-                onClick={() => setIsComposeOpen(true)}
-                disabled={isAllBlocked}
-                className={`flex items-center gap-2 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 ${isAllBlocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-             >
-                 <Edit3 size={20} />
-                 <span className="font-bold pr-1">Compose</span>
-             </button>
+        {/* Input Area - Collapsible */}
+        <div className={`bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0 relative transition-all duration-300 ease-in-out ${inputMode === 'NOTE' && isInputExpanded ? 'bg-yellow-50/30 dark:bg-yellow-900/5' : ''}`}>
+            
+            {/* Expanded State */}
+            {isInputExpanded ? (
+                <>
+                    {/* Mention Suggestions */}
+                    {mentionQuery !== null && (
+                        <div className="absolute bottom-full left-4 mb-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden z-30 animate-in zoom-in-95 duration-200">
+                            <div className="px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 text-xs font-bold text-slate-500 dark:text-slate-400">
+                                Mention User
+                            </div>
+                            <div className="max-h-48 overflow-y-auto custom-scrollbar">
+                                {mentionResults.map(user => (
+                                    <button
+                                        key={user.id}
+                                        onClick={() => handleSelectMention(user.name)}
+                                        className="w-full text-left px-3 py-2 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center gap-2"
+                                    >
+                                        <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold ${user.color} text-white`}>
+                                            {user.initials}
+                                        </div>
+                                        <span className="text-slate-700 dark:text-slate-200 font-medium truncate">{user.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Input Header / Tabs */}
+                    <div className="flex border-b border-slate-100 dark:border-slate-700 px-4 pt-2 justify-between items-center">
+                        <div className="flex gap-4">
+                            <button 
+                                onClick={() => { setInputMode('REPLY'); setMentionQuery(null); }}
+                                className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors ${inputMode === 'REPLY' ? 'border-indigo-600 text-indigo-700 dark:text-indigo-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                            >
+                                Reply
+                            </button>
+                            <button 
+                                onClick={() => setInputMode('NOTE')}
+                                className={`px-4 py-2 text-xs font-bold border-b-2 transition-colors flex items-center gap-1 ${inputMode === 'NOTE' ? 'border-yellow-500 text-yellow-600 dark:text-yellow-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                            >
+                                <Lock size={12} /> Private Note
+                            </button>
+                        </div>
+                        <button 
+                            onClick={() => setIsInputExpanded(false)}
+                            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors mb-1"
+                            title="Collapse"
+                        >
+                            <ChevronDown size={16} />
+                        </button>
+                    </div>
+
+                    {/* BLOCK NOTIFICATION */}
+                    {inputMode === 'REPLY' && isAllBlocked && (
+                        <div className="p-4 bg-red-50 dark:bg-red-900/10 text-center border-b border-red-100 dark:border-red-800">
+                            <p className="text-sm text-red-600 dark:text-red-400 font-bold flex items-center justify-center gap-2">
+                                <AlertTriangle size={16} /> Communication Blocked
+                            </p>
+                            <p className="text-xs text-red-500 dark:text-red-300 mt-1">This candidate has opted out of all communications.</p>
+                        </div>
+                    )}
+
+                    <div className={`p-4 ${isAllBlocked && inputMode === 'REPLY' ? 'opacity-50 pointer-events-none' : ''} animate-in slide-in-from-bottom-2 duration-300`}>
+                        {/* Reply Mode: Channel Selector */}
+                        {inputMode === 'REPLY' && (
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="relative">
+                                    <button 
+                                        onClick={() => setShowChannelDropdown(!showChannelDropdown)}
+                                        disabled={isAllBlocked}
+                                        className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${isChannelBlocked ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200'}`}
+                                    >
+                                        {replyChannel === 'Email' && <Mail size={14} className={isChannelBlocked ? "text-amber-600" : "text-blue-500"} />}
+                                        {replyChannel === 'SMS' && <MessageSquare size={14} className={isChannelBlocked ? "text-amber-600" : "text-green-500"} />}
+                                        <span>{replyChannel} {isChannelBlocked && '(Blocked)'}</span>
+                                        <ChevronDown size={12} className="text-slate-400" />
+                                    </button>
+                                    
+                                    {showChannelDropdown && (
+                                        <>
+                                            <div className="fixed inset-0 z-10" onClick={() => setShowChannelDropdown(false)}></div>
+                                            <div className="absolute top-full left-0 mt-1 w-32 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-20 overflow-hidden">
+                                                <button 
+                                                    onClick={() => { setReplyChannel('Email'); setShowChannelDropdown(false); }}
+                                                    className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
+                                                    disabled={conversation.blockedChannels?.includes('Email')}
+                                                >
+                                                    <Mail size={14} className="text-blue-500" /> Email
+                                                    {conversation.blockedChannels?.includes('Email') && <span className="text-[9px] text-red-500 ml-auto">Blocked</span>}
+                                                </button>
+                                                <button 
+                                                    onClick={() => { setReplyChannel('SMS'); setShowChannelDropdown(false); }}
+                                                    className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2"
+                                                    disabled={conversation.blockedChannels?.includes('SMS')}
+                                                >
+                                                    <MessageSquare size={14} className="text-green-500" /> SMS
+                                                    {conversation.blockedChannels?.includes('SMS') && <span className="text-[9px] text-red-500 ml-auto">Blocked</span>}
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                {replyChannel === 'Email' && (
+                                    <input 
+                                        type="text"
+                                        placeholder="Subject"
+                                        value={emailSubject}
+                                        onChange={(e) => setEmailSubject(e.target.value)}
+                                        disabled={isChannelBlocked}
+                                        className="flex-1 text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-1.5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-transparent dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    />
+                                )}
+                                
+                                {isChannelBlocked && (
+                                    <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                        <AlertCircle size={12} /> Sending failed
+                                    </span>
+                                )}
+                            </div>
+                        )}
+
+                        <div className="relative">
+                            <textarea 
+                                ref={inputRef}
+                                value={inputText}
+                                onChange={handleInputChange}
+                                placeholder={inputMode === 'NOTE' ? "Add a private note (use @ to mention)..." : isAllBlocked ? "Reply disabled" : `Type your ${replyChannel} message...`}
+                                className={`w-full pl-4 pr-12 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all resize-none custom-scrollbar ${inputMode === 'NOTE' ? 'bg-white dark:bg-slate-800 border-yellow-200 dark:border-yellow-800 focus:ring-yellow-400 dark:text-slate-200' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:ring-indigo-500 dark:text-slate-200'}`}
+                                rows={inputMode === 'NOTE' || replyChannel === 'Email' ? 4 : 2}
+                                disabled={inputMode === 'REPLY' && isAllBlocked}
+                            />
+                            <div className="absolute right-3 bottom-3 flex gap-2">
+                                <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                    <Smile size={20} />
+                                </button>
+                                <button type="button" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                    <Paperclip size={20} />
+                                </button>
+                                <button 
+                                    onClick={handleSend}
+                                    disabled={!inputText.trim() || (inputMode === 'REPLY' && (isAllBlocked || !!isChannelBlocked))}
+                                    className={`p-1.5 rounded-lg transition-colors ${inputText.trim() && !(inputMode === 'REPLY' && (isAllBlocked || !!isChannelBlocked)) ? (inputMode === 'NOTE' ? 'bg-yellow-500 hover:bg-yellow-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white') : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'}`}
+                                >
+                                    <Send size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between items-center mt-2 px-1">
+                            <p className="text-[10px] text-slate-400">
+                                <strong>Shift+Enter</strong> for new line.
+                            </p>
+                            {inputMode === 'REPLY' && !isAllBlocked && (
+                                <div className="flex gap-2">
+                                    <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Canned Response</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </>
+            ) : (
+                /* Collapsed State */
+                <div className="p-4 flex gap-3 items-center justify-center bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm border-t border-slate-200 dark:border-slate-700">
+                    <button 
+                        onClick={() => { setIsInputExpanded(true); setInputMode('REPLY'); }}
+                        className="flex-1 py-2.5 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 rounded-xl text-sm font-medium hover:border-indigo-400 dark:hover:border-indigo-500 hover:text-indigo-600 dark:hover:text-indigo-400 shadow-sm transition-all flex items-center gap-2"
+                    >
+                        <ChevronUp size={16} /> Reply to conversation...
+                    </button>
+                    <button 
+                        onClick={() => { setIsInputExpanded(true); setInputMode('NOTE'); }}
+                        className="p-2.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-yellow-600 dark:text-yellow-400 rounded-xl hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors"
+                        title="Add Private Note"
+                    >
+                        <Lock size={18} />
+                    </button>
+                </div>
+            )}
         </div>
     </div>
   );
