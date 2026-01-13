@@ -26,6 +26,7 @@ import { useUserPreferences } from './hooks/useUserPreferences';
 import { useUserProfile } from './hooks/useUserProfile';
 import { GLOBAL_CAMPAIGNS } from './data';
 import { GlobalSearch } from './components/GlobalSearch'; // Import Global Search
+import clarity from '@microsoft/clarity';
 
 // Import New Menu Components
 import { DashboardMenu } from './components/Menu/DashboardMenu';
@@ -89,6 +90,24 @@ export const App = () => {
           setIsAuthenticated(true);
       }
   }, []);
+
+  // Update Clarity User Info on Authentication
+  useEffect(() => {
+      if (isAuthenticated && userProfile?.email && clarity && clarity.identify) {
+          // Identify user in Clarity
+          clarity.identify(
+            userProfile.email, // Identifier
+            undefined, // Custom ID (Session-based)
+            `${userProfile.firstName} ${userProfile.lastName}` // Friendly Name
+          );
+          
+          // Set additional tags for filtering
+          if (clarity.set) {
+            if (userProfile.role) clarity.set('user_role', userProfile.role);
+            if (userProfile.activeClient) clarity.set('active_client', userProfile.activeClient);
+          }
+      }
+  }, [isAuthenticated, userProfile]);
 
   // Global Keyboard Listener for Search (Cmd+K / Ctrl+K)
   useEffect(() => {

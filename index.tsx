@@ -1,3 +1,4 @@
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
@@ -5,6 +6,13 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { PublicClientApplication } from '@azure/msal-browser';
 import { MsalProvider } from '@azure/msal-react';
 import { ToastProvider } from './components/Toast';
+import clarity from '@microsoft/clarity';
+
+// Initialize Microsoft Clarity
+const CLARITY_PROJECT_ID = "v0ogrd44yt";
+if (clarity && clarity.init) {
+    clarity.init(CLARITY_PROJECT_ID);
+}
 
 // IMPORTANT: Replace with your actual Client IDs
 const GOOGLE_CLIENT_ID = "INSERT_GOOGLE_CLIENT_ID_HERE";
