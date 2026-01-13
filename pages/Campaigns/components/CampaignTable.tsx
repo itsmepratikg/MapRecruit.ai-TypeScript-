@@ -12,15 +12,30 @@ import { StatusBadge } from '../../../components/Common';
 // --- Internal Helper Components ---
 
 const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, onAction: (action: string) => void, isOpenMobile?: boolean }) => {
+  const [activeSub, setActiveSub] = useState<string | null>(null);
+  const timeoutRef = useRef<any>(null);
+
+  const handleMouseEnter = (menu: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setActiveSub(menu);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setActiveSub(null);
+    }, 150); // Small delay to allow moving mouse to submenu
+  };
+
   return (
-    <div className={`absolute left-full top-0 ml-4 z-50 animate-in fade-in zoom-in-95 duration-200 w-56 ${isOpenMobile ? 'block' : 'hidden group-hover/title:block'}`}>
-      <div className="absolute top-3 -left-2 w-4 h-4 bg-white dark:bg-slate-800 transform rotate-45 border-l border-b border-gray-100 dark:border-slate-700 shadow-sm"></div>
+    <div className={`absolute left-full top-0 ml-4 z-50 animate-in fade-in zoom-in-95 duration-200 w-56 origin-top-left ${isOpenMobile ? 'block' : 'hidden group-hover/title:block'}`}>
+      {/* Connector triangle */}
+      <div className="absolute top-3 -left-2 w-4 h-4 bg-white dark:bg-slate-800 transform rotate-45 border-l border-b border-gray-100 dark:border-slate-700 shadow-sm z-10"></div>
       
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-100 dark:border-slate-700 overflow-hidden relative">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-100 dark:border-slate-700 overflow-visible relative">
         <div className="px-4 py-3 border-b border-gray-50 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50">
            <h4 className="font-bold text-gray-800 dark:text-slate-100 text-sm truncate" title={campaign.name}>{campaign.name}</h4>
         </div>
-        <div className="py-1">
+        <div className="py-1 flex flex-col relative">
            <button 
              onClick={(e) => { e.stopPropagation(); onAction('INTELLIGENCE'); }}
              className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors"
@@ -28,20 +43,33 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
               Intelligence
            </button>
            
-           <div className="group/submenu relative">
+           {/* Source AI Group */}
+           <div 
+             className="relative w-full"
+             onMouseEnter={() => handleMouseEnter('SOURCE')}
+             onMouseLeave={handleMouseLeave}
+           >
              <button 
-                onClick={(e) => e.stopPropagation()} 
-                className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 group-hover/submenu:bg-sky-50 dark:group-hover/submenu:bg-slate-700 group-hover/submenu:text-green-600 dark:group-hover/submenu:text-green-400 transition-colors flex justify-between items-center"
+                onClick={(e) => { e.stopPropagation(); onAction('SOURCE_AI'); }} 
+                className={`w-full text-left px-4 py-2 text-sm transition-colors flex justify-between items-center ${activeSub === 'SOURCE' ? 'bg-sky-50 dark:bg-slate-700 text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-green-600 dark:hover:text-green-400'}`}
              >
                 <span>Source AI</span>
-                <ChevronRight size={14} className="text-gray-400 group-hover/submenu:text-green-600 dark:group-hover/submenu:text-green-400" />
+                <ChevronRight size={14} className={activeSub === 'SOURCE' ? 'text-green-600 dark:text-green-400' : 'text-gray-400'} />
              </button>
-             <div className="hidden group-hover/submenu:block absolute left-full top-0 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-100 dark:border-slate-700 ml-1 py-1">
-                <button onClick={(e) => { e.stopPropagation(); onAction('ATTACH_PEOPLE'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400">Attach People</button>
-                <button onClick={(e) => { e.stopPropagation(); onAction('ATTACHED_PROFILES'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400">Attached Profiles</button>
-                <button onClick={(e) => { e.stopPropagation(); onAction('INTEGRATIONS'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400">Integrations</button>
-                <button onClick={(e) => { e.stopPropagation(); onAction('JOB_DESC'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400">Job Description</button>
-             </div>
+             
+             {/* Sub Menu - Positioned Absolutely to the Right */}
+             {activeSub === 'SOURCE' && (
+                <div 
+                    className="absolute left-[100%] top-0 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-100 dark:border-slate-700 ml-1 py-1 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
+                    onMouseEnter={() => handleMouseEnter('SOURCE')}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    <button onClick={(e) => { e.stopPropagation(); onAction('ATTACH_PEOPLE'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Attach People</button>
+                    <button onClick={(e) => { e.stopPropagation(); onAction('ATTACHED_PROFILES'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Attached Profiles</button>
+                    <button onClick={(e) => { e.stopPropagation(); onAction('INTEGRATIONS'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Integrations</button>
+                    <button onClick={(e) => { e.stopPropagation(); onAction('JOB_DESC'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Job Description</button>
+                </div>
+             )}
            </div>
 
            <button 
@@ -50,12 +78,35 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
            >
               Match AI
            </button>
-           <button 
-             onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_AI'); }}
-             className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+
+           {/* Engage AI Group */}
+           <div 
+             className="relative w-full"
+             onMouseEnter={() => handleMouseEnter('ENGAGE')}
+             onMouseLeave={handleMouseLeave}
            >
-              Engage AI
-           </button>
+             <button 
+                onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_AI'); }} 
+                className={`w-full text-left px-4 py-2 text-sm transition-colors flex justify-between items-center ${activeSub === 'ENGAGE' ? 'bg-sky-50 dark:bg-slate-700 text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-green-600 dark:hover:text-green-400'}`}
+             >
+                <span>Engage AI</span>
+                <ChevronRight size={14} className={activeSub === 'ENGAGE' ? 'text-green-600 dark:text-green-400' : 'text-gray-400'} />
+             </button>
+
+             {/* Sub Menu - Positioned Absolutely to the Right */}
+             {activeSub === 'ENGAGE' && (
+                <div 
+                    className="absolute left-[100%] top-0 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-gray-100 dark:border-slate-700 ml-1 py-1 z-50 animate-in fade-in slide-in-from-left-2 duration-150"
+                    onMouseEnter={() => handleMouseEnter('ENGAGE')}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_CANDIDATES'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Candidate List</button>
+                    <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_WORKFLOW'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Workflow Builder</button>
+                    <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_INTERVIEW'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Interview Panel</button>
+                </div>
+             )}
+           </div>
+
            <button 
              onClick={(e) => { e.stopPropagation(); onAction('RECOMMENDED'); }}
              className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors"
@@ -168,18 +219,28 @@ export const CampaignTable = ({
 
     // Navigate to specific tabs in the Campaign Dashboard
     if (action === 'INTELLIGENCE') onNavigateToCampaign(campaign, 'Intelligence');
+    
+    // SOURCE AI ACTIONS
+    else if (action === 'SOURCE_AI') onNavigateToCampaign(campaign, 'Source AI:ATTACH'); 
     else if (action === 'ATTACH_PEOPLE') onNavigateToCampaign(campaign, 'Source AI:ATTACH');
     else if (action === 'ATTACHED_PROFILES') onNavigateToCampaign(campaign, 'Source AI:PROFILES');
     else if (action === 'INTEGRATIONS') onNavigateToCampaign(campaign, 'Source AI:INTEGRATIONS');
     else if (action === 'JOB_DESC') onNavigateToCampaign(campaign, 'Source AI:JD');
+    
     else if (action === 'MATCH_AI') onNavigateToCampaign(campaign, 'Match AI');
-    else if (action === 'ENGAGE_AI') onNavigateToCampaign(campaign, 'Engage AI');
+    
+    // ENGAGE AI ACTIONS
+    else if (action === 'ENGAGE_AI') onNavigateToCampaign(campaign, 'Engage AI:TRACKING');
+    else if (action === 'ENGAGE_WORKFLOW') onNavigateToCampaign(campaign, 'Engage AI:BUILDER');
+    else if (action === 'ENGAGE_INTERVIEW') onNavigateToCampaign(campaign, 'Engage AI:ROOM');
+    else if (action === 'ENGAGE_CANDIDATES') onNavigateToCampaign(campaign, 'Engage AI:TRACKING');
+    
     else if (action === 'RECOMMENDED') onNavigateToCampaign(campaign, 'Recommended Profiles');
     
     setActiveMobileMenu(null); 
   };
 
-  // --- Long Press Handlers ---
+  // --- Long Press Handlers (Mobile) ---
   const handleTouchStart = (id: number) => {
       longPressTimer.current = setTimeout(() => {
           setActiveMobileMenu(id);
@@ -193,7 +254,9 @@ export const CampaignTable = ({
   };
 
   useEffect(() => {
-      const closeMenu = () => setActiveMobileMenu(null);
+      const closeMenu = () => {
+          setActiveMobileMenu(null);
+      };
       if (activeMobileMenu) window.addEventListener('click', closeMenu);
       return () => window.removeEventListener('click', closeMenu);
   }, [activeMobileMenu]);
@@ -293,14 +356,15 @@ export const CampaignTable = ({
                         
                         {/* Title & Hover Menu Container */}
                         <div 
-                            className="relative group/title inline-block"
+                            className="relative inline-block group/title"
                             onTouchStart={() => handleTouchStart(camp.id)}
                             onTouchEnd={handleTouchEnd}
                         >
                            <button className="font-medium text-blue-600 dark:text-blue-400 hover:underline text-left block max-w-[220px] truncate">
                               {camp.name}
                            </button>
-                           {/* Hover Menu positioned to right */}
+                           
+                           {/* Hover Menu */}
                            <HoverMenu 
                                 campaign={camp} 
                                 onAction={(action) => handleMenuAction(camp.id, action)} 
