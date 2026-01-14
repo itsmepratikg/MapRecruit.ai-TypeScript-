@@ -1,0 +1,31 @@
+# MapRecruit ATS - Comprehensive Testing & Documentation Task
+
+- [x] **Phase 1: Analysis & Documentation** <!-- id: 0 -->
+    - [x] Explore Codebase & Architecture <!-- id: 1 -->
+    - [x] Draft Detailed PRD (Product Requirements Document) <!-- id: 2 -->
+    - [x] Draft Detailed BRD (Business Requirements Document) <!-- id: 3 -->
+    - [x] Define Testing Phases & Test Plan <!-- id: 4 -->
+- [/] **Phase 2: Testing Execution** <!-- id: 5 -->
+    - [x] **Phase 2.1: Core Navigation & Dashboard** <!-- id: 6 -->
+        - [x] Test Dashboard Widgets & Layout <!-- id: 7 -->
+        - [x] Test Navigation & Sidebar <!-- id: 8 -->
+        - [x] Test Global Search <!-- id: 9 -->
+    - [x] **Phase 2.2: Profiles & Talent Search** <!-- id: 10 -->
+        - [x] Test Profile Creation & Editing <!-- id: 11 -->
+        - [x] Test Folder Management <!-- id: 12 -->
+        - [x] Test Search Filters & AI Search <!-- id: 13 -->
+    - [x] **Phase 2.3: Campaign Module** <!-- id: 14 -->
+        - [x] Test Intelligence/Analytics Views <!-- id: 15 -->
+        - [x] Test Source AI (Search & Attach) <!-- id: 16 -->
+        - [x] Test Match AI (Scoring & Ranking) <!-- id: 17 -->
+        - [x] Test Engage AI (Workflow Builder) <!-- id: 18 -->
+    - [x] **Phase 2.4: Settings & Admin** <!-- id: 19 -->
+        - [x] Test User Management <!-- id: 20 -->
+        - [x] Test Configuration Settings <!-- id: 21 -->
+- [x] **Phase 3: Reporting & Regression** <!-- id: 22 -->
+    - [x] Compile Bug Report with Criticality <!-- id: 23 -->
+    - [x] Propose Solutions for Critical Bugs <!-- id: 24 -->
+    - [x] Final Sign-off <!-- id: 25 -->
+    - [ ] Compile Bug Report with Criticality <!-- id: 23 -->
+    - [ ] Propose Solutions for Critical Bugs <!-- id: 24 -->
+    - [ ] Final Sign-off <!-- id: 25 -->
