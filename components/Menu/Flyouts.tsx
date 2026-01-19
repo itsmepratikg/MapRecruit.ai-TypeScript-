@@ -10,6 +10,9 @@ import { SIDEBAR_CAMPAIGN_DATA, GLOBAL_CAMPAIGNS } from '../../data';
 import { PROFILES_CATEGORIES, SETTINGS_CATEGORIES, TALENT_CHAT_MENU } from './constants';
 import { COLORS } from '../../data/profile';
 import { Campaign } from '../../types';
+import { campaignService } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import { HoverMenu } from '../Campaign/HoverMenu';
 
 // --- Client Menu ---
 export const ClientMenuContent = ({ activeClient, clients, onSwitchClient, onClose }: { activeClient: string, clients: string[], onSwitchClient: (client: string) => void, onClose: () => void }) => {
@@ -39,11 +42,13 @@ export const ClientMenuContent = ({ activeClient, clients, onSwitchClient, onClo
 // --- Create Menu ---
 export const CreateMenuContent = ({
     onCreateProfile,
+    onCreateCampaign,
     onCreateFolder,
     onOpenPlaceholder,
     closeMenu
 }: {
     onCreateProfile: () => void,
+    onCreateCampaign: () => void,
     onCreateFolder: () => void,
     onOpenPlaceholder: (title: string, msg: string) => void,
     closeMenu?: () => void
@@ -63,7 +68,7 @@ export const CreateMenuContent = ({
             <button onClick={() => handleClick(onCreateProfile)} data-tour="create-menu-profile" className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
                 <UserPlus size={16} className="text-emerald-600 dark:text-emerald-400" /> <span>{t("Profile")}</span>
             </button>
-            <button onClick={() => handleClick(() => onOpenPlaceholder('Create Campaign', 'The Campaign creation wizard involves multiple steps including Job Description AI generation. We are working on this module.'))} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
+            <button onClick={() => handleClick(onCreateCampaign)} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
                 <Briefcase size={16} className="text-blue-600 dark:text-blue-400" /> <span>{t("Campaign")}</span>
             </button>
             <button onClick={() => handleClick(onCreateFolder)} data-tour="create-menu-folder" className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
@@ -183,7 +188,7 @@ export const CampaignMenuContent = ({
     onClose
 }: {
     onNavigate: (tab: string) => void,
-    onNavigateToCampaign: (campaign: Campaign) => void,
+    onNavigateToCampaign: (campaign: any) => void,
     activeView: string,
     activeClient: string,
     onClose: () => void
@@ -191,28 +196,53 @@ export const CampaignMenuContent = ({
     const { t } = useTranslation();
     const [expandedClient, setExpandedClient] = useState<string>(activeClient);
     const [searchQuery, setSearchQuery] = useState('');
+    const [campaigns, setCampaigns] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         setExpandedClient(activeClient);
     }, [activeClient]);
 
-    const filterClients = (clients: typeof SIDEBAR_CAMPAIGN_DATA.clients) => {
-        if (!searchQuery) return clients;
-        return clients.map(client => {
-            const clientMatch = client.name.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchedCampaigns = client.campaigns.filter(c =>
-                c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                c.jobId.includes(searchQuery)
-            );
-
-            if (clientMatch || matchedCampaigns.length > 0) {
-                return { ...client, campaigns: matchedCampaigns.length > 0 ? matchedCampaigns : client.campaigns };
+    useEffect(() => {
+        const fetchCampaigns = async () => {
+            try {
+                setLoading(true);
+                const data = await campaignService.getAll();
+                const activeOnes = data.filter((c: any) => {
+                    const status = c.schemaConfig?.mainSchema?.status || (c.status === true || c.status === 'Active' ? 'Active' : 'Closed');
+                    return status === 'Active';
+                });
+                setCampaigns(activeOnes);
+            } catch (error) {
+                console.error("Error fetching sidebar campaigns:", error);
+            } finally {
+                setLoading(false);
             }
-            return null;
-        }).filter(Boolean) as typeof SIDEBAR_CAMPAIGN_DATA.clients;
-    };
+        };
+        fetchCampaigns();
+    }, []);
 
-    const displayClients = filterClients(SIDEBAR_CAMPAIGN_DATA.clients);
+    const groupedClients = campaigns.reduce((acc: any[], camp: any) => {
+        const clientName = camp.migrationMeta?.clientName || "General";
+        const existing = acc.find(c => c.name === clientName);
+        const campData = {
+            id: camp._id?.$oid || camp._id || camp.id,
+            name: camp.schemaConfig?.mainSchema?.title || camp.title || t('Untitled'),
+            jobId: camp.migrationMeta?.jobID || '---'
+        };
+
+        if (existing) {
+            existing.campaigns.push(campData);
+        } else {
+            acc.push({ name: clientName, campaigns: [campData] });
+        }
+        return acc;
+    }, []);
+
+    const displayClients = groupedClients.filter(c =>
+        c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.campaigns.some((camp: any) => camp.name.toLowerCase().includes(searchQuery.toLowerCase()) || camp.jobId.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
     const handleNavigateToList = (e: React.MouseEvent, tab: string) => {
         e.stopPropagation();
@@ -220,35 +250,39 @@ export const CampaignMenuContent = ({
         onClose();
     };
 
+    const counts = {
+        active: campaigns.length,
+        closed: 0,
+        archived: 0
+    };
+
     return (
-        <div className="w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[90vh]">
-            <div className="p-3 border-b border-slate-100 dark:border-slate-700 shrink-0">
-                <div className="flex items-center gap-2 mb-2 justify-between">
-                    <span className="text-xs font-bold text-slate-400 uppercase">{t("Campaigns")}</span>
-                    <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded lg:hidden"><X size={14} /></button>
-                </div>
+        <div className="w-80 bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            {/* Search Header */}
+            <div className="p-3 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
                 <div className="relative">
+                    <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
                     <input
                         type="text"
-                        placeholder={t("Search active campaigns...")}
-                        className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-slate-200"
+                        placeholder={t("Search campaigns...")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        autoFocus
+                        className="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 dark:text-slate-200"
                     />
-                    <Search size={12} className="absolute left-2.5 top-2 text-slate-400" />
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-1 space-y-1">
-                <div>
+            <div className="p-2 max-h-[400px] overflow-y-auto custom-scrollbar">
+                <div className="mb-2">
                     <button onClick={(e) => handleNavigateToList(e, 'Active')} data-tour="nav-campaigns-active" className="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 rounded transition-colors group">
-                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">{t("Active Campaigns")}</span>
-                        <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-full font-mono font-bold">{SIDEBAR_CAMPAIGN_DATA.activeCount}</span>
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 uppercase tracking-wide">{t("Active Campaigns")}</span>
+                        <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-full font-mono font-bold">{counts.active}</span>
                     </button>
 
                     <div className="pl-2 mt-1 space-y-1">
-                        {displayClients.map(client => {
+                        {loading ? (
+                            <div className="px-3 py-2 text-xs text-slate-400 animate-pulse">{t("Loading...")}</div>
+                        ) : displayClients.map(client => {
                             const isExpanded = expandedClient === client.name || searchQuery.length > 0;
                             return (
                                 <div key={client.name} className="rounded overflow-hidden">
@@ -262,15 +296,32 @@ export const CampaignMenuContent = ({
 
                                     {isExpanded && (
                                         <div className="pl-6 space-y-0.5 mt-0.5 border-l border-slate-100 dark:border-slate-700 ml-4 mb-1">
-                                            {client.campaigns.map(camp => (
-                                                <button
-                                                    key={camp.id}
-                                                    onClick={(e) => { e.stopPropagation(); onNavigateToCampaign({ ...GLOBAL_CAMPAIGNS[0], id: camp.id, name: camp.name, jobID: camp.jobId }); onClose(); }}
-                                                    className="w-full text-left px-3 py-1.5 text-[11px] text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded flex justify-between items-center group/item transition-colors"
-                                                >
-                                                    <span className="truncate flex-1" title={camp.name}>{camp.name}</span>
-                                                    <span className="text-[9px] text-slate-400 group-hover/item:text-slate-500 opacity-0 group-hover/item:opacity-100 transition-opacity ml-2">{camp.jobId}</span>
-                                                </button>
+                                            {client.campaigns.map((camp: any) => (
+                                                <div key={camp.id} className="relative group/item">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onNavigateToCampaign(camp);
+                                                            onClose();
+                                                        }}
+                                                        className="w-full text-left px-3 py-1.5 text-[11px] text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded flex justify-between items-center transition-colors font-medium"
+                                                    >
+                                                        <span className="truncate flex-1" title={camp.name}>{camp.name}</span>
+                                                        <span className="text-[9px] text-slate-400 group-hover/item:text-slate-500 opacity-0 group-hover/item:opacity-100 transition-opacity ml-2">{camp.jobId}</span>
+                                                    </button>
+
+                                                    <HoverMenu
+                                                        campaign={{ ...camp, title: camp.name }}
+                                                        onAction={(action) => {
+                                                            if (action === 'INTELLIGENCE') onNavigateToCampaign(camp);
+                                                            else {
+                                                                onNavigateToCampaign(camp);
+                                                            }
+                                                            onClose();
+                                                        }}
+                                                        position="right"
+                                                    />
+                                                </div>
                                             ))}
                                             {client.campaigns.length === 0 && <div className="px-3 py-1 text-[10px] text-slate-400 italic">No campaigns found</div>}
                                         </div>
@@ -283,11 +334,11 @@ export const CampaignMenuContent = ({
                 <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>
                 <button onClick={(e) => handleNavigateToList(e, 'Closed')} data-tour="nav-campaigns-closed" className="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 rounded transition-colors group">
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 uppercase tracking-wide">Closed Campaigns</span>
-                    <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-mono">{SIDEBAR_CAMPAIGN_DATA.closedCount}</span>
+                    <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-mono">{counts.closed}</span>
                 </button>
                 <button onClick={(e) => handleNavigateToList(e, 'Archived')} data-tour="nav-campaigns-archived" className="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 rounded transition-colors group">
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 uppercase tracking-wide">Archived Campaigns</span>
-                    <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-mono">{SIDEBAR_CAMPAIGN_DATA.archivedCount}</span>
+                    <span className="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-full font-mono">{counts.archived}</span>
                 </button>
             </div>
         </div>

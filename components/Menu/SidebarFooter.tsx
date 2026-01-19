@@ -8,6 +8,7 @@ import { CreateMenuContent, ClientMenuContent, AccountMenuContent } from './Flyo
 
 interface SidebarFooterProps {
     setIsCreateProfileOpen: (v: boolean) => void;
+    setIsCreateCampaignOpen: (v: boolean) => void;
     setIsCreateFolderOpen: (v: boolean) => void;
     setIsThemeSettingsOpen: (v: boolean) => void;
     setIsGlobalSearchOpen: (v: boolean) => void; // New Prop
@@ -22,6 +23,7 @@ interface SidebarFooterProps {
 
 export const SidebarFooter = ({
     setIsCreateProfileOpen,
+    setIsCreateCampaignOpen,
     setIsCreateFolderOpen,
     setIsThemeSettingsOpen,
     setIsGlobalSearchOpen,
@@ -138,6 +140,7 @@ export const SidebarFooter = ({
                     <div className={`${getPopupClass('create')} w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg`}>
                         <CreateMenuContent
                             onCreateProfile={() => { setIsCreateProfileOpen(true); setActivePopover(null); }}
+                            onCreateCampaign={() => { setIsCreateCampaignOpen(true); setActivePopover(null); }}
                             onCreateFolder={() => { setIsCreateFolderOpen(true); setActivePopover(null); }}
                             onOpenPlaceholder={(t, m) => { onOpenPlaceholder(t, m); setActivePopover(null); }}
                             closeMenu={() => setActivePopover(null)}
@@ -208,6 +211,7 @@ export const SidebarFooter = ({
                         {mobileMenuOpen === 'create' && (
                             <CreateMenuContent
                                 onCreateProfile={() => { setIsCreateProfileOpen(true); setMobileMenuOpen(null); }}
+                                onCreateCampaign={() => { setIsCreateCampaignOpen(true); setMobileMenuOpen(null); }}
                                 onCreateFolder={() => { setIsCreateFolderOpen(true); setMobileMenuOpen(null); }}
                                 onOpenPlaceholder={(t, m) => { onOpenPlaceholder(t, m); setMobileMenuOpen(null); }}
                                 closeMenu={() => setMobileMenuOpen(null)}

@@ -28,7 +28,7 @@ const SchemaTable = ({ data = [], columns = [], onEdit, onDelete, title }) => {
     };
 
     return (
-        <div className="overflow-x-auto">
+        <div className="overflow-visible">
             <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800">
                 <thead className="bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-sm sticky top-0 z-10">
                     <tr>

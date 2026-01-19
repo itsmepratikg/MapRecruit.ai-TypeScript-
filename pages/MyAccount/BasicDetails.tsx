@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
    User, Upload, Search, ChevronDown, Check, ChevronLeft,
    MapPin, Mail, Phone, Briefcase, Building2, Users, X
@@ -53,7 +54,7 @@ const ColorDropdown = ({ selected, onSelect }: { selected: string, onSelect: (c:
          <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-left flex items-center justify-between focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-left flex items-center justify-between focus:ring-2 focus:ring-emerald-500 outline-none"
          >
             <span className="text-sm text-slate-700 dark:text-slate-200">{selected || 'Select Colour'}</span>
             <ChevronDown size={16} className="text-slate-400" />
@@ -80,7 +81,7 @@ const ColorDropdown = ({ selected, onSelect }: { selected: string, onSelect: (c:
                         key={color.name}
                         type="button"
                         onClick={() => { onSelect(color.name); setIsOpen(false); }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between ${selected === color.name ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300'}`}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between ${selected === color.name ? 'bg-blue-50 dark:bg-blue-900/20 text-emerald-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300'}`}
                      >
                         <div className="flex items-center gap-2">
                            <div className={`w-3 h-3 rounded-full ${color.class.split(' ')[0]}`}></div>
@@ -197,11 +198,16 @@ interface BasicDetailsProps {
 }
 
 export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDetailsProps) => {
+   const { t } = useTranslation();
    const { addToast, addPromise } = useToast();
    const { userProfile, clients, saveProfile } = useUserProfile();
 
-   // If userOverride is present, we start in editing mode, otherwise false
-   const [isEditing, setIsEditing] = useState(!!userOverride);
+   const userId = userOverride?._id || userOverride?.id;
+   const isCreating = userOverride && !userId;
+   const isSelf = !userOverride;
+
+   // Start in edit mode only if creating a new user, otherwise read mode
+   const [isEditing, setIsEditing] = useState(isCreating);
 
    // Initialize with override data or global profile data
    const [formData, setFormData] = useState(userOverride || userProfile);
@@ -257,9 +263,6 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
          return;
       }
 
-      const userId = userOverride?._id || userOverride?.id;
-      const isCreating = userOverride && !userId;
-      const isSelf = !userOverride;
 
       // Default behavior: Save via API or local hook fallback
       const saveAction = (async () => {
@@ -302,25 +305,36 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                   )}
                   <div>
                      <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                        <User size={20} className="text-slate-400" /> {userOverride ? 'Edit User Profile' : 'Basic Details'}
+                        <User size={20} className="text-slate-400" /> {isCreating ? t('Create User') : (userOverride ? t('Edit User') : t('Basic Details'))}
                      </h2>
                      {userOverride && <p className="text-xs text-slate-500 mt-1">Managing settings for {formData.firstName} {formData.lastName}</p>}
                   </div>
                </div>
-               {!isEditing && !userOverride ? (
+               {!isEditing ? (
                   <button
                      onClick={() => setIsEditing(true)}
                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
                   >
-                     Edit
+                     {t("Edit")}
                   </button>
                ) : (
-                  <button
-                     onClick={handleSave}
-                     className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
-                  >
-                     <Save size={18} /> {userOverride && !userOverride.id ? 'Create User' : 'Save Changes'}
-                  </button>
+                  <div className="flex items-center gap-3">
+                     <button
+                        onClick={() => {
+                           setFormData(userOverride || userProfile); // Reset to original data
+                           setIsEditing(false);
+                        }}
+                        className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-200 dark:border-slate-700"
+                     >
+                        {t("Cancel")}
+                     </button>
+                     <button
+                        onClick={handleSave}
+                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold shadow-sm transition-colors flex items-center gap-2"
+                     >
+                        <Save size={18} /> {isCreating ? t('Create User') : t('Save Changes')}
+                     </button>
+                  </div>
                )}
             </div>
 
@@ -476,7 +490,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                                  step="0.1"
                                  value={zoomLevel}
                                  onChange={(e) => setZoomLevel(parseFloat(e.target.value))}
-                                 className="w-full h-1.5 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                                 className="w-full h-1.5 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-600"
                               />
                            </div>
                         )}
@@ -493,14 +507,14 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                                  placeholder="First Name"
                                  value={formData.firstName}
                                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                 className="flex-1 px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-slate-200"
+                                 className="flex-1 px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
                               <input
                                  type="text"
                                  placeholder="Last Name"
                                  value={formData.lastName}
                                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                 className="flex-1 px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-slate-200"
+                                 className="flex-1 px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
                            </div>
                         </div>
@@ -529,7 +543,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                                  type="text"
                                  value={formData.phone}
                                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                 className="flex-1 px-3 py-2.5 border border-l-0 border-slate-200 dark:border-slate-600 rounded-r-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-slate-200"
+                                 className="flex-1 px-3 py-2.5 border border-l-0 border-slate-200 dark:border-slate-600 rounded-r-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
                            </div>
                         </div>
@@ -587,7 +601,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                                  type="text"
                                  value={formData.jobTitle}
                                  onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                                 className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-slate-200"
+                                 className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
                            </div>
 
@@ -597,7 +611,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                                  type="text"
                                  value={formData.location}
                                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                 className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-slate-200"
+                                 className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
                            </div>
                         </div>

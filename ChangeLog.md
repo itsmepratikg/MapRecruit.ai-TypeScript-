@@ -3,6 +3,19 @@
 
 All notable changes to the **MapRecruit ATS Dashboard** project will be documented in this file.
 
+## [1.4.0] - 2026-01-19
+
+### Campaign Management & MongoDB Integration
+- **Live Data Transition**: Shifted the Campaigns module from mock data to live MongoDB integration using `campaignService`.
+- **Sidebar Connectivity**: Updated `Flyouts.tsx` to fetch and group campaigns by client dynamically from the database.
+- **Strict Status Filtering**: Implemented robust backend-synced filtering to ensure only "Active" campaigns are displayed in designated sections.
+- **UI Consolidation**: Extracted `HoverMenu` into a shared component used across `Flyouts.tsx`, `SchemaCampaignList.tsx`, and `CampaignTable.tsx`.
+- **Performance & Reliability**:
+  - Implemented loading states for better UX during data fetching.
+  - Added robust fallback to mock data in case of API failure.
+  - Resolved `net::ERR_CONNECTION_REFUSED` and `ReferenceError` issues.
+  - Fixed navigation bugs related to MongoDB ObjectID vs string ID mapping.
+
 ## [1.3.0] - 2025-05-22
 
 ### Architecture & Scaffolding

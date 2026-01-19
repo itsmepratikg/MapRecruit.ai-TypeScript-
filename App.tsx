@@ -40,6 +40,7 @@ import { CandidateMenu } from './components/Menu/CandidateMenu';
 import { UserAdminMenu } from './components/Menu/UserAdminMenu';
 import { TalentChatMenu } from './components/Menu/TalentChatMenu';
 import { QuickTourManager } from './components/QuickTour/QuickTourManager';
+import { CampaignCreationModal } from './components/Campaign/CampaignCreationModal';
 
 type ViewState = 'DASHBOARD' | 'PROFILES' | 'CAMPAIGNS' | 'METRICS' | 'SETTINGS' | 'MY_ACCOUNT' | 'ACTIVITIES' | 'HISTORY' | 'NOTIFICATIONS' | 'TALENT_CHAT';
 
@@ -76,6 +77,7 @@ export const App = () => {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
   const [isCreateProfileOpen, setIsCreateProfileOpen] = useState(false);
+  const [isCreateCampaignOpen, setIsCreateCampaignOpen] = useState(false);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false); // Global Search State
@@ -405,6 +407,7 @@ export const App = () => {
           {!isCollapsed && (
             <SidebarFooter
               setIsCreateProfileOpen={setIsCreateProfileOpen}
+              setIsCreateCampaignOpen={setIsCreateCampaignOpen}
               setIsCreateFolderOpen={setIsCreateFolderOpen}
               setIsThemeSettingsOpen={setIsThemeSettingsOpen}
               setIsGlobalSearchOpen={setIsGlobalSearchOpen}
@@ -451,7 +454,10 @@ export const App = () => {
             } />
 
             <Route path="/campaigns" element={
-              <Campaigns onNavigateToCampaign={(c) => navigate(`/campaigns/${c.id}`)} initialTab={targetCampaignTab} />
+              <Campaigns onNavigateToCampaign={(c: any) => {
+                const id = c.id || c._id?.$oid || c._id;
+                navigate(`/campaigns/${id}`);
+              }} initialTab={targetCampaignTab} />
             } />
 
             <Route path="/campaigns/:id/*" element={
@@ -478,6 +484,8 @@ export const App = () => {
 
         {/* Create Profile Modal */}
         <CreateProfileModal isOpen={isCreateProfileOpen} onClose={() => setIsCreateProfileOpen(false)} />
+        {/* Create Campaign Modal */}
+        <CampaignCreationModal isOpen={isCreateCampaignOpen} onClose={() => setIsCreateCampaignOpen(false)} />
         {/* Create Folder Modal */}
         <CreateFolderModal isOpen={isCreateFolderOpen} onClose={() => setIsCreateFolderOpen(false)} />
         {/* Theme Settings Modal */}
@@ -498,12 +506,38 @@ export const App = () => {
 const CampaignDashboardWrapper = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  // In a real app, fetch data here. For now, find in global data.
-  const campaign = GLOBAL_CAMPAIGNS.find(c => c.id.toString() === id);
+  const [campaign, setCampaign] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!campaign) {
-    return <div>Campaign not found</div>;
-  }
+  useEffect(() => {
+    const loadCampaign = async () => {
+      // 1. Check mock data first
+      const mockCampaign = GLOBAL_CAMPAIGNS.find(c => c.id.toString() === id);
+      if (mockCampaign) {
+        setCampaign(mockCampaign);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Try fetching from service if not in mock
+      try {
+        const campaigns = await campaignService.getAll();
+        const found = campaigns.find((c: any) => (c._id?.$oid || c._id)?.toString() === id);
+        if (found) {
+          setCampaign(found);
+        }
+      } catch (err) {
+        console.error("Failed to fetch campaign details", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCampaign();
+  }, [id]);
+
+  if (loading) return <div className="p-12 text-center text-slate-500 animate-pulse">Loading Campaign Details...</div>;
+  if (!campaign) return <div className="p-12 text-center text-slate-500">Campaign not found</div>;
 
   return <CampaignDashboard campaign={campaign} activeTab={'Intelligence'} onBack={() => navigate('/campaigns')} />;
 };
