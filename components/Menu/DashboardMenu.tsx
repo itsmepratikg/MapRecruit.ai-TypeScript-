@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, Users, BarChart2, Settings, ChevronRight, MessageSquare } from '../Icons';
 import { NavItem } from './NavItem';
@@ -39,6 +40,7 @@ export const DashboardMenu = ({
     const location = useLocation();
     const navigate = useNavigate();
     const [activePopover, setActivePopover] = useState<string | null>(null);
+    const { t } = useTranslation();
 
     // Hover timeout refs
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,7 +87,7 @@ export const DashboardMenu = ({
 
     return (
         <>
-            <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" isCollapsed={isCollapsed} />
+            <NavItem to="/dashboard" icon={LayoutDashboard} label={t("Dashboard")} isCollapsed={isCollapsed} />
 
             {/* Campaign Fly-out Menu Item */}
             <div className="relative" onMouseEnter={() => handlePopoverEnter('campaigns')} onMouseLeave={handlePopoverLeave}>
@@ -96,7 +98,7 @@ export const DashboardMenu = ({
                 >
                     <div className="flex items-center gap-3">
                         <Briefcase size={20} className={(isActiveCampaign || activePopover === 'campaigns') ? 'text-emerald-700' : 'text-slate-400 dark:text-slate-500'} />
-                        <span className={isCollapsed ? 'hidden' : 'block'}>Campaigns</span>
+                        <span className={isCollapsed ? 'hidden' : 'block'}>{t("Campaigns")}</span>
                     </div>
                     {!isCollapsed && <ChevronRight size={16} className={`transition-transform duration-200 ${activePopover === 'campaigns' ? 'rotate-90 text-emerald-600' : ''}`} />}
                 </NavLink>
@@ -127,7 +129,7 @@ export const DashboardMenu = ({
                 >
                     <div className="flex items-center gap-3">
                         <Users size={20} className={isActiveProfile || activePopover === 'profiles' ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 dark:text-slate-500'} />
-                        <span className={isCollapsed ? 'hidden' : 'block'}>Profiles</span>
+                        <span className={isCollapsed ? 'hidden' : 'block'}>{t("Profiles")}</span>
                     </div>
                     {!isCollapsed && <ChevronRight size={16} className={`transition-transform duration-200 ${activePopover === 'profiles' ? 'rotate-90 text-emerald-600' : ''}`} />}
                 </NavLink>
@@ -152,7 +154,7 @@ export const DashboardMenu = ({
                 )}
             </div>
 
-            <NavItem to="/metrics" icon={BarChart2} label="Metrics" isCollapsed={isCollapsed} data-tour="nav-metrics" />
+            <NavItem to="/metrics" icon={BarChart2} label={t("Metrics")} isCollapsed={isCollapsed} data-tour="nav-metrics" />
 
             {/* Main Sidebar Settings Item with Hover Menu */}
             <div className="relative" onMouseEnter={() => handlePopoverEnter('settings')} onMouseLeave={handlePopoverLeave}>
@@ -163,7 +165,7 @@ export const DashboardMenu = ({
                 >
                     <div className="flex items-center gap-3">
                         <Settings size={20} className={isActiveSettings || activePopover === 'settings' ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 dark:text-slate-500'} />
-                        <span className={isCollapsed ? 'hidden' : 'block'}>Settings</span>
+                        <span className={isCollapsed ? 'hidden' : 'block'}>{t("Settings")}</span>
                     </div>
                     {!isCollapsed && <ChevronRight size={16} className={`transition-transform duration-200 ${activePopover === 'settings' ? 'rotate-90 text-emerald-600' : ''}`} />}
                 </NavLink>
@@ -197,7 +199,7 @@ export const DashboardMenu = ({
                 >
                     <div className="flex items-center gap-3">
                         <MessageSquare size={20} className={isActiveTalentChat || activePopover === 'talentchat' ? 'text-emerald-600 dark:text-emerald-300' : 'text-slate-400 dark:text-slate-500'} />
-                        <span className={isCollapsed ? 'hidden' : 'block'}>Talent Chat</span>
+                        <span className={isCollapsed ? 'hidden' : 'block'}>{t("Talent Chat")}</span>
                     </div>
                     {!isCollapsed && <ChevronRight size={16} className={`transition-transform duration-200 ${activePopover === 'talentchat' ? 'rotate-90 text-emerald-600' : ''}`} />}
                 </NavLink>

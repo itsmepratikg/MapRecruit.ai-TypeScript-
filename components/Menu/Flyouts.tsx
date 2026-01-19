@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     X, CheckCircle, UserPlus, Briefcase, FolderPlus, Tag, User,
     Settings, UserCog, Lock, Palette, LogOut, Search, ChevronRight, ChevronDown,
@@ -11,26 +12,29 @@ import { COLORS } from '../../data/profile';
 import { Campaign } from '../../types';
 
 // --- Client Menu ---
-export const ClientMenuContent = ({ activeClient, clients, onSwitchClient, onClose }: { activeClient: string, clients: string[], onSwitchClient: (client: string) => void, onClose: () => void }) => (
-    <>
-        <div className="flex justify-between items-center px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-t mb-1">
-            <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Switch Client</div>
-            <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors lg:hidden"><X size={14} /></button>
-        </div>
-        <div className="p-1 space-y-1 max-h-60 overflow-y-auto custom-scrollbar">
-            {clients.map(client => (
-                <button
-                    key={client}
-                    onClick={() => onSwitchClient(client)}
-                    className={`w-full text-left px-3 py-2 text-sm rounded flex items-center justify-between font-medium transition-colors duration-150 ${client === activeClient ? 'text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
-                >
-                    {client}
-                    {client === activeClient && <CheckCircle size={14} className="text-emerald-600 dark:text-emerald-400" />}
-                </button>
-            ))}
-        </div>
-    </>
-);
+export const ClientMenuContent = ({ activeClient, clients, onSwitchClient, onClose }: { activeClient: string, clients: string[], onSwitchClient: (client: string) => void, onClose: () => void }) => {
+    const { t } = useTranslation();
+    return (
+        <>
+            <div className="flex justify-between items-center px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-t mb-1">
+                <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("Switch Client")}</div>
+                <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors lg:hidden"><X size={14} /></button>
+            </div>
+            <div className="p-1 space-y-1 max-h-60 overflow-y-auto custom-scrollbar">
+                {clients.map(client => (
+                    <button
+                        key={client}
+                        onClick={() => onSwitchClient(client)}
+                        className={`w-full text-left px-3 py-2 text-sm rounded flex items-center justify-between font-medium transition-colors duration-150 ${client === activeClient ? 'text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-700' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
+                    >
+                        {client}
+                        {client === activeClient && <CheckCircle size={14} className="text-emerald-600 dark:text-emerald-400" />}
+                    </button>
+                ))}
+            </div>
+        </>
+    );
+};
 
 // --- Create Menu ---
 export const CreateMenuContent = ({
@@ -48,24 +52,25 @@ export const CreateMenuContent = ({
         action();
         if (closeMenu) closeMenu();
     };
+    const { t } = useTranslation();
 
     return (
         <div className="py-1 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-700 w-full relative">
             <div className="flex justify-between items-center px-3 py-2">
-                <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Create New</div>
+                <div className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("Create New")}</div>
                 {closeMenu && <button onClick={(e) => { e.stopPropagation(); closeMenu(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded lg:hidden"><X size={14} /></button>}
             </div>
             <button onClick={() => handleClick(onCreateProfile)} data-tour="create-menu-profile" className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
-                <UserPlus size={16} className="text-emerald-600 dark:text-emerald-400" /> <span>Profile</span>
+                <UserPlus size={16} className="text-emerald-600 dark:text-emerald-400" /> <span>{t("Profile")}</span>
             </button>
             <button onClick={() => handleClick(() => onOpenPlaceholder('Create Campaign', 'The Campaign creation wizard involves multiple steps including Job Description AI generation. We are working on this module.'))} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
-                <Briefcase size={16} className="text-blue-600 dark:text-blue-400" /> <span>Campaign</span>
+                <Briefcase size={16} className="text-blue-600 dark:text-blue-400" /> <span>{t("Campaign")}</span>
             </button>
             <button onClick={() => handleClick(onCreateFolder)} data-tour="create-menu-folder" className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
-                <FolderPlus size={16} className="text-orange-600 dark:text-orange-400" /> <span>Folder</span>
+                <FolderPlus size={16} className="text-orange-600 dark:text-orange-400" /> <span>{t("Folder")}</span>
             </button>
             <button onClick={() => handleClick(() => onOpenPlaceholder('Create Tag', 'Global tag management and AI-suggested tagging features will be available in the next release.'))} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-3 transition-colors">
-                <Tag size={16} className="text-purple-600 dark:text-purple-400" /> <span>Tag</span>
+                <Tag size={16} className="text-purple-600 dark:text-purple-400" /> <span>{t("Tag")}</span>
             </button>
         </div>
     );
@@ -87,6 +92,7 @@ export const AccountMenuContent = ({
     userProfile: any,
     setActiveAccountTab?: (tab: string) => void
 }) => {
+    const { t } = useTranslation();
     const userColorObj = COLORS.find(c => c.name === userProfile.color) || COLORS[0];
 
     return (
@@ -125,43 +131,43 @@ export const AccountMenuContent = ({
                     className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer group/item"
                 >
                     <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300 group-hover/item:text-emerald-600 dark:group-hover/item:text-emerald-400 transition-colors">
-                        <User size={16} /> <span className="font-medium">My Account</span>
+                        <User size={16} /> <span className="font-medium">{t("My Account")}</span>
                     </div>
                 </button>
 
                 {/* New Added Items */}
                 <button onClick={() => { if (onNavigate) onNavigate('/activities'); if (closeMenu) closeMenu(); }} data-tour="nav-activities" className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
-                    <Activity size={16} /> Activities
+                    <Activity size={16} /> {t("Activities")}
                 </button>
 
                 <button onClick={() => { if (onNavigate) onNavigate('/history'); if (closeMenu) closeMenu(); }} data-tour="nav-history" className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
-                    <History size={16} /> History
+                    <History size={16} /> {t("History")}
                 </button>
 
                 <button onClick={() => { if (onNavigate) onNavigate('/notifications'); if (closeMenu) closeMenu(); }} data-tour="nav-notifications" className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
-                    <Bell size={16} /> Notifications
+                    <Bell size={16} /> {t("Notifications")}
                 </button>
 
                 <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>
 
                 <button onClick={() => { if (onNavigate) onNavigate('/settings/CompanyInfo'); if (closeMenu) closeMenu(); }} data-tour="nav-admin-settings" className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
-                    <Settings size={16} /> Admin Settings
+                    <Settings size={16} /> {t("Admin Settings")}
                 </button>
 
                 <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
-                    <UserCog size={16} /> Product Admin Settings
+                    <UserCog size={16} /> {t("Product Admin Settings")}
                 </button>
                 <button onClick={() => { if (onNavigate) onNavigate('/myaccount/authsync'); if (closeMenu) closeMenu(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
-                    <Lock size={16} /> Change Password
+                    <Lock size={16} /> {t("Change Password")}
                 </button>
 
                 <button onClick={() => { setIsThemeSettingsOpen(true); if (closeMenu) closeMenu(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
-                    <Palette size={16} /> Themes
+                    <Palette size={16} /> {t("Themes")}
                 </button>
 
                 <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>
                 <button onClick={() => { onLogout(); if (closeMenu) closeMenu(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors font-medium">
-                    <LogOut size={16} /> Logout
+                    <LogOut size={16} /> {t("Logout")}
                 </button>
             </div>
         </>
@@ -182,6 +188,7 @@ export const CampaignMenuContent = ({
     activeClient: string,
     onClose: () => void
 }) => {
+    const { t } = useTranslation();
     const [expandedClient, setExpandedClient] = useState<string>(activeClient);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -217,13 +224,13 @@ export const CampaignMenuContent = ({
         <div className="w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[90vh]">
             <div className="p-3 border-b border-slate-100 dark:border-slate-700 shrink-0">
                 <div className="flex items-center gap-2 mb-2 justify-between">
-                    <span className="text-xs font-bold text-slate-400 uppercase">Campaigns</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase">{t("Campaigns")}</span>
                     <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded lg:hidden"><X size={14} /></button>
                 </div>
                 <div className="relative">
                     <input
                         type="text"
-                        placeholder="Search active campaigns..."
+                        placeholder={t("Search active campaigns...")}
                         className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:text-slate-200"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -236,7 +243,7 @@ export const CampaignMenuContent = ({
             <div className="flex-1 overflow-y-auto custom-scrollbar p-1 space-y-1">
                 <div>
                     <button onClick={(e) => handleNavigateToList(e, 'Active')} data-tour="nav-campaigns-active" className="w-full px-3 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700 rounded transition-colors group">
-                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Active Campaigns</span>
+                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">{t("Active Campaigns")}</span>
                         <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded-full font-mono font-bold">{SIDEBAR_CAMPAIGN_DATA.activeCount}</span>
                     </button>
 
@@ -297,6 +304,7 @@ export const SettingsMenuContent = ({
     activeTab: string,
     onClose: () => void
 }) => {
+    const { t } = useTranslation();
     // Helper to map IDs to PascalCase paths (same as in Settings page)
     const getPath = (id: string) => {
         const map: Record<string, string> = {
@@ -321,7 +329,7 @@ export const SettingsMenuContent = ({
     return (
         <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh] overflow-hidden">
             <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 shrink-0 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Administration</span>
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("Administration")}</span>
                 <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors lg:hidden"><X size={14} /></button>
             </div>
 
@@ -334,7 +342,7 @@ export const SettingsMenuContent = ({
                                 onClick={(e) => { e.stopPropagation(); setOpenCategory(isOpen ? '' : category.id); }}
                                 className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold rounded-md transition-colors ${isOpen ? 'bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'}`}
                             >
-                                {category.label}
+                                {t(category.label)}
                                 <ChevronDown size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                             </button>
 
@@ -355,7 +363,7 @@ export const SettingsMenuContent = ({
                                                 className={`w-full text-left pl-6 pr-3 py-2 text-xs flex items-center gap-2 transition-colors rounded-md ${activeTab === path ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-medium' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
                                             >
                                                 <item.icon size={14} className={activeTab === path ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
-                                                {item.label}
+                                                {t(item.label)}
                                             </button>
                                         );
                                     })}
@@ -371,6 +379,7 @@ export const SettingsMenuContent = ({
 
 // --- Profiles Menu ---
 export const ProfilesMenuContent = ({ onNavigate, onClose, activeView }: { onNavigate: (view: string) => void, onClose: () => void, activeView: string }) => {
+    const { t } = useTranslation();
     const getPath = (id: string) => {
         const map: Record<string, string> = {
             'SEARCH': 'Search',
@@ -399,7 +408,7 @@ export const ProfilesMenuContent = ({ onNavigate, onClose, activeView }: { onNav
         <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh] overflow-hidden">
             <div className="py-1">
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 mb-1 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Profiles Module</span>
+                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("Profiles Module")}</span>
                     <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors lg:hidden"><X size={14} /></button>
                 </div>
 
@@ -412,7 +421,7 @@ export const ProfilesMenuContent = ({ onNavigate, onClose, activeView }: { onNav
                                     onClick={(e) => { e.stopPropagation(); setOpenCategory(isOpen ? '' : category.id); }}
                                     className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold rounded-md transition-colors ${isOpen ? 'bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-700 dark:hover:text-slate-200'}`}
                                 >
-                                    {category.label}
+                                    {t(category.label)}
                                     <ChevronDown size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
@@ -427,7 +436,7 @@ export const ProfilesMenuContent = ({ onNavigate, onClose, activeView }: { onNav
                                                     className={`w-full text-left pl-6 pr-3 py-2 text-xs flex items-center gap-2 transition-colors rounded-md ${activeView === item.id ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-medium' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
                                                 >
                                                     <item.icon size={14} className={activeView === item.id ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
-                                                    {item.label}
+                                                    {t(item.label)}
                                                 </button>
                                             );
                                         })}
@@ -452,6 +461,7 @@ export const TalentChatMenuContent = ({
     onClose: () => void,
     activeTab: string
 }) => {
+    const { t } = useTranslation();
     const getPath = (id: string) => {
         const map: Record<string, string> = {
             'CONVERSATIONS': 'Conversations',
@@ -466,7 +476,7 @@ export const TalentChatMenuContent = ({
         <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh] overflow-hidden">
             <div className="py-1">
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 mb-1 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Talent Chat</span>
+                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("Talent Chat")}</span>
                     <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors lg:hidden"><X size={14} /></button>
                 </div>
 
@@ -480,7 +490,7 @@ export const TalentChatMenuContent = ({
                                 className={`w-full text-left px-4 py-2.5 text-xs flex items-center gap-2 transition-colors rounded-md ${activeTab === item.id ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-medium' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
                             >
                                 <item.icon size={14} className={activeTab === item.id ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
-                                {item.label}
+                                {t(item.label)}
                             </button>
                         );
                     })}

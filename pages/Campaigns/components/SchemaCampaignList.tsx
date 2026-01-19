@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { campaignService } from '../../../services/api';
 import SchemaTable from '../../../components/Schema/SchemaTable';
 import { useToast } from '../../../components/Toast';
@@ -8,6 +9,7 @@ import { ChevronDown, Search, Filter } from '../../../components/Icons';
 import { StatusBadge } from '../../../components/Common';
 
 export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange }: any) => {
+    const { t } = useTranslation();
     const { addToast } = useToast();
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange }
             setCampaigns(data);
         } catch (error) {
             console.error(error);
-            addToast("Failed to load campaigns", "error");
+            addToast(t("Failed to load campaigns"), "error");
         } finally {
             setLoading(false);
         }
@@ -44,46 +46,47 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange }
 
     const columns = [
         {
-            header: 'Title',
+            header: t('Title'),
             accessor: (item: any) => (
                 <div
                     className="font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                     onClick={() => onNavigateToCampaign(item, 'Intelligence')}
                 >
-                    {item.schema?.mainSchema?.title || item.title || 'Untitled Campaign'}
+                    {item.schema?.mainSchema?.title || item.title || t('Untitled Campaign')}
                 </div>
             )
         },
         {
-            header: 'Owner',
+            header: t('Owner'),
             accessor: (item: any) => item.ownerId?.[0] || 'Me'
         },
         {
-            header: 'Status',
+            header: t('Status'),
             accessor: (item: any) => <StatusBadge status={item.schema?.mainSchema?.status || (item.status ? 'Active' : 'Closed')} />
         },
         {
-            header: 'Created',
+            header: t('Created'),
             accessor: (item: any) => new Date(item.createdAt).toLocaleDateString()
         }
         // Add more columns as needed matching the Schema
     ];
 
-    if (loading) return <div className="p-8 text-center text-slate-500">Loading Campaigns...</div>;
+    if (loading) return <div className="p-8 text-center text-slate-500">{t("Loading Campaigns...")}</div>;
+
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
             {/* Toolbar - Simplified for MVP */}
             <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800">
                 <div className="flex items-center gap-4">
-                    <h3 className="font-bold text-lg text-slate-800 dark:text-white">{status} Campaigns (Schema)</h3>
+                    <h3 className="font-bold text-lg text-slate-800 dark:text-white">{t(status)} {t("Campaigns (Schema)")}</h3>
                 </div>
 
                 <div className="flex items-center gap-3">
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Search..."
+                            placeholder={t("Search...")}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="pl-8 pr-4 py-2 border rounded-lg text-sm bg-slate-50 dark:bg-slate-700 border-slate-200 dark:border-slate-600 focus:outline-none focus:border-emerald-500 dark:text-slate-200"
@@ -91,7 +94,7 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange }
                         <Search size={14} className="absolute left-2.5 top-3 text-slate-400" />
                     </div>
                     <button onClick={loadCampaigns} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg text-emerald-600">
-                        Refresh
+                        {t("Refresh")}
                     </button>
                 </div>
             </div>
@@ -100,7 +103,7 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange }
                 <SchemaTable
                     data={filteredCampaigns}
                     columns={columns}
-                    title={`${status} Campaigns`}
+                    title={`${status} ${t("Campaigns")}`}
                 />
             </div>
         </div>

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PlusCircle, Building2, Search, Command } from '../Icons';
 import { useScreenSize } from '../../hooks/useScreenSize';
 import { COLORS } from '../../data/profile';
@@ -32,6 +33,7 @@ export const SidebarFooter = ({
     onSwitchClient,
     setActiveAccountTab
 }: SidebarFooterProps) => {
+    const { t } = useTranslation();
     const { isDesktop } = useScreenSize();
     const [activePopover, setActivePopover] = useState<string | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState<'client' | 'account' | 'create' | null>(null);
@@ -110,7 +112,7 @@ export const SidebarFooter = ({
                 >
                     <div className="flex items-center gap-3">
                         <Search size={18} />
-                        <span className="text-sm font-medium">Search</span>
+                        <span className="text-sm font-medium">{t("Search")}</span>
                     </div>
                     {isDesktop && (
                         <div className="hidden lg:flex items-center gap-1 text-[10px] text-slate-400 bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600">
@@ -128,7 +130,7 @@ export const SidebarFooter = ({
                     className={`w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors ${activePopover === 'create' ? 'bg-slate-50 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400' : ''}`}
                 >
                     <PlusCircle size={18} className={activePopover === 'create' ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"} />
-                    <span className="text-sm font-medium">Create</span>
+                    <span className="text-sm font-medium">{t("Create")}</span>
                 </button>
 
                 {/* Desktop Create Menu */}
@@ -179,7 +181,7 @@ export const SidebarFooter = ({
                     </div>
                     <div className="text-left flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{userProfile.firstName}</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate">My Account</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 truncate">{t("My Account")}</p>
                     </div>
                 </button>
 

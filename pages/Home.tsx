@@ -5,12 +5,14 @@ import { GridStack } from 'gridstack';
 import { Layout } from '../components/Icons';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import { useScreenSize } from '../hooks/useScreenSize';
+import { useTranslation } from 'react-i18next';
 
 interface HomeProps {
     onNavigate: (tab: string) => void;
 }
 
 export const Home = ({ onNavigate }: HomeProps) => {
+    const { t } = useTranslation();
     const gridRef = useRef<GridStack | null>(null);
     const { dashboardLayouts } = useUserPreferences();
     const { isMobile, isTablet } = useScreenSize();
@@ -33,7 +35,7 @@ export const Home = ({ onNavigate }: HomeProps) => {
     }, [dashboardLayouts, currentMode]);
 
     // Create widget registry with navigation handler
-    const widgetRegistry = useMemo(() => createWidgetRegistry(onNavigate), [onNavigate]);
+    const widgetRegistry = useMemo(() => createWidgetRegistry(onNavigate, t), [onNavigate, t]);
 
     useEffect(() => {
         // Destroy previous instance if re-initializing to prevent artifacts
@@ -80,7 +82,7 @@ export const Home = ({ onNavigate }: HomeProps) => {
                             gs-h={widget.h}
                         >
                             <div className="grid-stack-item-content h-full relative group/widget shadow-sm hover:shadow-md transition-shadow">
-                                {widgetRegistry[widget.id] || <div className="p-4 bg-white dark:bg-slate-800 rounded-lg">Widget {widget.id} not found</div>}
+                                {widgetRegistry[widget.id] || <div className="p-4 bg-white dark:bg-slate-800 rounded-lg">Widget {widget.id} {t("not found")}</div>}
                             </div>
                         </div>
                     ))}

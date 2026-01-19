@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Briefcase, Search, ChevronDown, RefreshCw, MoreVertical, HelpCircle,
   Heart, Network, ChevronRight, ArrowUpDown
@@ -12,6 +13,7 @@ import { StatusBadge } from '../../../components/Common';
 // --- Internal Helper Components ---
 
 const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, onAction: (action: string) => void, isOpenMobile?: boolean }) => {
+  const { t } = useTranslation();
   const [activeSub, setActiveSub] = useState<string | null>(null);
   const timeoutRef = useRef<any>(null);
 
@@ -40,7 +42,7 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
             onClick={(e) => { e.stopPropagation(); onAction('INTELLIGENCE'); }}
             className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors"
           >
-            Intelligence
+            {t("Intelligence")}
           </button>
 
           {/* Source AI Group */}
@@ -53,7 +55,7 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
               onClick={(e) => { e.stopPropagation(); onAction('SOURCE_AI'); }}
               className={`w-full text-left px-4 py-2 text-sm transition-colors flex justify-between items-center ${activeSub === 'SOURCE' ? 'bg-sky-50 dark:bg-slate-700 text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-green-600 dark:hover:text-green-400'}`}
             >
-              <span>Source AI</span>
+              <span>{t("Source AI")}</span>
               <ChevronRight size={14} className={activeSub === 'SOURCE' ? 'text-green-600 dark:text-green-400' : 'text-gray-400'} />
             </button>
 
@@ -64,10 +66,10 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
                 onMouseEnter={() => handleMouseEnter('SOURCE')}
                 onMouseLeave={handleMouseLeave}
               >
-                <button onClick={(e) => { e.stopPropagation(); onAction('ATTACH_PEOPLE'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Attach People</button>
-                <button onClick={(e) => { e.stopPropagation(); onAction('ATTACHED_PROFILES'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Attached Profiles</button>
-                <button onClick={(e) => { e.stopPropagation(); onAction('INTEGRATIONS'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Integrations</button>
-                <button onClick={(e) => { e.stopPropagation(); onAction('JOB_DESC'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Job Description</button>
+                <button onClick={(e) => { e.stopPropagation(); onAction('ATTACH_PEOPLE'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">{t("Attach People")}</button>
+                <button onClick={(e) => { e.stopPropagation(); onAction('ATTACHED_PROFILES'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">{t("Attached Profiles")}</button>
+                <button onClick={(e) => { e.stopPropagation(); onAction('INTEGRATIONS'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">{t("Integrations")}</button>
+                <button onClick={(e) => { e.stopPropagation(); onAction('JOB_DESC'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">{t("Job Description")}</button>
               </div>
             )}
           </div>
@@ -76,7 +78,7 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
             onClick={(e) => { e.stopPropagation(); onAction('MATCH_AI'); }}
             className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors"
           >
-            Match AI
+            {t("Match AI")}
           </button>
 
           {/* Engage AI Group */}
@@ -89,7 +91,7 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
               onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_AI'); }}
               className={`w-full text-left px-4 py-2 text-sm transition-colors flex justify-between items-center ${activeSub === 'ENGAGE' ? 'bg-sky-50 dark:bg-slate-700 text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-green-600 dark:hover:text-green-400'}`}
             >
-              <span>Engage AI</span>
+              <span>{t("Engage AI")}</span>
               <ChevronRight size={14} className={activeSub === 'ENGAGE' ? 'text-green-600 dark:text-green-400' : 'text-gray-400'} />
             </button>
 
@@ -100,9 +102,9 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
                 onMouseEnter={() => handleMouseEnter('ENGAGE')}
                 onMouseLeave={handleMouseLeave}
               >
-                <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_CANDIDATES'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Candidate List</button>
-                <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_WORKFLOW'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Workflow Builder</button>
-                <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_INTERVIEW'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">Interview Panel</button>
+                <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_CANDIDATES'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">{t("Candidate List")}</button>
+                <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_WORKFLOW'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">{t("Workflow Builder")}</button>
+                <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_INTERVIEW'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 block">{t("Interview Panel")}</button>
               </div>
             )}
           </div>
@@ -111,7 +113,7 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
             onClick={(e) => { e.stopPropagation(); onAction('RECOMMENDED'); }}
             className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors"
           >
-            Recommended Profiles
+            {t("Recommended Profiles")}
           </button>
         </div>
       </div>
@@ -120,6 +122,7 @@ const HoverMenu = ({ campaign, onAction, isOpenMobile }: { campaign: Campaign, o
 };
 
 const FilterDropdown = ({ onChange }: { onChange: (filter: string) => void }) => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState('All');
   const options = ['All', 'Created by Me', 'Shared with Me', 'Favorites', 'New'];
@@ -137,7 +140,7 @@ const FilterDropdown = ({ onChange }: { onChange: (filter: string) => void }) =>
         data-tour="campaign-filters"
         className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-sm text-gray-700 dark:text-slate-200 hover:border-gray-300 dark:hover:border-slate-600 focus:ring-2 focus:ring-green-100 transition-all min-w-[140px] justify-between"
       >
-        <span>Filter: {selected}</span>
+        <span>{t("Filter")}: {t(selected)}</span>
         <ChevronDown size={14} className="text-gray-400" />
       </button>
 
@@ -147,7 +150,7 @@ const FilterDropdown = ({ onChange }: { onChange: (filter: string) => void }) =>
           <div className="absolute top-full right-0 mt-1 w-48 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-20 py-1">
             <div className="px-3 py-2 border-b border-gray-100 dark:border-slate-700">
               <div className="relative">
-                <input type="text" placeholder="Search..." className="w-full pl-7 pr-2 py-1 text-xs bg-gray-50 dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:border-green-500 dark:text-slate-200" />
+                <input type="text" placeholder={t("Search...")} className="w-full pl-7 pr-2 py-1 text-xs bg-gray-50 dark:bg-slate-700 rounded border border-gray-200 dark:border-slate-600 focus:outline-none focus:border-green-500 dark:text-slate-200" />
                 <Search size={10} className="absolute left-2 top-1.5 text-gray-400" />
               </div>
             </div>
@@ -157,7 +160,7 @@ const FilterDropdown = ({ onChange }: { onChange: (filter: string) => void }) =>
                 onClick={() => handleSelect(opt)}
                 className={`w-full text-left px-4 py-2 text-sm hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 ${selected === opt ? 'text-green-700 dark:text-green-400 font-medium bg-green-50 dark:bg-slate-700' : 'text-gray-600 dark:text-slate-300'}`}
               >
-                {opt}
+                {t(opt)}
               </button>
             ))}
           </div>
@@ -178,6 +181,7 @@ export const CampaignTable = ({
   onNavigateToCampaign: (c: Campaign, t?: string) => void,
   onTabChange?: (tab: string) => void
 }) => {
+  const { t } = useTranslation();
   const { addToast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
@@ -207,7 +211,7 @@ export const CampaignTable = ({
     setCampaigns(prev => prev.map(c => {
       if (c.id === id) {
         const newVal = !c.isFavorite;
-        addToast(newVal ? "Campaign added to favorites" : "Campaign removed from favorites", "success");
+        addToast(newVal ? t("Campaign added to favorites") : t("Campaign removed from favorites"), "success");
         return { ...c, isFavorite: newVal };
       }
       return c;
@@ -273,7 +277,7 @@ export const CampaignTable = ({
             data-tour="campaign-view-switcher"
             className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-lg text-sm text-gray-700 dark:text-slate-200 bg-gray-50 dark:bg-slate-700 hover:bg-white dark:hover:bg-slate-600 hover:border-gray-300 transition-colors w-full md:w-auto justify-center"
           >
-            {status} Campaigns <ChevronDown size={14} />
+            {t(status)} {t("Campaigns")} <ChevronDown size={14} />
           </button>
 
           {isViewMenuOpen && (
@@ -289,7 +293,7 @@ export const CampaignTable = ({
                     }}
                     className={`w-full text-left px-4 py-2 text-sm hover:bg-green-50 dark:hover:bg-slate-700 ${status === view ? 'text-green-700 font-bold bg-green-50 dark:bg-slate-700' : 'text-gray-700 dark:text-slate-200'}`}
                   >
-                    {view} Campaigns
+                    {t(view)} {t("Campaigns")}
                   </button>
                 ))}
               </div>
@@ -305,7 +309,7 @@ export const CampaignTable = ({
           <div className="relative w-full sm:w-64">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={t("Search...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-4 pr-10 py-2 border border-gray-200 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-100 dark:bg-slate-700 dark:text-slate-200 transition-all"
@@ -318,7 +322,7 @@ export const CampaignTable = ({
               onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}
               className="text-green-600 dark:text-green-400 text-sm font-medium hover:underline px-2 whitespace-nowrap"
             >
-              Clear
+              {t("Clear")}
             </button>
             <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg"><RefreshCw size={16} /></button>
             <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg"><MoreVertical size={16} /></button>
@@ -334,14 +338,14 @@ export const CampaignTable = ({
             <tr>
               <th className="px-6 py-4 w-12"><input type="checkbox" className="rounded border-gray-300 text-green-600 focus:ring-green-500 dark:bg-slate-700 dark:border-slate-600" /></th>
               <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 group flex items-center gap-1">
-                Title <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />
+                {t("Title")} <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" />
               </th>
-              <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 group"><div className="flex items-center gap-1">Job ID <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" /></div></th>
-              <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 group"><div className="flex items-center gap-1">Days Left <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" /></div></th>
-              <th className="px-6 py-4">Owner</th>
-              <th className="px-6 py-4">Members</th>
-              <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 group"><div className="flex items-center gap-1">Updated Date <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" /></div></th>
-              <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 group"><div className="flex items-center gap-1">Profiles <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" /></div></th>
+              <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 group"><div className="flex items-center gap-1">{t("Job ID")} <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" /></div></th>
+              <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 group"><div className="flex items-center gap-1">{t("Days Left")} <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" /></div></th>
+              <th className="px-6 py-4">{t("Owner")}</th>
+              <th className="px-6 py-4">{t("Members")}</th>
+              <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 group"><div className="flex items-center gap-1">{t("Updated Date")} <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" /></div></th>
+              <th className="px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-slate-200 group"><div className="flex items-center gap-1">{t("Profiles")} <ArrowUpDown size={12} className="opacity-0 group-hover:opacity-50" /></div></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-slate-700">
@@ -357,7 +361,7 @@ export const CampaignTable = ({
                   <div className="flex items-center gap-3">
                     {camp.isNew && (
                       <div className="relative">
-                        <span className="absolute -top-4 -left-2 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-br-md rounded-tl-md shadow-sm z-10 transform -rotate-12">New</span>
+                        <span className="absolute -top-4 -left-2 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-br-md rounded-tl-md shadow-sm z-10 transform -rotate-12">{t("New")}</span>
                       </div>
                     )}
 
@@ -425,7 +429,7 @@ export const CampaignTable = ({
             {filteredCampaigns.length === 0 && (
               <tr>
                 <td colSpan={9} className="text-center py-10 text-gray-400">
-                  No {status} campaigns found matching your criteria.
+                  {t("No " + status.toLowerCase() + " campaigns found matching your criteria.")}
                 </td>
               </tr>
             )}
@@ -435,10 +439,10 @@ export const CampaignTable = ({
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 dark:text-slate-400 mt-auto bg-white dark:bg-slate-800 gap-4">
-        <span>Total Rows: {filteredCampaigns.length}</span>
+        <span>{t("Total Rows")}: {filteredCampaigns.length}</span>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span>10 / page</span>
+            <span>10 / {t("page")}</span>
             <ChevronDown size={14} />
           </div>
           <div className="flex items-center gap-2">
@@ -447,7 +451,7 @@ export const CampaignTable = ({
             <button className="hover:text-gray-900 dark:hover:text-slate-200">&gt;</button>
           </div>
           <div className="flex items-center gap-2">
-            <span>Go to</span>
+            <span>{t("Go to")}</span>
             <input type="text" className="w-10 border border-gray-200 dark:border-slate-600 rounded px-1 py-0.5 text-center bg-white dark:bg-slate-700 dark:text-slate-200" />
           </div>
         </div>

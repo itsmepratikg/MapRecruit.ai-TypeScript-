@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Settings } from '../../components/Icons';
 import { SETTINGS_CONTENT } from './constants';
 import { PlaceholderView } from './components/PlaceholderView';
@@ -17,6 +18,7 @@ interface SettingsPageProps {
 }
 
 export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
+    const { t } = useTranslation();
     // The activeTab is no longer directly used for rendering, but might be for initial state or other logic if needed.
     // const activeTab = searchParams.get('tab') || 'COMPANY_INFO';
 
@@ -49,16 +51,20 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
     const SettingsContentWrapper = ({ id }: { id: string }) => {
         const content = SETTINGS_CONTENT[id];
         return (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div>
-                    <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">{content.title}</h3>
-                    <p className="text-slate-500 dark:text-slate-400">{content.desc}</p>
+            <div className="h-full overflow-hidden flex flex-col">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-8 lg:p-12">
+                    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div>
+                            <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">{t(content.title)}</h3>
+                            <p className="text-slate-500 dark:text-slate-400">{t(content.desc)}</p>
+                        </div>
+                        <PlaceholderView
+                            title={`${t(content.title)} ${t("Configuration")}`}
+                            description={t("Manage your {0} settings here. This module is currently under active development.", { title: t(content.title).toLowerCase() })}
+                            icon={content.icon}
+                        />
+                    </div>
                 </div>
-                <PlaceholderView
-                    title={`${content.title} Configuration`}
-                    description={`Manage your ${content.title.toLowerCase()} settings here. This module is currently under active development.`}
-                    icon={content.icon}
-                />
             </div>
         );
     };

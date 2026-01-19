@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Palette, X, CheckCircle } from './Icons';
 import { useToast } from './Toast';
 import { hexToRgb, rgbToHex, mixColors, applyTheme } from '../utils/themeUtils';
 
 export const ThemeSettingsModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  const { t } = useTranslation();
   const [color, setColor] = useState('#10b981'); // Default Emerald
   const [rgb, setRgb] = useState({ r: 16, g: 185, b: 129 });
   const { addToast } = useToast();
@@ -42,15 +44,15 @@ export const ThemeSettingsModal = ({ isOpen, onClose }: { isOpen: boolean, onClo
   if (!isOpen) return null;
 
   // Generate preview color for active state (approximation of 100 shade)
-  const activeBgPreview = rgbToHex(mixColors(hexToRgb(color), {r:255,g:255,b:255}, 85).r, mixColors(hexToRgb(color), {r:255,g:255,b:255}, 85).g, mixColors(hexToRgb(color), {r:255,g:255,b:255}, 85).b);
-  const activeTextPreview = rgbToHex(mixColors(hexToRgb(color), {r:0,g:0,b:0}, 50).r, mixColors(hexToRgb(color), {r:0,g:0,b:0}, 50).g, mixColors(hexToRgb(color), {r:0,g:0,b:0}, 50).b);
+  const activeBgPreview = rgbToHex(mixColors(hexToRgb(color), { r: 255, g: 255, b: 255 }, 85).r, mixColors(hexToRgb(color), { r: 255, g: 255, b: 255 }, 85).g, mixColors(hexToRgb(color), { r: 255, g: 255, b: 255 }, 85).b);
+  const activeTextPreview = rgbToHex(mixColors(hexToRgb(color), { r: 0, g: 0, b: 0 }, 50).r, mixColors(hexToRgb(color), { r: 0, g: 0, b: 0 }, 50).g, mixColors(hexToRgb(color), { r: 0, g: 0, b: 0 }, 50).b);
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Palette size={20} className="text-emerald-600 dark:text-emerald-400" /> Theme Settings
+            <Palette size={20} className="text-emerald-600 dark:text-emerald-400" /> {t("Theme Settings")}
           </h2>
           <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
             <X size={20} />
@@ -61,8 +63,8 @@ export const ThemeSettingsModal = ({ isOpen, onClose }: { isOpen: boolean, onClo
           {/* Color Preview & Picker */}
           <div className="flex gap-4">
             <div className="relative w-24 h-24 rounded-lg shadow-inner overflow-hidden border border-slate-200 dark:border-slate-600 shrink-0">
-              <input 
-                type="color" 
+              <input
+                type="color"
                 value={color}
                 onChange={handleHexChange}
                 className="absolute inset-0 w-[150%] h-[150%] -top-[25%] -left-[25%] cursor-pointer p-0 border-0"
@@ -70,11 +72,11 @@ export const ThemeSettingsModal = ({ isOpen, onClose }: { isOpen: boolean, onClo
             </div>
             <div className="flex-1 space-y-3">
               <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">HEX Code</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t("HEX Code")}</label>
                 <div className="flex items-center border border-slate-200 dark:border-slate-600 rounded-lg overflow-hidden bg-white dark:bg-slate-700">
                   <span className="pl-3 text-slate-400 text-sm">#</span>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={color.replace('#', '')}
                     onChange={(e) => handleHexChange({ target: { value: '#' + e.target.value } } as any)}
                     className="w-full px-2 py-2 text-sm font-mono text-slate-700 dark:text-slate-200 outline-none bg-transparent"
@@ -83,27 +85,27 @@ export const ThemeSettingsModal = ({ isOpen, onClose }: { isOpen: boolean, onClo
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">RGB</label>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">{t("RGB")}</label>
                 <div className="flex gap-2">
-                  <input 
-                    type="number" 
-                    value={rgb.r} 
+                  <input
+                    type="number"
+                    value={rgb.r}
                     onChange={(e) => handleRgbChange('r', e.target.value)}
-                    className="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-center font-mono dark:bg-slate-700 dark:text-slate-200" 
+                    className="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-center font-mono dark:bg-slate-700 dark:text-slate-200"
                     placeholder="R"
                   />
-                  <input 
-                    type="number" 
-                    value={rgb.g} 
+                  <input
+                    type="number"
+                    value={rgb.g}
                     onChange={(e) => handleRgbChange('g', e.target.value)}
-                    className="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-center font-mono dark:bg-slate-700 dark:text-slate-200" 
+                    className="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-center font-mono dark:bg-slate-700 dark:text-slate-200"
                     placeholder="G"
                   />
-                  <input 
-                    type="number" 
-                    value={rgb.b} 
+                  <input
+                    type="number"
+                    value={rgb.b}
                     onChange={(e) => handleRgbChange('b', e.target.value)}
-                    className="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-center font-mono dark:bg-slate-700 dark:text-slate-200" 
+                    className="w-full px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-center font-mono dark:bg-slate-700 dark:text-slate-200"
                     placeholder="B"
                   />
                 </div>
@@ -113,7 +115,7 @@ export const ThemeSettingsModal = ({ isOpen, onClose }: { isOpen: boolean, onClo
 
           {/* Predefined Palettes */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Predefined Colors</label>
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">{t("Predefined Colors")}</label>
             <div className="flex flex-wrap gap-3">
               {PREDEFINED_COLORS.map(c => (
                 <button
@@ -129,28 +131,28 @@ export const ThemeSettingsModal = ({ isOpen, onClose }: { isOpen: boolean, onClo
 
           {/* Preview Block */}
           <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600">
-             <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Theme Preview</p>
-             <div className="flex gap-3 items-center flex-wrap">
-                <button className="px-4 py-2 rounded-lg text-white text-sm font-bold shadow-sm" style={{ backgroundColor: color }}>
-                   Primary Button
-                </button>
-                <div 
-                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-bold" 
-                  style={{ backgroundColor: activeBgPreview, color: activeTextPreview }}
-                >
-                   <CheckCircle size={16} /> Selected
-                </div>
-                <button className="px-4 py-2 rounded-lg border text-sm font-medium" style={{ borderColor: color, color: color }}>
-                   Outline
-                </button>
-             </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">{t("Theme Preview")}</p>
+            <div className="flex gap-3 items-center flex-wrap">
+              <button className="px-4 py-2 rounded-lg text-white text-sm font-bold shadow-sm" style={{ backgroundColor: color }}>
+                {t("Primary Button")}
+              </button>
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-bold"
+                style={{ backgroundColor: activeBgPreview, color: activeTextPreview }}
+              >
+                <CheckCircle size={16} /> {t("Selected")}
+              </div>
+              <button className="px-4 py-2 rounded-lg border text-sm font-medium" style={{ borderColor: color, color: color }}>
+                {t("Outline")}
+              </button>
+            </div>
           </div>
         </div>
 
         <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm">{t("Cancel")}</button>
           <button onClick={handleApply} className="px-6 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold rounded-lg hover:opacity-90 transition-colors text-sm shadow-sm">
-            Apply Theme
+            {t("Apply Theme")}
           </button>
         </div>
       </div>

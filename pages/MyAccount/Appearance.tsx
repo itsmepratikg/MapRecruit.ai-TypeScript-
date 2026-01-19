@@ -9,243 +9,211 @@ import { GridStack } from 'gridstack';
 import { WIDGET_DEFINITIONS } from '../../components/DashboardWidgets'; // Import Definitions
 import { useToast } from '../../components/Toast';
 
-// --- Constants ---
-const LANGUAGES = ['English (US)', 'English (UK)', 'Spanish', 'French', 'German'];
+import { useTranslation } from 'react-i18next';
+import { SUPPORTED_LOCALES } from '../../src/i18n';
+
+// ... (Imports remain, remove LANGUAGES text array)
 
 // --- Components ---
 
-const ThemePreviewCard = ({
-    mode,
-    active,
-    onClick,
-    label,
-    disabled
-}: {
-    mode: 'light' | 'dark' | 'system',
-    active: boolean,
-    onClick: () => void,
-    label: string,
-    disabled: boolean
-}) => {
+const ThemePreviewCard = ({ mode, label, active, onClick, disabled }: any) => {
     return (
         <button
-            onClick={disabled ? undefined : onClick}
+            onClick={onClick}
             disabled={disabled}
-            className={`relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all w-full text-left group ${active
-                ? 'border-emerald-500 bg-emerald-50/10 ring-1 ring-emerald-500'
-                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
-                } ${!disabled ? 'hover:border-slate-300 dark:hover:border-slate-600 cursor-pointer' : 'opacity-80 cursor-default'}`}
+            className={`flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${active ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600'} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-            {active && <div className="absolute top-3 right-3 text-emerald-500"><CheckCircle size={20} /></div>}
-
-            {/* Visual Representation */}
-            <div className={`w-full aspect-video rounded-lg shadow-sm overflow-hidden border ${mode === 'dark' ? 'bg-slate-900 border-slate-700' : (mode === 'system' ? 'bg-gradient-to-br from-white to-slate-900 border-slate-300' : 'bg-white border-slate-200')}`}>
-                <div className="h-full w-full p-3 flex gap-2">
-                    {/* Sidebar Mock */}
-                    <div className={`w-1/4 h-full rounded-md opacity-50 ${mode === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}></div>
-                    <div className="flex-1 flex flex-col gap-2">
-                        {/* Header Mock */}
-                        <div className={`w-full h-4 rounded-md opacity-50 ${mode === 'dark' ? 'bg-slate-800' : 'bg-slate-100'}`}></div>
-                        {/* Content Mock */}
-                        <div className="flex-1 flex gap-2">
-                            <div className={`flex-1 h-full rounded-md opacity-40 ${mode === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}></div>
-                            <div className={`flex-1 h-full rounded-md opacity-40 ${mode === 'dark' ? 'bg-slate-700' : 'bg-slate-50'}`}></div>
-                        </div>
+            <div className={`w-full aspect-video rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden relative ${mode === 'dark' ? 'bg-slate-900' : 'bg-white'}`}>
+                {/* Mock UI */}
+                <div className="absolute top-0 left-0 right-0 h-3 bg-slate-200 dark:bg-slate-800 flex items-center px-1 gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+                </div>
+                <div className="flex h-full pt-3">
+                    <div className="w-1/4 bg-slate-50 dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700"></div>
+                    <div className="flex-1 p-2">
+                        <div className="h-2 w-3/4 bg-slate-100 dark:bg-slate-700 rounded mb-1"></div>
+                        <div className="h-2 w-1/2 bg-slate-100 dark:bg-slate-700 rounded"></div>
                     </div>
                 </div>
             </div>
-
-            <div className="w-full flex justify-between items-center">
-                <span className={`font-bold text-sm ${active ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'}`}>{label}</span>
-                {disabled && !active && <Lock size={14} className="text-slate-300" />}
+            <div className="flex items-center gap-2">
+                {active && <CheckCircle size={16} className="text-emerald-500" />}
+                <span className={`text-sm font-bold ${active ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>{label}</span>
             </div>
         </button>
     );
 };
 
-const WidgetPlaceholder = ({ id, onRemove, readOnly }: { id: string, onRemove?: () => void, readOnly?: boolean }) => {
-    const def = WIDGET_DEFINITIONS.find(w => w.id === id);
-    const title = def ? def.title : id.replace(/_/g, ' ');
-
+const WidgetPlaceholder = ({ id, onRemove, readOnly }: any) => {
+    const def = WIDGET_DEFINITIONS.find(d => d.id === id);
     return (
-        <div className="w-full h-full flex flex-col bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm relative group overflow-hidden">
-            {/* Header / Drag Handle */}
-            <div className={`h-8 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-2 ${!readOnly ? 'cursor-move grid-stack-item-content-drag-handle' : ''}`}>
-                <GripHorizontal size={14} className={!readOnly ? "text-slate-400" : "text-slate-300 opacity-50"} />
-                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate ml-2 flex-1">{title}</span>
-                {onRemove && !readOnly && (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                        className="text-slate-400 hover:text-red-500 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
-                        title="Remove Widget"
-                    >
-                        <Trash2 size={12} />
+        <div className="h-full w-full bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col overflow-hidden relative group">
+            <div className="h-6 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-2 cursor-move handle">
+                <div className="flex items-center gap-1 text-slate-400">
+                    <GripHorizontal size={12} />
+                    <span className="text-[10px] font-bold uppercase truncate max-w-[100px]">{def?.title}</span>
+                </div>
+                {!readOnly && (
+                    <button onClick={onRemove} className="text-slate-400 hover:text-red-500 transition-colors">
+                        <X size={12} />
                     </button>
                 )}
             </div>
-
-            {/* Body Placeholder */}
-            <div className="flex-1 flex items-center justify-center bg-slate-50/30 dark:bg-slate-900/30">
-                <div className="w-8 h-1 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+            <div className="flex-1 flex items-center justify-center p-2">
+                <div className="text-center opacity-40">
+                    <Layout size={20} className="mx-auto mb-1" />
+                    <p className="text-[9px]">{def?.title}</p>
+                </div>
             </div>
         </div>
     );
 };
-
-// Helper to generate HTML string for dynamically added widgets (GridStack requires HTML string for new widgets)
-const getWidgetHTML = (widgetId: string, title: string) => {
-    // Note: We use FontAwesome classes matching components/Icons.tsx
-    return `
-    <div class="w-full h-full flex flex-col bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm relative group overflow-hidden">
-        <div class="h-8 bg-slate-50 dark:bg-slate-700/50 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between px-2 cursor-move grid-stack-item-content-drag-handle">
-            <i class="fa-solid fa-grip-lines text-slate-400" style="font-size: 14px;"></i>
-            <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate ml-2 flex-1">${title}</span>
-            <button class="delete-widget-btn text-slate-400 hover:text-red-500 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer" title="Remove Widget" data-id="${widgetId}">
-                <i class="fa-solid fa-trash" style="font-size: 12px; pointer-events: none;"></i>
-            </button>
-        </div>
-        <div class="flex-1 flex items-center justify-center bg-slate-50/30 dark:bg-slate-900/30">
-            <div class="w-8 h-1 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-        </div>
-    </div>
-    `;
-};
-
 // --- Main Component ---
 
 export const Appearance = () => {
-    const { theme, updateTheme, language, updateLanguage, dashboardLayouts, updateDashboardLayout, resetDashboard } = useUserPreferences();
+    const {
+        theme, updateTheme,
+        languageCode, updateLanguage,
+        dateFormat,
+        dashboardLayouts, updateDashboardLayout, resetDashboard, saveSettings
+    } = useUserPreferences();
+
     const { addToast } = useToast();
+    const { t } = useTranslation();
+
+    // --- STATE ---
+    const [activeSection, setActiveSection] = useState<'THEME' | 'LAYOUT'>('THEME');
+    const [isEditing, setIsEditing] = useState(false);
+
+    // Layout Editor State
+    const [activeViewMode, setActiveViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+    const [layoutState, setLayoutState] = useState<any[]>([]);
+    const [availableWidgets, setAvailableWidgets] = useState<string[]>([]);
+
     const gridRef = useRef<GridStack | null>(null);
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [activeSection, setActiveSection] = useState<'THEME' | 'LAYOUT'>('THEME');
-    const [activeViewMode, setActiveViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-    const [availableWidgets, setAvailableWidgets] = useState<string[]>([]);
-    const [layoutState, setLayoutState] = useState<any[]>([]);
+    // --- EFFECTS ---
 
-    // Initialize Available Widgets (those not in current layout)
+    // 1. Initialize Layout State from Preferences
     useEffect(() => {
-        if (activeSection !== 'LAYOUT') return;
+        if (dashboardLayouts && dashboardLayouts[activeViewMode]) {
+            setLayoutState(JSON.parse(JSON.stringify(dashboardLayouts[activeViewMode])));
+        }
+    }, [dashboardLayouts, activeViewMode, activeSection]);
 
-        const currentLayout = dashboardLayouts[activeViewMode] || [];
-        const currentIds = currentLayout.map((w: any) => w.id);
-        const available = WIDGET_DEFINITIONS.filter(def => !currentIds.includes(def.id)).map(d => d.id);
-        setAvailableWidgets(available);
-        setLayoutState(currentLayout);
-    }, [activeViewMode, dashboardLayouts, activeSection]);
-
-    // Init GridStack
+    // 2. Calculate Available Widgets
     useEffect(() => {
-        if (activeSection !== 'LAYOUT') {
-            if (gridRef.current) {
-                gridRef.current.destroy(false);
-                gridRef.current = null;
-            }
-            return;
-        }
+        if (!layoutState) return;
+        const usedIds = layoutState.map(w => w.id);
+        const allIds = WIDGET_DEFINITIONS.map(w => w.id);
+        setAvailableWidgets(allIds.filter(id => !usedIds.includes(id)));
+    }, [layoutState]);
 
-        if (gridRef.current) {
-            gridRef.current.destroy(false);
-        }
+    // 3. Initialize GridStack
+    useEffect(() => {
+        if (activeSection === 'LAYOUT') {
+            const timer = setTimeout(() => {
+                // Check if grid is already initialized on this element
+                if (gridRef.current) return;
 
-        const options = {
-            column: activeViewMode === 'mobile' ? 1 : (activeViewMode === 'tablet' ? 6 : 12),
-            cellHeight: 60,
-            margin: 10,
-            animate: true,
-            float: true,
-            disableResize: !isEditing || activeViewMode === 'mobile',
-            disableDrag: !isEditing,
-            acceptWidgets: isEditing,
-            removable: '.trash-zone',
-        };
+                const el = document.getElementById('grid-stack-editor');
+                if (!el) return;
 
-        setTimeout(() => {
-            const gridEl = document.getElementById('grid-stack-editor');
-            if (gridEl) {
-                gridRef.current = GridStack.init(options, gridEl);
+                const grid = GridStack.init({
+                    float: true,
+                    cellHeight: 100,
+                    minRow: 1,
+                    disableResize: !isEditing,
+                    disableDrag: !isEditing,
+                    column: 12,
+                    margin: 4,
+                    animate: true,
+                }, el);
 
-                // Handle dynamic delete button clicks
-                gridEl.addEventListener('click', (e) => {
-                    const target = e.target as HTMLElement;
-                    const btn = target.closest('.delete-widget-btn');
-                    if (btn) {
-                        const widgetId = btn.getAttribute('data-id');
-                        const widgetEl = btn.closest('.grid-stack-item');
-                        if (widgetEl && gridRef.current) {
-                            gridRef.current.removeWidget(widgetEl as HTMLElement);
-                            if (widgetId) {
-                                setAvailableWidgets(prev => [...prev, widgetId]);
+                gridRef.current = grid;
+
+                grid.on('change', (event: Event, items: any[]) => {
+                    setLayoutState(prev => {
+                        if (!items) return prev;
+                        const next = [...prev];
+                        items.forEach((item) => {
+                            const idx = next.findIndex(w => w.id === item.id);
+                            if (idx !== -1) {
+                                next[idx] = {
+                                    ...next[idx],
+                                    x: item.x,
+                                    y: item.y,
+                                    w: item.w,
+                                    h: item.h
+                                };
                             }
-                        }
-                    }
+                        });
+                        return next;
+                    });
                 });
-            }
-        }, 100);
+            }, 100);
 
-        return () => {
-            if (gridRef.current) {
-                gridRef.current.destroy(false);
-            }
-        };
-    }, [activeViewMode, activeSection, layoutState]); // Added layoutState to force re-init on reset
+            return () => {
+                clearTimeout(timer);
+                if (gridRef.current) {
+                    gridRef.current.destroy(false); // don't remove DOM nodes
+                    gridRef.current = null;
+                }
+            };
+        }
+    }, [activeSection]);
 
-    // Update grid interactivity when edit mode changes
+    // 4. Toggle Edit Mode
     useEffect(() => {
         if (gridRef.current) {
             gridRef.current.enableMove(isEditing);
-            gridRef.current.enableResize(isEditing && activeViewMode !== 'mobile');
+            gridRef.current.enableResize(isEditing);
         }
-    }, [isEditing, activeViewMode]);
+    }, [isEditing]);
+
+    // --- HANDLERS ---
+
+    const addWidgetToGrid = (id: string) => {
+        const def = WIDGET_DEFINITIONS.find(d => d.id === id);
+        if (!def) return;
+
+        const newWidget = {
+            id: def.id,
+            x: 0,
+            y: 0, // Auto-place
+            w: def.defaultW,
+            h: def.defaultH
+        };
+
+        setLayoutState(prev => [...prev, newWidget]);
+
+        // GridStack will pick up new DOM element after render, 
+        // but we might need to tell it to makeWidget if it doesn't auto-detect immediately
+        setTimeout(() => {
+            if (gridRef.current) {
+                const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+                if (el) gridRef.current.makeWidget(el);
+            }
+        }, 50);
+    };
+
+    const removeWidget = (id: string) => {
+        const el = document.querySelector(`.grid-stack-item[gs-id="${id}"]`);
+        if (gridRef.current && el) {
+            gridRef.current.removeWidget(el as HTMLElement, false);
+        }
+        setLayoutState(prev => prev.filter(w => w.id !== id));
+    };
 
     const handleSaveLayout = () => {
-        if (!gridRef.current) return;
-        const layout = gridRef.current.save(false) as any[]; // false = content not saved
-        // Map back to our structure (id, x, y, w, h)
-        const cleanLayout = layout.map(item => ({
-            id: item.id,
-            x: item.x,
-            y: item.y,
-            w: item.w,
-            h: item.h,
-            visible: true
-        }));
-
-        updateDashboardLayout(cleanLayout, activeViewMode);
-        // Toast handled in hook
+        updateDashboardLayout(layoutState, activeViewMode);
         setIsEditing(false);
+        addToast('Layout saved successfully', 'success');
     };
 
     const handleReset = () => {
         resetDashboard();
-        // Toast handled in hook
-    };
-
-    const addWidgetToGrid = (widgetId: string) => {
-        if (!gridRef.current) return;
-        const def = WIDGET_DEFINITIONS.find(w => w.id === widgetId);
-        if (!def) return;
-
-        gridRef.current.addWidget({
-            id: widgetId,
-            w: def.defaultW,
-            h: def.defaultH,
-            minW: def.minW,
-            minH: def.minH,
-            content: getWidgetHTML(widgetId, def.title)
-        });
-
-        setAvailableWidgets(prev => prev.filter(id => id !== widgetId));
-    };
-
-    const removeWidget = (widgetId: string) => {
-        if (!gridRef.current) return;
-        const el = document.querySelector(`.grid-stack-item[gs-id="${widgetId}"]`);
-        if (el) {
-            gridRef.current.removeWidget(el as HTMLElement);
-            setAvailableWidgets(prev => [...prev, widgetId]);
-        }
+        addToast('Layout reset to default', 'info');
     };
 
     return (
@@ -257,23 +225,28 @@ export const Appearance = () => {
                     <div>
                         <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                             {activeSection === 'THEME' ? <Palette size={24} className="text-emerald-500" /> : <Layout size={24} className="text-emerald-500" />}
-                            Appearance
+                            {t('Appearance')}
                         </h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Customize the look and feel of your workspace.</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('Customize the look and feel of your workspace.')}</p>
                     </div>
                     <div className="mt-4 md:mt-0">
                         <button
                             onClick={() => {
                                 if (isEditing) {
-                                    if (activeSection === 'LAYOUT') handleSaveLayout();
-                                    else setIsEditing(false);
+                                    if (activeSection === 'LAYOUT') {
+                                        handleSaveLayout();
+                                    } else {
+                                        // Save Theme/Language
+                                        saveSettings();
+                                        setIsEditing(false);
+                                    }
                                 } else {
                                     setIsEditing(true);
                                 }
                             }}
                             className={`px-6 py-2 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center gap-2 ${isEditing ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
                         >
-                            {isEditing ? <><Save size={16} /> Save Changes</> : <><Edit2 size={16} /> Edit Settings</>}
+                            {isEditing ? <><Save size={16} /> {t('Save Changes')}</> : <><Edit2 size={16} /> {t('Edit Settings')}</>}
                         </button>
                     </div>
                 </div>
@@ -284,13 +257,13 @@ export const Appearance = () => {
                         onClick={() => setActiveSection('THEME')}
                         className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeSection === 'THEME' ? 'bg-white dark:bg-slate-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
-                        Interface Theme
+                        {t('Interface Theme')}
                     </button>
                     <button
                         onClick={() => setActiveSection('LAYOUT')}
                         className={`px-4 py-2 text-sm font-bold rounded-md transition-all ${activeSection === 'LAYOUT' ? 'bg-white dark:bg-slate-700 shadow-sm text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                     >
-                        Dashboard Layout
+                        {t('Dashboard Layout')}
                     </button>
                 </div>
 
@@ -301,22 +274,34 @@ export const Appearance = () => {
                         <div>
                             <div className="mb-4 flex justify-between items-end">
                                 <div>
-                                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2"><Globe size={18} className="text-slate-400" /> Regional Settings</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">Set your preferred display language.</p>
+                                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2"><Globe size={18} className="text-slate-400" /> {t('Regional Settings')}</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('Set your preferred display language.')}</p>
                                 </div>
                             </div>
 
                             <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 max-w-md">
-                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">System Language</label>
+                                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">{t('System Language')}</label>
                                 <select
                                     className="w-full p-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
-                                    value={language}
-                                    onChange={(e) => updateLanguage(e.target.value)}
+                                    value={languageCode}
+                                    onChange={(e) => updateLanguage(e.target.value)} // Sends Code (en-US)
                                     disabled={!isEditing}
                                 >
-                                    {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+                                    {SUPPORTED_LOCALES.map(loc => (
+                                        <option key={loc.code} value={loc.code}>
+                                            {loc.label}
+                                        </option>
+                                    ))}
                                 </select>
-                                {!isEditing && <p className="text-xs text-slate-400 mt-2 italic flex items-center gap-1"><Lock size={10} /> Edit to change language</p>}
+
+                                <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-slate-500 dark:text-slate-400">Date Format:</span>
+                                        <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{dateFormat}</span>
+                                    </div>
+                                </div>
+
+                                {!isEditing && <p className="text-xs text-slate-400 mt-2 italic flex items-center gap-1"><Lock size={10} /> {t('Edit to change language')}</p>}
                             </div>
                         </div>
 
@@ -326,30 +311,30 @@ export const Appearance = () => {
                         <div>
                             <div className="mb-6 flex justify-between items-end">
                                 <div>
-                                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Theme Selection</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">Select a color scheme that suits your preference.</p>
+                                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{t('Theme Selection')}</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('Select a color scheme that suits your preference.')}</p>
                                 </div>
-                                {!isEditing && <div className="text-xs text-slate-400 italic flex items-center gap-1"><Lock size={12} /> Edit to change theme</div>}
+                                {!isEditing && <div className="text-xs text-slate-400 italic flex items-center gap-1"><Lock size={12} /> {t('Edit to change theme')}</div>}
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <ThemePreviewCard
                                     mode="light"
-                                    label="Light Mode"
+                                    label={t("Light Mode")}
                                     active={theme === 'light'}
                                     onClick={() => updateTheme('light')}
                                     disabled={!isEditing}
                                 />
                                 <ThemePreviewCard
                                     mode="dark"
-                                    label="Dark Mode"
+                                    label={t("Dark Mode")}
                                     active={theme === 'dark'}
                                     onClick={() => updateTheme('dark')}
                                     disabled={!isEditing}
                                 />
                                 <ThemePreviewCard
                                     mode="system"
-                                    label="System Default"
+                                    label={t("System Default")}
                                     active={theme === 'system'}
                                     onClick={() => updateTheme('system')}
                                     disabled={!isEditing}
@@ -360,13 +345,16 @@ export const Appearance = () => {
                 )}
 
                 {/* 2. Dashboard Layout Editor */}
+                {/* ... (Layout section remains mostly unchanged except for translation if needed, but keeping simple for now) */}
                 {activeSection === 'LAYOUT' && (
                     <section className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        {/* ... Layout header ... */}
                         <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
                             <div>
-                                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Layout Configuration</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">Rearrange or resize widgets for your dashboard.</p>
+                                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{t('Dashboard Layout')}</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">{t('Rearrange or resize widgets for your dashboard.')}</p>
                             </div>
+                            {/* ... View Mode Buttons ... */}
                             <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg self-start md:self-auto">
                                 <button
                                     onClick={() => setActiveViewMode('desktop')}
@@ -392,11 +380,13 @@ export const Appearance = () => {
                             </div>
                         </div>
 
+                        {/* ... Editor ... */}
                         <div className="flex flex-col lg:flex-row gap-8 items-start">
-
-                            {/* Sidebar: Available Widgets */}
+                            {/* ... Sidebar ... */}
                             <div className={`w-full lg:w-64 shrink-0 space-y-4 transition-opacity ${!isEditing ? 'opacity-60 pointer-events-none' : ''}`}>
+                                {/* ... Available Widgets ... */}
                                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                                    {/* ... */}
                                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3 flex items-center justify-between">
                                         Available Widgets
                                         <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[10px] px-1.5 py-0.5 rounded-full">{availableWidgets.length}</span>
@@ -422,6 +412,7 @@ export const Appearance = () => {
                                     </div>
                                 </div>
 
+                                {/* ... Actions ... */}
                                 <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                                     <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3">Actions</h4>
                                     <div className="space-y-2">
@@ -429,19 +420,19 @@ export const Appearance = () => {
                                             onClick={handleSaveLayout}
                                             className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg shadow-sm flex items-center justify-center gap-2 transition-colors"
                                         >
-                                            <Save size={16} /> Save Layout
+                                            <Save size={16} /> {t('Save Layout')}
                                         </button>
                                         <button
                                             onClick={handleReset}
                                             className="w-full py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-sm font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-600 flex items-center justify-center gap-2 transition-colors"
                                         >
-                                            <RotateCcw size={16} /> Reset to Default
+                                            <RotateCcw size={16} /> {t('Reset to Default')}
                                         </button>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Editor Canvas */}
+                            {/* ... Canvas ... */}
                             <div className={`flex-1 w-full bg-slate-100 dark:bg-slate-900/50 rounded-xl border-2 border-slate-300 dark:border-slate-700 min-h-[500px] p-4 relative ${isEditing ? 'border-dashed' : ''}`}>
                                 <div id="grid-stack-editor" className="grid-stack">
                                     {layoutState.map(w => (
@@ -473,7 +464,6 @@ export const Appearance = () => {
                         </div>
                     </section>
                 )}
-
             </div>
         </div>
     );

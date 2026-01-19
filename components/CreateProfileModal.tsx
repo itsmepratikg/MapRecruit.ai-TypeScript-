@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Upload, User, Mail, Phone, MapPin, Briefcase, CheckCircle, Loader2 } from 'lucide-react';
 import { useToast } from './Toast';
 
@@ -9,6 +10,7 @@ interface CreateProfileModalProps {
 }
 
 export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, onClose }) => {
+    const { t } = useTranslation();
     const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState<'upload' | 'manual'>('upload');
     const [isDragging, setIsDragging] = useState(false);
@@ -75,7 +77,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                 <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
-                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Create New Profile</h2>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t("Create New Profile")}</h2>
                     <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                         <X size={20} />
                     </button>
@@ -87,13 +89,13 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                             onClick={() => setActiveTab('upload')}
                             className={`pb-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'upload' ? 'border-emerald-500 text-emerald-700 dark:text-emerald-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                         >
-                            Upload Resume
+                            {t("Upload Resume")}
                         </button>
                         <button
                             onClick={() => setActiveTab('manual')}
                             className={`pb-3 text-sm font-medium transition-colors border-b-2 ${activeTab === 'manual' ? 'border-emerald-500 text-emerald-700 dark:text-emerald-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                         >
-                            Manual Entry
+                            {t("Manual Entry")}
                         </button>
                     </div>
 
@@ -107,17 +109,17 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                             {uploading ? (
                                 <div className="flex flex-col items-center">
                                     <Loader2 size={48} className="text-emerald-500 animate-spin mb-4" />
-                                    <p className="text-slate-600 dark:text-slate-300 font-medium">Parsing resume...</p>
+                                    <p className="text-slate-600 dark:text-slate-300 font-medium">{t("Parsing resume...")}</p>
                                 </div>
                             ) : (
                                 <>
                                     <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-4 text-slate-400">
                                         <Upload size={32} />
                                     </div>
-                                    <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">Drop resume here</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Supported formats: PDF, DOCX, TXT</p>
+                                    <h3 className="text-lg font-bold text-slate-700 dark:text-slate-200 mb-2">{t("Drop resume here")}</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{t("Supported formats: PDF, DOCX, TXT")}</p>
                                     <button className="px-4 py-2 bg-white dark:bg-slate-600 border border-slate-200 dark:border-slate-500 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-500 shadow-sm">
-                                        Browse Files
+                                        {t("Browse Files")}
                                     </button>
                                 </>
                             )}
@@ -125,7 +127,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                     ) : (
                         <form id="create-profile-form" onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">First Name *</label>
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("First Name")} *</label>
                                 <div className="relative">
                                     <User size={16} className="absolute left-3 top-2.5 text-slate-400" />
                                     <input
@@ -139,7 +141,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Last Name *</label>
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("Last Name")} *</label>
                                 <input
                                     required
                                     value={formData.lastName}
@@ -151,7 +153,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Email *</label>
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("Email")} *</label>
                                 <div className="relative">
                                     <Mail size={16} className="absolute left-3 top-2.5 text-slate-400" />
                                     <input
@@ -166,7 +168,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Phone</label>
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("Phone")}</label>
                                 <div className="relative">
                                     <Phone size={16} className="absolute left-3 top-2.5 text-slate-400" />
                                     <input
@@ -180,7 +182,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
-                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Job Title</label>
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("Job Title")}</label>
                                 <div className="relative">
                                     <Briefcase size={16} className="absolute left-3 top-2.5 text-slate-400" />
                                     <input
@@ -194,7 +196,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Current Company</label>
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("Current Company")}</label>
                                 <input
                                     value={formData.company}
                                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
@@ -204,7 +206,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Location</label>
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("Location")}</label>
                                 <div className="relative">
                                     <MapPin size={16} className="absolute left-3 top-2.5 text-slate-400" />
                                     <input
@@ -218,7 +220,7 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                             </div>
 
                             <div className="space-y-1.5 md:col-span-2">
-                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Skills (Comma separated)</label>
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("Skills (Comma separated)")}</label>
                                 <textarea
                                     value={formData.skills}
                                     onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
@@ -231,14 +233,14 @@ export const CreateProfileModal: React.FC<CreateProfileModalProps> = ({ isOpen, 
                 </div>
 
                 <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm">Cancel</button>
+                    <button onClick={onClose} className="px-4 py-2 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors text-sm">{t("Cancel")}</button>
                     {activeTab === 'manual' ? (
                         <button form="create-profile-form" type="submit" className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 shadow-sm transition-colors text-sm flex items-center gap-2">
-                            <CheckCircle size={16} /> Create Profile
+                            <CheckCircle size={16} /> {t("Create Profile")}
                         </button>
                     ) : (
                         <button onClick={() => setActiveTab('manual')} className="px-6 py-2 bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-200 font-bold rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors text-sm">
-                            Skip Upload
+                            {t("Skip Upload")}
                         </button>
                     )}
                 </div>

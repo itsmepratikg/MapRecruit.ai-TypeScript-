@@ -7,6 +7,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { PublicClientApplication } from '@azure/msal-browser';
 import { MsalProvider } from '@azure/msal-react';
 import { ToastProvider } from './components/Toast';
+import './src/i18n';
 import clarity from '@microsoft/clarity';
 
 // Initialize Microsoft Clarity

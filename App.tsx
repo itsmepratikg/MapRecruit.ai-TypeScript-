@@ -187,6 +187,7 @@ export const App = () => {
   const handleUserSelect = (user: any) => {
     setSelectedAdminUser(user);
     setActiveAdminUserTab('BASIC_DETAILS');
+    navigate(`/settings/Users/userprofile/basicdetails/${user._id || user.id}`);
     if (!isDesktop) setIsSidebarOpen(false);
   };
 

@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { DEFAULT_USER_ACCOUNT } from '../data';
 import { userService } from '../services/api';
 import { useToast } from '../components/Toast';
+import { useTranslation } from 'react-i18next';
+import { SUPPORTED_LOCALES } from '../src/i18n';
 
 export const useUserPreferences = () => {
 
-  // Use custom hook for consistent toast styling
   const { addPromise } = useToast();
+  const { i18n } = useTranslation();
 
   // --- Helper: Get State from Auth User or Fallback ---
   const getInitialState = () => {
@@ -18,10 +20,13 @@ export const useUserPreferences = () => {
       try {
         const user = JSON.parse(authUserStr);
         if (user.accessibilitySettings && Object.keys(user.accessibilitySettings).length > 0) {
-          // Merge with defaults to ensure structure integrity
+          // Merge with defaults
           return {
             theme: user.accessibilitySettings.theme || DEFAULT_USER_ACCOUNT.preferences.theme,
-            language: user.accessibilitySettings.language || DEFAULT_USER_ACCOUNT.preferences.language,
+            // Use languageCode if available, else fallback
+            languageCode: user.accessibilitySettings.languageCode || 'en-US',
+            dateFormat: user.accessibilitySettings.dateFormat || 'MM/DD/YYYY',
+            language: user.accessibilitySettings.language || DEFAULT_USER_ACCOUNT.preferences.language, // Legacy
             dashboardConfig: {
               ...DEFAULT_USER_ACCOUNT.preferences.dashboardConfig,
               ...(user.accessibilitySettings.dashboardConfig || {}),
@@ -44,52 +49,31 @@ export const useUserPreferences = () => {
       }
     } catch (e) { }
 
-    return DEFAULT_USER_ACCOUNT.preferences;
+    return { ...DEFAULT_USER_ACCOUNT.preferences, languageCode: 'en-US', dateFormat: 'MM/DD/YYYY' };
   };
 
   const [preferences, setPreferences] = useState(getInitialState);
 
-  // --- Persistence Logic ---
-  // Accepts PARTIAL updates (e.g., { theme: 'dark' } or { dashboardConfig: ... })
-  const persistPreferences = async (partialPrefs: any) => {
-
-    // 1. Calculate Full New State locally (for immediate UI update)
-    const newState = {
-      ...preferences,
-      ...partialPrefs,
-      // Handle nested dashboardConfig merge if present in partial
-      dashboardConfig: partialPrefs.dashboardConfig ? {
-        ...preferences.dashboardConfig,
-        ...partialPrefs.dashboardConfig,
-        layouts: {
-          ...preferences.dashboardConfig.layouts,
-          ...(partialPrefs.dashboardConfig.layouts || {})
-        }
-      } : preferences.dashboardConfig
-    };
-
-    // Update Local State 
-    setPreferences(newState);
-
-    // 2. Update LocalStorage 'user' object (Optimistic Update)
+  // --- Explicit Save Action ---
+  const saveSettings = async () => {
     const authUserStr = localStorage.getItem('user');
     if (authUserStr) {
       try {
         const user = JSON.parse(authUserStr);
 
-        // We must save the FULL state to local storage so page reloads work correctly
-        user.accessibilitySettings = newState;
+        // 1. Persist to LocalStorage (User Object)
+        user.accessibilitySettings = preferences;
         localStorage.setItem('user', JSON.stringify(user));
 
-        // 3. Send ONLY PARTIAL to Backend (Bandwidth Optimization)
+        // 2. Persist to Backend
         const userId = user._id || user.id;
         if (userId) {
           await addPromise(
-            userService.update(userId, { accessibilitySettings: partialPrefs }),
+            userService.update(userId, { accessibilitySettings: preferences }),
             {
               loading: 'Saving changes...',
               success: 'Settings saved',
-              error: 'Could not save settings. Please try again.'
+              error: 'Could not save settings'
             }
           );
         }
@@ -97,15 +81,69 @@ export const useUserPreferences = () => {
         console.error("Failed to save preferences to server", error);
       }
     } else {
-      // Guest/Fallback mode
+      // Guest Fallback
       localStorage.setItem('userAccount', JSON.stringify({
         ...DEFAULT_USER_ACCOUNT,
-        preferences: newState
+        preferences: preferences
       }));
     }
   };
 
-  // --- Effect: Apply Theme to Document ---
+  // --- Local State Updaters (Previews) ---
+
+  const updateLocalState = (partialPrefs: any) => {
+    setPreferences(prev => ({
+      ...prev,
+      ...partialPrefs,
+      dashboardConfig: partialPrefs.dashboardConfig ? {
+        ...prev.dashboardConfig,
+        ...partialPrefs.dashboardConfig,
+        layouts: {
+          ...prev.dashboardConfig.layouts,
+          ...(partialPrefs.dashboardConfig.layouts || {})
+        }
+      } : prev.dashboardConfig
+    }));
+  };
+
+  const updateTheme = (theme: 'light' | 'dark' | 'system') => {
+    updateLocalState({ theme });
+  };
+
+  const updateLanguage = (code: string) => {
+    // Find associated date format
+    const locale = SUPPORTED_LOCALES.find(l => l.code === code);
+
+    // Explicitly update i18n
+    if (i18n.language !== code) {
+      i18n.changeLanguage(code);
+    }
+
+    updateLocalState({
+      languageCode: code,
+      language: locale?.label || 'English (United States)', // Sync legacy field
+      dateFormat: locale?.dateFormat || 'MM/DD/YYYY'
+    });
+  };
+
+  const updateDashboardLayout = (widgets: any[], viewMode: 'desktop' | 'tablet' | 'mobile') => {
+    const partial = {
+      dashboardConfig: {
+        layouts: {
+          [viewMode]: widgets
+        }
+      }
+    };
+    updateLocalState(partial);
+  };
+
+  const resetDashboard = () => {
+    updateLocalState({
+      dashboardConfig: DEFAULT_USER_ACCOUNT.preferences.dashboardConfig
+    });
+  }
+
+  // --- Effect: Apply Theme ---
   useEffect(() => {
     const applyTheme = (t: string) => {
       let isDark = false;
@@ -124,7 +162,6 @@ export const useUserPreferences = () => {
 
     applyTheme(preferences.theme);
 
-    // Listen for system changes if mode is system
     if (preferences.theme === 'system') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = (e: MediaQueryListEvent) => {
@@ -136,43 +173,56 @@ export const useUserPreferences = () => {
     }
   }, [preferences.theme]);
 
+  // Remove the "Push" effect that was causing loops
+  // useEffect(() => {
+  //   if (preferences.languageCode && i18n.language !== preferences.languageCode) {
+  //     i18n.changeLanguage(preferences.languageCode);
+  //   }
+  // }, [preferences.languageCode, i18n]);
 
-  // --- Updaters (Sending Partials) ---
+  // --- Effect: Sync with Global i18n Changes (Fix Loop) ---
+  useEffect(() => {
+    const handleLanguageChanged = (lng: string) => {
+      // If the global language changes (e.g. from another component),
+      // sync this hook's local state to match and prevent reverting it.
+      // Use function update to prevent stale closures, but check current state carefully? 
+      // Actually, since we only set state if different, it should be fine.
+      // We need to access the LATEST preferences to check if update is needed.
+      // But we can't access it easily inside the event listener if we don't depend on it.
+      // If we depend on it, we re-bind the listener on every change. 
+      // That's acceptable.
 
-  const updateTheme = (theme: 'light' | 'dark' | 'system') => {
-    persistPreferences({ theme });
-  };
-
-  const updateLanguage = (lang: string) => {
-    persistPreferences({ language: lang });
-  };
-
-  const updateDashboardLayout = (widgets: any[], viewMode: 'desktop' | 'tablet' | 'mobile') => {
-    // Construct the partial nested structure
-    const partial = {
-      dashboardConfig: {
-        layouts: {
-          [viewMode]: widgets
-        }
+      if (preferences.languageCode !== lng) {
+        const locale = SUPPORTED_LOCALES.find(l => l.code === lng);
+        setPreferences(prev => {
+          if (prev.languageCode === lng) return prev; // already synced
+          return {
+            ...prev,
+            languageCode: lng,
+            language: locale?.label || prev.language,
+            dateFormat: locale?.dateFormat || prev.dateFormat
+          };
+        });
       }
     };
-    persistPreferences(partial);
-  };
 
-  const resetDashboard = () => {
-    persistPreferences({
-      dashboardConfig: DEFAULT_USER_ACCOUNT.preferences.dashboardConfig
-    });
-  }
+    i18n.on('languageChanged', handleLanguageChanged);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChanged);
+    };
+  }, [preferences.languageCode, i18n]);
 
   return {
-    userAccount: { preferences }, // Maintain backward compatibility shape if needed
+    userAccount: { preferences },
     theme: preferences.theme,
-    language: preferences.language,
+    language: preferences.language,       // Legacy Label
+    languageCode: preferences.languageCode, // New Code
+    dateFormat: preferences.dateFormat,
     dashboardLayouts: preferences.dashboardConfig.layouts,
     updateTheme,
     updateLanguage,
     updateDashboardLayout,
-    resetDashboard
+    resetDashboard,
+    saveSettings
   };
 };

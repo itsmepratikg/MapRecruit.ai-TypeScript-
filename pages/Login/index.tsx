@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle,
     Fingerprint, Globe, Shield, Command, Building2
@@ -14,6 +15,7 @@ interface LoginProps {
 }
 
 export const Login = ({ onLogin }: LoginProps) => {
+    const { t } = useTranslation();
     const { addToast, addPromise } = useToast();
     const { instance } = useMsal();
 
@@ -25,7 +27,7 @@ export const Login = ({ onLogin }: LoginProps) => {
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email || !password) {
-            addToast("Please enter both email and password.", "error");
+            addToast(t("Please enter both email and password."), "error");
             return;
         }
 
@@ -37,9 +39,9 @@ export const Login = ({ onLogin }: LoginProps) => {
 
         try {
             await addPromise(loginAction(), {
-                loading: 'Authenticating with Backend...',
-                success: 'Successfully logged in!',
-                error: 'Authentication failed. Please check credentials.'
+                loading: t('Authenticating with Backend...'),
+                success: t('Successfully logged in!'),
+                error: t('Authentication failed. Please check credentials.')
             });
             onLogin();
         } catch (error) {
@@ -51,7 +53,7 @@ export const Login = ({ onLogin }: LoginProps) => {
 
     const handlePasskeyLogin = async () => {
         if (!window.PublicKeyCredential) {
-            addToast("WebAuthn is not supported on this device.", "error");
+            addToast(t("WebAuthn is not supported on this device."), "error");
             return;
         }
 
@@ -81,15 +83,15 @@ export const Login = ({ onLogin }: LoginProps) => {
                 });
 
                 await addPromise(passkeyAction, {
-                    loading: 'Verifying passkey...',
-                    success: 'Authenticated with Biometrics',
-                    error: 'Passkey verification failed.'
+                    loading: t('Verifying passkey...'),
+                    success: t('Authenticated with Biometrics'),
+                    error: t('Passkey verification failed.')
                 });
                 onLogin();
             }
         } catch (err: any) {
             console.error("Passkey Auth Error:", err);
-            addToast("Passkey authentication failed or cancelled.", "error");
+            addToast(t("Passkey authentication failed or cancelled."), "error");
         } finally {
             setIsLoading(false);
         }
@@ -108,9 +110,9 @@ export const Login = ({ onLogin }: LoginProps) => {
             });
 
             addPromise(googleAuthAction, {
-                loading: 'Connecting to Google...',
-                success: 'Successfully logged in via Google!',
-                error: 'Google login failed.'
+                loading: t('Connecting to Google...'),
+                success: t('Successfully logged in via Google!'),
+                error: t('Google login failed.')
             }).then(() => {
                 onLogin();
             }).finally(() => {
@@ -119,7 +121,7 @@ export const Login = ({ onLogin }: LoginProps) => {
         },
         onError: (errorResponse) => {
             console.error("Google Login Error:", errorResponse);
-            addToast("Google Sign-In failed. Please try again.", "error");
+            addToast(t("Google Sign-In failed. Please try again."), "error");
             setIsLoading(false);
         }
     });
@@ -141,15 +143,15 @@ export const Login = ({ onLogin }: LoginProps) => {
             });
 
             await addPromise(msAuthAction, {
-                loading: 'Connecting to Microsoft...',
-                success: 'Successfully logged in via Microsoft!',
-                error: 'Microsoft login failed.'
+                loading: t('Connecting to Microsoft...'),
+                success: t('Successfully logged in via Microsoft!'),
+                error: t('Microsoft login failed.')
             });
 
             onLogin();
         } catch (error) {
             console.error("Microsoft Login Error:", error);
-            addToast("Microsoft Sign-In failed. Please try again.", "error");
+            addToast(t("Microsoft Sign-In failed. Please try again."), "error");
         } finally {
             setIsLoading(false);
         }
@@ -175,11 +177,11 @@ export const Login = ({ onLogin }: LoginProps) => {
                         <span className="text-2xl font-bold tracking-tight">MapRecruit</span>
                     </div>
                     <h1 className="text-5xl font-bold leading-tight mb-6">
-                        Intelligent Hiring <br />
-                        <span className="text-emerald-400">Simplified.</span>
+                        {t("Intelligent Hiring")} <br />
+                        <span className="text-emerald-400">{t("Simplified.")}</span>
                     </h1>
                     <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-                        Streamline your recruitment process with AI-powered sourcing, matching, and engagement workflows designed for modern teams.
+                        {t("Streamline your recruitment process with AI-powered sourcing, matching, and engagement workflows designed for modern teams.")}
                     </p>
                 </div>
 
@@ -199,9 +201,9 @@ export const Login = ({ onLogin }: LoginProps) => {
                     <div className="flex items-center gap-2 text-sm text-slate-500">
                         <span>© 2025 MapRecruit.ai</span>
                         <span>•</span>
-                        <a href="#" className="hover:text-white transition-colors">Privacy</a>
+                        <a href="#" className="hover:text-white transition-colors">{t("Privacy")}</a>
                         <span>•</span>
-                        <a href="#" className="hover:text-white transition-colors">Terms</a>
+                        <a href="#" className="hover:text-white transition-colors">{t("Terms")}</a>
                     </div>
                 </div>
             </div>
@@ -215,13 +217,13 @@ export const Login = ({ onLogin }: LoginProps) => {
                                 <Command size={28} />
                             </div>
                         </div>
-                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Welcome back</h2>
-                        <p className="text-slate-500 dark:text-slate-400 mt-2">Please enter your details to sign in.</p>
+                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{t("Welcome back")}</h2>
+                        <p className="text-slate-500 dark:text-slate-400 mt-2">{t("Please enter your details to sign in.")}</p>
                     </div>
 
                     <form onSubmit={handleEmailLogin} className="space-y-5">
                         <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email Address</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("Email Address")}</label>
                             <div className="relative">
                                 <Mail size={18} className="absolute left-3 top-3 text-slate-400" />
                                 <input
@@ -236,7 +238,7 @@ export const Login = ({ onLogin }: LoginProps) => {
                         </div>
 
                         <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("Password")}</label>
                             <div className="relative">
                                 <Lock size={18} className="absolute left-3 top-3 text-slate-400" />
                                 <input
@@ -260,9 +262,9 @@ export const Login = ({ onLogin }: LoginProps) => {
                         <div className="flex items-center justify-between text-sm">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox" className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 dark:bg-slate-700 dark:border-slate-600" />
-                                <span className="text-slate-600 dark:text-slate-400">Remember me</span>
+                                <span className="text-slate-600 dark:text-slate-400">{t("Remember me")}</span>
                             </label>
-                            <button type="button" className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Forgot password?</button>
+                            <button type="button" className="text-emerald-600 dark:text-emerald-400 font-medium hover:underline">{t("Forgot password?")}</button>
                         </div>
 
                         <button
@@ -273,14 +275,14 @@ export const Login = ({ onLogin }: LoginProps) => {
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : (
-                                <>Sign in <ArrowRight size={18} /></>
+                                <>{t("Sign in")} <ArrowRight size={18} /></>
                             )}
                         </button>
                     </form>
 
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200 dark:border-slate-700"></div></div>
-                        <div className="relative flex justify-center text-xs uppercase"><span className="bg-white dark:bg-slate-900 px-2 text-slate-400">Or sign in with</span></div>
+                        <div className="relative flex justify-center text-xs uppercase"><span className="bg-white dark:bg-slate-900 px-2 text-slate-400">{t("Or sign in with")}</span></div>
                     </div>
 
                     <div className="flex flex-col gap-3">
@@ -296,7 +298,7 @@ export const Login = ({ onLogin }: LoginProps) => {
                                 <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
                                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
                             </svg>
-                            Google Workspace
+                            {t("Google Workspace")}
                         </button>
 
                         <button
@@ -310,7 +312,7 @@ export const Login = ({ onLogin }: LoginProps) => {
                                 <rect x="1" y="11" width="9" height="9" fill="#00a4ef" />
                                 <rect x="11" y="11" width="9" height="9" fill="#ffb900" />
                             </svg>
-                            Microsoft 365
+                            {t("Microsoft 365")}
                         </button>
 
                         <button
@@ -319,7 +321,7 @@ export const Login = ({ onLogin }: LoginProps) => {
                             className="w-full flex items-center justify-center gap-2 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium disabled:opacity-60"
                         >
                             <Fingerprint size={18} className="text-emerald-500" />
-                            Sign in via Passkey
+                            {t("Sign in via Passkey")}
                         </button>
                     </div>
                 </div>

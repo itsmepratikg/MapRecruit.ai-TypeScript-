@@ -5,6 +5,7 @@ import {
    MoreHorizontal, Download, Share2, Search, Filter, X, CheckCircle,
    Eye, Check
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
    PieChart, Pie, Cell, Legend, BarChart, Bar
@@ -78,6 +79,7 @@ export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => vo
 
    const userColorObj = COLORS.find(c => c.name === userProfile.color) || COLORS[0];
    const initials = (userProfile.firstName.charAt(0) + userProfile.lastName.charAt(0)).toUpperCase();
+   const { t } = useTranslation();
 
    useEffect(() => {
       const updateGreeting = () => {
@@ -122,23 +124,23 @@ export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => vo
          <div className="z-10 flex-1">
             <div className="flex justify-between items-start mb-4">
                <div>
-                  <h2 className="text-xl font-bold tracking-tight">{timeData.greeting}, {userProfile.firstName}</h2>
-                  <p className="text-[10px] text-white/60 mt-0.5">Timezone: {userProfile.timeZone || 'Asia/Kolkata (IST)'}</p>
+                  <h2 className="text-xl font-bold tracking-tight">{t(timeData.greeting)}, {userProfile.firstName}</h2>
+                  <p className="text-[10px] text-white/60 mt-0.5">{t("Timezone")}: {userProfile.timeZone || 'Asia/Kolkata (IST)'}</p>
                </div>
                <div className="flex flex-col items-end gap-1">
                   <span className="text-[10px] text-white/80 bg-black/20 px-2 py-1 rounded border border-white/10 whitespace-nowrap">
-                     Last Active: {formatDisplayTime(userProfile.lastActiveAt)}
+                     {t("Last Active")}: {formatDisplayTime(userProfile.lastActiveAt)}
                   </span>
                   {userProfile.loginCount !== undefined && (
                      <span className="text-[9px] text-white/60">
-                        Login count: {userProfile.loginCount}
+                        {t("Login count")}: {userProfile.loginCount}
                      </span>
                   )}
                </div>
             </div>
             <p className="text-white/80 text-xs mb-6 flex items-center gap-2">
                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
-               You have 0 new notifications
+               {t("You have {{count}} new notifications", { count: 0 })}
             </p>
 
             <div className="flex items-center gap-4 mb-2">
@@ -167,11 +169,11 @@ export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                onClick={() => onNavigate && onNavigate('Active')}
             >
                <span className="block text-2xl font-bold text-white group-hover:text-green-300 transition-colors">1</span>
-               <span className="text-[9px] text-white/60 uppercase tracking-wider font-semibold group-hover:text-white">New Campaigns</span>
+               <span className="text-[9px] text-white/60 uppercase tracking-wider font-semibold group-hover:text-white">{t("New Campaigns")}</span>
             </div>
             <div className="text-left border-l border-white/10 pl-4 group cursor-pointer hover:bg-white/10 rounded p-2 transition-colors">
                <span className="block text-2xl font-bold text-white group-hover:text-blue-300 transition-colors">0</span>
-               <span className="text-[9px] text-white/60 uppercase tracking-wider font-semibold group-hover:text-white">Upcoming Interviews</span>
+               <span className="text-[9px] text-white/60 uppercase tracking-wider font-semibold group-hover:text-white">{t("Upcoming Interviews")}</span>
             </div>
          </div>
       </div>
@@ -193,269 +195,287 @@ export const MetricCard = ({ title, value, subValue, icon: Icon, colorClass, ico
    </div>
 );
 
-export const AlertsWidget = () => (
-   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-4 shadow-sm flex items-center justify-between h-full min-h-[100px]">
-      <div className="flex items-center gap-4 flex-1 justify-center border-r border-gray-100 dark:border-slate-700 pr-4">
-         <img src="https://cdni.iconscout.com/illustration/premium/thumb/business-failure-illustration-download-in-svg-png-gif-file-formats--bankruptcy-market-crash-pack-people-illustrations-3791244.png" className="w-12 h-12 object-contain opacity-80" alt="Alert" />
-         <div className="text-center">
-            <span className="block text-2xl font-bold text-red-500">0</span>
-            <span className="text-[10px] text-gray-500 dark:text-slate-400 leading-tight block">Campaigns with<br />high Opt-Out</span>
+export const AlertsWidget = () => {
+   const { t } = useTranslation();
+   return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-4 shadow-sm flex items-center justify-between h-full min-h-[100px]">
+         <div className="flex items-center gap-4 flex-1 justify-center border-r border-gray-100 dark:border-slate-700 pr-4">
+            <img src="https://cdni.iconscout.com/illustration/premium/thumb/business-failure-illustration-download-in-svg-png-gif-file-formats--bankruptcy-market-crash-pack-people-illustrations-3791244.png" className="w-12 h-12 object-contain opacity-80" alt="Alert" />
+            <div className="text-center">
+               <span className="block text-2xl font-bold text-red-500">0</span>
+               <span className="text-[10px] text-gray-500 dark:text-slate-400 leading-tight block">{t("Campaigns with high Opt-Out")}</span>
+            </div>
+         </div>
+         <div className="flex items-center gap-4 flex-1 justify-center pl-4 relative">
+            <div className="text-center">
+               <span className="block text-2xl font-bold text-red-500">0</span>
+               <span className="text-[10px] text-gray-500 dark:text-slate-400 block max-w-[120px] mx-auto leading-tight">{t("Unsubscribed / Not Reachable (24h)")}</span>
+            </div>
+            <div className="absolute top-0 right-0 flex flex-col gap-1">
+               <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+               <div className="w-1.5 h-1.5 rounded-full bg-blue-500 opacity-50"></div>
+               <div className="w-1.5 h-1.5 rounded-full bg-blue-500 opacity-20"></div>
+            </div>
          </div>
       </div>
-      <div className="flex items-center gap-4 flex-1 justify-center pl-4 relative">
-         <div className="text-center">
-            <span className="block text-2xl font-bold text-red-500">0</span>
-            <span className="text-[10px] text-gray-500 dark:text-slate-400 block max-w-[120px] mx-auto leading-tight">Unsubscribed /<br />Not Reachable (24h)</span>
-         </div>
-         <div className="absolute top-0 right-0 flex flex-col gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 opacity-50"></div>
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 opacity-20"></div>
-         </div>
-      </div>
-   </div>
-);
+   );
+};
 
-export const TrendGraph = () => (
-   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col">
-      <div className="flex justify-between items-start mb-4">
-         <div>
-            <h3 className="text-gray-800 dark:text-slate-100 font-bold text-base">Profiles / Applies Trends</h3>
-            <p className="text-xs text-gray-400 dark:text-slate-400">1,000</p>
-         </div>
-         <select className="text-xs border border-gray-200 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-200 outline-none">
-            <option>Last 7 days</option>
-         </select>
-      </div>
-      <div className="flex-1 flex gap-4 min-h-0">
-         <div className="flex-1 min-h-[150px]">
-            <ResponsiveContainer width="100%" height="100%">
-               <LineChart data={TREND_DATA}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line type="monotone" dataKey="profiles" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }} activeDot={{ r: 6 }} />
-                  <Line type="monotone" dataKey="applies" stroke="#82ca9d" strokeWidth={2} dot={{ r: 3, fill: '#82ca9d', strokeWidth: 0 }} />
-               </LineChart>
-            </ResponsiveContainer>
-         </div>
-         <div className="w-24 flex flex-col justify-center gap-4 text-right border-l border-gray-50 dark:border-slate-700 pl-4">
+export const TrendGraph = () => {
+   const { t } = useTranslation();
+   return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col">
+         <div className="flex justify-between items-start mb-4">
             <div>
-               <div className="flex items-center justify-end gap-1 text-red-500 text-xs font-bold mb-0.5">
-                  <span>↓ 87%</span>
-                  <span className="text-lg text-gray-700 dark:text-slate-200">2.9k</span>
-               </div>
-               <p className="text-[9px] text-gray-400 uppercase tracking-wide">New Profiles</p>
+               <h3 className="text-gray-800 dark:text-slate-100 font-bold text-base">{t("Profiles / Applies Trends")}</h3>
+               <p className="text-xs text-gray-400 dark:text-slate-400">1,000</p>
             </div>
-            <div>
-               <div className="flex items-center justify-end gap-1 text-red-500 text-xs font-bold mb-0.5">
-                  <span>↓ 41%</span>
-                  <span className="text-lg text-gray-700 dark:text-slate-200">1.8k</span>
-               </div>
-               <p className="text-[9px] text-gray-400 uppercase tracking-wide">New Applies</p>
-            </div>
-            <div>
-               <div className="flex items-center justify-end gap-1 text-red-500 text-xs font-bold mb-0.5">
-                  <span>↓ 100%</span>
-                  <span className="text-lg text-gray-700 dark:text-slate-200">0</span>
-               </div>
-               <p className="text-[9px] text-gray-400 uppercase tracking-wide">New Campaigns</p>
-            </div>
-         </div>
-      </div>
-   </div>
-);
-
-export const SourceDistributionChart = () => (
-   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-         <h3 className="text-gray-800 dark:text-slate-100 font-bold text-base">New Profile Source Distribution</h3>
-         <div className="flex gap-2">
             <select className="text-xs border border-gray-200 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-200 outline-none">
-               <option>Last 7 days</option>
+               <option>{t("Last 7 days")}</option>
             </select>
-            <div className="flex bg-gray-100 dark:bg-slate-700 rounded p-0.5">
-               <button className="px-2 py-0.5 text-[10px] bg-white dark:bg-slate-600 shadow-sm rounded text-gray-700 dark:text-slate-200 font-medium">Profiles</button>
-               <button className="px-2 py-0.5 text-[10px] text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300">Applies</button>
-            </div>
          </div>
-      </div>
-      <div className="flex-1 min-h-[200px]">
-         <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-               <Pie
-                  data={SOURCE_DATA}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-               >
-                  {SOURCE_DATA.map((entry, index) => (
-                     <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-               </Pie>
-               <Tooltip content={<CustomTooltip />} />
-               <Legend
-                  layout="vertical"
-                  verticalAlign="middle"
-                  align="right"
-                  iconType="circle"
-                  iconSize={8}
-                  wrapperStyle={{ fontSize: '11px', color: '#64748b' }}
-               />
-            </PieChart>
-         </ResponsiveContainer>
-      </div>
-   </div>
-);
-
-export const EmptyWidget = ({ title, sub }: any) => (
-   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col relative overflow-hidden group">
-      <div className="flex justify-between items-center mb-6 z-10 relative">
-         <h3 className="text-gray-800 dark:text-slate-100 font-bold text-sm flex items-center gap-2">
-            {title}
-            {title === 'Upcoming Interviews' && <span className="text-red-500 text-xs cursor-pointer">x</span>}
-         </h3>
-         {sub && sub}
-      </div>
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 min-h-[100px]">
-         <div className="w-12 h-12 mb-2 opacity-50">
-            {title.includes('Portal') ? (
-               <div className="relative">
-                  <span className="text-3xl">💤</span>
+         <div className="flex-1 flex gap-4 min-h-0">
+            <div className="flex-1 min-h-[150px]">
+               <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={TREND_DATA}>
+                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
+                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                     <Tooltip content={<CustomTooltip />} />
+                     <Line type="monotone" dataKey="profiles" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                     <Line type="monotone" dataKey="applies" stroke="#82ca9d" strokeWidth={2} dot={{ r: 3, fill: '#82ca9d', strokeWidth: 0 }} />
+                  </LineChart>
+               </ResponsiveContainer>
+            </div>
+            <div className="w-24 flex flex-col justify-center gap-4 text-right border-l border-gray-50 dark:border-slate-700 pl-4">
+               <div>
+                  <div className="flex items-center justify-end gap-1 text-red-500 text-xs font-bold mb-0.5">
+                     <span>↓ 87%</span>
+                     <span className="text-lg text-gray-700 dark:text-slate-200">2.9k</span>
+                  </div>
+                  <p className="text-[9px] text-gray-400 uppercase tracking-wide">{t("New Profiles")}</p>
                </div>
-            ) : (
-               <span className="text-gray-300 dark:text-slate-600 text-3xl">📭</span>
-            )}
+               <div>
+                  <div className="flex items-center justify-end gap-1 text-red-500 text-xs font-bold mb-0.5">
+                     <span>↓ 41%</span>
+                     <span className="text-lg text-gray-700 dark:text-slate-200">1.8k</span>
+                  </div>
+                  <p className="text-[9px] text-gray-400 uppercase tracking-wide">{t("New Applies")}</p>
+               </div>
+               <div>
+                  <div className="flex items-center justify-end gap-1 text-red-500 text-xs font-bold mb-0.5">
+                     <span>↓ 100%</span>
+                     <span className="text-lg text-gray-700 dark:text-slate-200">0</span>
+                  </div>
+                  <p className="text-[9px] text-gray-400 uppercase tracking-wide">{t("New Campaigns")}</p>
+               </div>
+            </div>
          </div>
-         <p className="text-xs text-gray-400">{title.includes('Interviews') ? 'No Upcoming Interviews' : 'No Data Found'}</p>
       </div>
-      {title.includes('Portal') && (
-         <div className="border-t border-gray-100 dark:border-slate-700 pt-3 mt-auto flex justify-between text-[10px] text-gray-500 dark:text-slate-400 w-full z-10">
-            <div className="text-center"><span className="block text-blue-600 font-bold text-base">0</span> Searches</div>
-            <div className="text-center"><span className="block text-blue-600 font-bold text-base">0</span> Downloads</div>
-            <div className="text-center"><span className="block text-blue-600 font-bold text-base">0</span> Contacted</div>
-            <div className="text-center"><span className="block text-green-600 font-bold text-base">0</span> Interested</div>
-         </div>
-      )}
-   </div>
-);
+   );
+};
 
-export const EmailDeliveryReport = () => (
-   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col">
-      <div className="flex justify-between items-center mb-4">
-         <h3 className="text-gray-800 dark:text-slate-100 font-bold text-sm">Mass Email Delivery Report</h3>
-         <select className="text-xs border border-gray-200 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-200 outline-none">
-            <option>Last 7 days</option>
-         </select>
-      </div>
-      <div className="flex-1 flex gap-4 min-h-[100px]">
-         <div className="w-28 flex flex-col justify-center gap-3 border-r border-gray-50 dark:border-slate-700 pr-3">
-            <div className="text-center">
-               <span className="block text-lg font-bold text-blue-600">0</span>
-               <span className="text-[9px] text-gray-400">Total Mails</span>
-            </div>
-            <div className="grid grid-cols-2 gap-y-3 gap-x-1 text-center">
-               <div><span className="block font-bold text-green-600 text-xs">0</span><span className="text-[8px] text-gray-400">Delivered</span></div>
-               <div><span className="block font-bold text-red-500 text-xs">0%</span><span className="text-[8px] text-gray-400">Bounced</span></div>
-               <div><span className="block font-bold text-green-600 text-xs">0</span><span className="text-[8px] text-gray-400">Viewed</span></div>
-               <div><span className="block font-bold text-red-500 text-xs">0%</span><span className="text-[8px] text-gray-400">Opt-out</span></div>
-            </div>
-            <div className="text-center">
-               <span className="block font-bold text-green-600 text-xs">0</span>
-               <span className="text-[9px] text-gray-400">Replied</span>
+export const SourceDistributionChart = () => {
+   const { t } = useTranslation();
+   return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col">
+         <div className="flex justify-between items-center mb-4">
+            <h3 className="text-gray-800 dark:text-slate-100 font-bold text-base">{t("New Profile Source Distribution")}</h3>
+            <div className="flex gap-2">
+               <select className="text-xs border border-gray-200 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-200 outline-none">
+                  <option>{t("Last 7 days")}</option>
+               </select>
+               <div className="flex bg-gray-100 dark:bg-slate-700 rounded p-0.5">
+                  <button className="px-2 py-0.5 text-[10px] bg-white dark:bg-slate-600 shadow-sm rounded text-gray-700 dark:text-slate-200 font-medium">{t("Profiles")}</button>
+                  <button className="px-2 py-0.5 text-[10px] text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300">{t("Applies")}</button>
+               </div>
             </div>
          </div>
-         <div className="flex-1">
+         <div className="flex-1 min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={EMAIL_DATA}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#94a3b8' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#94a3b8' }} />
+               <PieChart>
+                  <Pie
+                     data={SOURCE_DATA}
+                     cx="50%"
+                     cy="50%"
+                     innerRadius={60}
+                     outerRadius={80}
+                     paddingAngle={2}
+                     dataKey="value"
+                  >
+                     {SOURCE_DATA.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                     ))}
+                  </Pie>
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="opened" fill="#82ca9d" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="bounced" fill="#ff8042" radius={[4, 4, 0, 0]} />
-               </BarChart>
+                  <Legend
+                     layout="vertical"
+                     verticalAlign="middle"
+                     align="right"
+                     iconType="circle"
+                     iconSize={8}
+                     wrapperStyle={{ fontSize: '11px', color: '#64748b' }}
+                  />
+               </PieChart>
             </ResponsiveContainer>
          </div>
       </div>
-   </div>
-);
+   );
+};
 
-export const PreScreeningProgress = () => (
-   <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full relative overflow-hidden">
-      <div className="flex justify-between items-center mb-6">
-         <h3 className="text-gray-800 dark:text-slate-100 font-bold text-sm flex items-center gap-2">
-            <AlertCircle size={14} className="text-gray-400" /> Pre-Screening Progress Report
-         </h3>
-         <div className="flex bg-gray-100 dark:bg-slate-700 rounded p-0.5">
-            <button className="px-3 py-1 text-[10px] bg-white dark:bg-slate-600 shadow-sm rounded text-gray-700 dark:text-slate-200 font-medium">Pre-Screening</button>
-            <button className="px-3 py-1 text-[10px] text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300">Interview</button>
+export const EmptyWidget = ({ title, sub }: any) => {
+   const { t } = useTranslation();
+   return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col relative overflow-hidden group">
+         <div className="flex justify-between items-center mb-6 z-10 relative">
+            <h3 className="text-gray-800 dark:text-slate-100 font-bold text-sm flex items-center gap-2">
+               {t(title)}
+               {title === 'Upcoming Interviews' && <span className="text-red-500 text-xs cursor-pointer">x</span>}
+            </h3>
+            {sub && sub}
          </div>
+         <div className="flex-1 flex flex-col items-center justify-center relative z-10 min-h-[100px]">
+            <div className="w-12 h-12 mb-2 opacity-50">
+               {title.includes('Portal') ? (
+                  <div className="relative">
+                     <span className="text-3xl">💤</span>
+                  </div>
+               ) : (
+                  <span className="text-gray-300 dark:text-slate-600 text-3xl">📭</span>
+               )}
+            </div>
+            <p className="text-xs text-gray-400">{title.includes('Interviews') ? t('No Upcoming Interviews') : t('No Data Found')}</p>
+         </div>
+         {title.includes('Portal') && (
+            <div className="border-t border-gray-100 dark:border-slate-700 pt-3 mt-auto flex justify-between text-[10px] text-gray-500 dark:text-slate-400 w-full z-10">
+               <div className="text-center"><span className="block text-blue-600 font-bold text-base">0</span> {t("Searches")}</div>
+               <div className="text-center"><span className="block text-blue-600 font-bold text-base">0</span> {t("Downloads")}</div>
+               <div className="text-center"><span className="block text-blue-600 font-bold text-base">0</span> {t("Contacted")}</div>
+               <div className="text-center"><span className="block text-green-600 font-bold text-base">0</span> {t("Interested")}</div>
+            </div>
+         )}
       </div>
+   );
+};
 
-      {/* Funnel Visualization */}
-      <div className="relative h-[200px] flex items-center justify-between px-10">
-         {/* Node 1 */}
-         <div className="relative z-10 flex flex-col items-center">
-            <span className="text-lg font-bold text-blue-600">23k</span>
-            <span className="text-[9px] text-blue-400 mb-1">Total Profiles</span>
-            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shadow-sm border-2 border-white dark:border-slate-600"><Users size={14} /></div>
+export const EmailDeliveryReport = () => {
+   const { t } = useTranslation();
+   return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col">
+         <div className="flex justify-between items-center mb-4">
+            <h3 className="text-gray-800 dark:text-slate-100 font-bold text-sm">{t("Mass Email Delivery Report")}</h3>
+            <select className="text-xs border border-gray-200 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-200 outline-none">
+               <option>{t("Last 7 days")}</option>
+            </select>
          </div>
-
-         {/* Edges */}
-         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
-            <path d="M 80 100 C 150 100, 150 25, 220 25" fill="none" stroke="#22c55e" strokeWidth="1" strokeDasharray="4 2" />
-            <path d="M 80 100 C 150 100, 150 175, 220 175" fill="none" stroke="#ef4444" strokeWidth="1" />
-            <path d="M 250 25 L 350 25" fill="none" stroke="#22c55e" strokeWidth="1" />
-            <path d="M 250 25 C 280 25, 280 175, 350 175" fill="none" stroke="#ef4444" strokeWidth="1" />
-         </svg>
-
-         {/* Top Branch */}
-         <div className="flex flex-col gap-10 -mt-10">
-            <div className="flex gap-16">
-               <div className="flex flex-col items-center">
-                  <span className="text-sm font-bold text-green-600">9</span>
-                  <span className="text-[8px] text-gray-400 mb-1">Comm...</span>
-                  <div className="w-6 h-6 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center border border-green-200 dark:border-green-800"><Share2 size={10} /></div>
+         <div className="flex-1 flex gap-4 min-h-[100px]">
+            <div className="w-28 flex flex-col justify-center gap-3 border-r border-gray-50 dark:border-slate-700 pr-3">
+               <div className="text-center">
+                  <span className="block text-lg font-bold text-blue-600">0</span>
+                  <span className="text-[9px] text-gray-400">{t("Total Mails")}</span>
                </div>
-               <div className="flex flex-col items-center">
-                  <span className="text-sm font-bold text-green-600">4</span>
-                  <span className="text-[8px] text-gray-400 mb-1">Delivered</span>
-                  <div className="w-6 h-6 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center border border-green-200 dark:border-green-800"><Check size={10} /></div>
+               <div className="grid grid-cols-2 gap-y-3 gap-x-1 text-center">
+                  <div><span className="block font-bold text-green-600 text-xs">0</span><span className="text-[8px] text-gray-400">{t("Delivered")}</span></div>
+                  <div><span className="block font-bold text-red-500 text-xs">0%</span><span className="text-[8px] text-gray-400">{t("Bounced")}</span></div>
+                  <div><span className="block font-bold text-green-600 text-xs">0</span><span className="text-[8px] text-gray-400">{t("Viewed")}</span></div>
+                  <div><span className="block font-bold text-red-500 text-xs">0%</span><span className="text-[8px] text-gray-400">{t("Opt-out")}</span></div>
                </div>
-               <div className="flex flex-col items-center">
-                  <span className="text-sm font-bold text-green-600">4</span>
-                  <span className="text-[8px] text-gray-400 mb-1">Viewed</span>
-                  <div className="w-6 h-6 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center border border-green-200 dark:border-green-800"><Eye size={10} /></div>
-               </div>
-               <div className="flex flex-col items-center">
-                  <span className="text-sm font-bold text-green-600">2</span>
-                  <span className="text-[8px] text-gray-400 mb-1">Completed</span>
-                  <div className="w-6 h-6 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center border border-green-200 dark:border-green-800"><CheckCircle size={10} /></div>
+               <div className="text-center">
+                  <span className="block font-bold text-green-600 text-xs">0</span>
+                  <span className="text-[9px] text-gray-400">{t("Replied")}</span>
                </div>
             </div>
+            <div className="flex-1">
+               <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={EMAIL_DATA}>
+                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#94a3b8' }} />
+                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 8, fill: '#94a3b8' }} />
+                     <Tooltip content={<CustomTooltip />} />
+                     <Bar dataKey="opened" fill="#82ca9d" radius={[4, 4, 0, 0]} />
+                     <Bar dataKey="bounced" fill="#ff8042" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+               </ResponsiveContainer>
+            </div>
+         </div>
+      </div>
+   );
+};
 
-            {/* Bottom Branch (Dropoffs) */}
-            <div className="flex gap-16 mt-12">
-               <div className="flex flex-col items-center">
-                  <div className="w-6 h-6 rounded-full bg-red-50 dark:bg-red-900/30 text-red-500 flex items-center justify-center border border-red-200 dark:border-red-800 mb-1"><AlertCircle size={10} /></div>
-                  <span className="text-xs font-bold text-red-500">2,695</span>
-                  <span className="text-[8px] text-gray-400">Not Reachable</span>
+export const PreScreeningProgress = () => {
+   const { t } = useTranslation();
+   return (
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full relative overflow-hidden">
+         <div className="flex justify-between items-center mb-6">
+            <h3 className="text-gray-800 dark:text-slate-100 font-bold text-sm flex items-center gap-2">
+               <AlertCircle size={14} className="text-gray-400" /> {t("Pre-Screening Progress Report")}
+            </h3>
+            <div className="flex bg-gray-100 dark:bg-slate-700 rounded p-0.5">
+               <button className="px-3 py-1 text-[10px] bg-white dark:bg-slate-600 shadow-sm rounded text-gray-700 dark:text-slate-200 font-medium">{t("Pre-Screening")}</button>
+               <button className="px-3 py-1 text-[10px] text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300">{t("Interview")}</button>
+            </div>
+         </div>
+
+         {/* Funnel Visualization */}
+         <div className="relative h-[200px] flex items-center justify-between px-10">
+            {/* Node 1 */}
+            <div className="relative z-10 flex flex-col items-center">
+               <span className="text-lg font-bold text-blue-600">23k</span>
+               <span className="text-[9px] text-blue-400 mb-1">{t("Total Profiles")}</span>
+               <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 shadow-sm border-2 border-white dark:border-slate-600"><Users size={14} /></div>
+            </div>
+
+            {/* Edges */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ overflow: 'visible' }}>
+               <path d="M 80 100 C 150 100, 150 25, 220 25" fill="none" stroke="#22c55e" strokeWidth="1" strokeDasharray="4 2" />
+               <path d="M 80 100 C 150 100, 150 175, 220 175" fill="none" stroke="#ef4444" strokeWidth="1" />
+               <path d="M 250 25 L 350 25" fill="none" stroke="#22c55e" strokeWidth="1" />
+               <path d="M 250 25 C 280 25, 280 175, 350 175" fill="none" stroke="#ef4444" strokeWidth="1" />
+            </svg>
+
+            {/* Top Branch */}
+            <div className="flex flex-col gap-10 -mt-10">
+               <div className="flex gap-16">
+                  <div className="flex flex-col items-center">
+                     <span className="text-sm font-bold text-green-600">9</span>
+                     <span className="text-[8px] text-gray-400 mb-1">{t("Comm...")}</span>
+                     <div className="w-6 h-6 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center border border-green-200 dark:border-green-800"><Share2 size={10} /></div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                     <span className="text-sm font-bold text-green-600">4</span>
+                     <span className="text-[8px] text-gray-400 mb-1">{t("Delivered")}</span>
+                     <div className="w-6 h-6 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center border border-green-200 dark:border-green-800"><Check size={10} /></div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                     <span className="text-sm font-bold text-green-600">4</span>
+                     <span className="text-[8px] text-gray-400 mb-1">{t("Viewed")}</span>
+                     <div className="w-6 h-6 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center border border-green-200 dark:border-green-800"><Eye size={10} /></div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                     <span className="text-sm font-bold text-green-600">2</span>
+                     <span className="text-[8px] text-gray-400 mb-1">{t("Completed")}</span>
+                     <div className="w-6 h-6 rounded-full bg-green-50 dark:bg-green-900/30 text-green-600 flex items-center justify-center border border-green-200 dark:border-green-800"><CheckCircle size={10} /></div>
+                  </div>
                </div>
-               <div className="flex flex-col items-center">
-                  <div className="w-6 h-6 rounded-full bg-red-50 dark:bg-red-900/30 text-red-500 flex items-center justify-center border border-red-200 dark:border-red-800 mb-1"><X size={10} /></div>
-                  <span className="text-xs font-bold text-red-500">0</span>
-                  <span className="text-[8px] text-gray-400">Bounced</span>
+
+               {/* Bottom Branch (Dropoffs) */}
+               <div className="flex gap-16 mt-12">
+                  <div className="flex flex-col items-center">
+                     <div className="w-6 h-6 rounded-full bg-red-50 dark:bg-red-900/30 text-red-500 flex items-center justify-center border border-red-200 dark:border-red-800 mb-1"><AlertCircle size={10} /></div>
+                     <span className="text-xs font-bold text-red-500">2,695</span>
+                     <span className="text-[8px] text-gray-400">{t("Not Reachable")}</span>
+                  </div>
+                  <div className="flex flex-col items-center">
+                     <div className="w-6 h-6 rounded-full bg-red-50 dark:bg-red-900/30 text-red-500 flex items-center justify-center border border-red-200 dark:border-red-800 mb-1"><X size={10} /></div>
+                     <span className="text-xs font-bold text-red-500">0</span>
+                     <span className="text-[8px] text-gray-400">{t("Bounced")}</span>
+                  </div>
                </div>
             </div>
          </div>
       </div>
-   </div>
-);
+   );
+};
 
 // --- METADATA DEFINITIONS ---
 export const WIDGET_DEFINITIONS = [
@@ -474,12 +494,12 @@ export const WIDGET_DEFINITIONS = [
 ];
 
 // Registry Factory for Dynamic Loading
-export const createWidgetRegistry = (onNavigate: (tab: string) => void): Record<string, React.ReactNode> => ({
+export const createWidgetRegistry = (onNavigate: (tab: string) => void, t: any): Record<string, React.ReactNode> => ({
    'welcome': <WelcomeHeader onNavigate={onNavigate} />,
    'active_campaigns': (
       <div className="h-full" data-tour="widget-active-campaigns">
          <MetricCard
-            title="Active Campaigns"
+            title={t("Active Campaigns")}
             value={SIDEBAR_CAMPAIGN_DATA.activeCount}
             icon={Briefcase}
             colorClass="text-green-600"
@@ -491,7 +511,7 @@ export const createWidgetRegistry = (onNavigate: (tab: string) => void): Record<
    'closed_campaigns': (
       <div className="h-full" data-tour="widget-closed-campaigns">
          <MetricCard
-            title="Closed Campaigns"
+            title={t("Closed Campaigns")}
             value={SIDEBAR_CAMPAIGN_DATA.closedCount}
             icon={Briefcase}
             colorClass="text-red-500"
@@ -501,10 +521,10 @@ export const createWidgetRegistry = (onNavigate: (tab: string) => void): Record<
       </div>
    ),
    'active_profiles': (
-      <MetricCard title="Active Profiles" value="11k" icon={Users} colorClass="text-blue-600" iconBg="bg-blue-50" />
+      <MetricCard title={t("Active Profiles")} value="11k" icon={Users} colorClass="text-blue-600" iconBg="bg-blue-50" />
    ),
    'shortlisted': (
-      <MetricCard title="Shortlisted" value="9" icon={UserCheck} colorClass="text-emerald-600" iconBg="bg-emerald-50" />
+      <MetricCard title={t("Shortlisted")} value="9" icon={UserCheck} colorClass="text-emerald-600" iconBg="bg-emerald-50" />
    ),
    'alerts': <div className="h-full" data-tour="widget-alerts"><AlertsWidget /></div>,
    'trend_graph': <TrendGraph />,
@@ -512,11 +532,11 @@ export const createWidgetRegistry = (onNavigate: (tab: string) => void): Record<
    'upcoming_interviews': (
       <div className="h-full" data-tour="widget-upcoming-interviews">
          <EmptyWidget
-            title="Upcoming Interviews"
+            title={t("Upcoming Interviews")}
             sub={
                <div className="flex gap-2">
                   <select className="text-[10px] border rounded px-1 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><option>Interviews</option></select>
-                  <div className="flex bg-gray-100 dark:bg-slate-700 rounded"><button className="px-2 text-[10px] dark:text-slate-300">Previous</button><button className="px-2 text-[10px] bg-white dark:bg-slate-600 shadow-sm dark:text-white">Upcoming</button></div>
+                  <div className="flex bg-gray-100 dark:bg-slate-700 rounded"><button className="px-2 text-[10px] dark:text-slate-300">{t("Previous")}</button><button className="px-2 text-[10px] bg-white dark:bg-slate-600 shadow-sm dark:text-white">{t("Upcoming")}</button></div>
                </div>
             }
          />
@@ -525,8 +545,8 @@ export const createWidgetRegistry = (onNavigate: (tab: string) => void): Record<
    'email_delivery': <EmailDeliveryReport />,
    'portal_reports': (
       <EmptyWidget
-         title="Portal Sourcing Reports"
-         sub={<select className="text-[10px] border rounded px-1 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><option>Last 7 days</option></select>}
+         title={t("Portal Sourcing Reports")}
+         sub={<select className="text-[10px] border rounded px-1 bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><option>{t("Last 7 days")}</option></select>}
       />
    ),
    'pre_screening': <PreScreeningProgress />

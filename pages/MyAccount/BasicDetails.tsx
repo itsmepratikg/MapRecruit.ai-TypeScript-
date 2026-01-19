@@ -254,20 +254,22 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
       // If override is provided, we delegate saving to parent
       if (onSaveOverride) {
          onSaveOverride(formData);
-         // We typically don't toggle isEditing here because the parent controls view state,
-         // but if it's a modal or similar, the parent handles closing.
          return;
       }
 
+      const userId = userOverride?._id || userOverride?.id;
+      const isCreating = userOverride && !userId;
+      const isSelf = !userOverride;
+
       // Default behavior: Save via API or local hook fallback
       const saveAction = (async () => {
-         if (userOverride?.id) {
-            // Update existing user
-            await userService.update(userOverride.id, formData);
-         } else if (userOverride && !userOverride.id) {
+         if (isCreating) {
             // Create new user (from Users list)
             await userService.create(formData);
-         } else {
+         } else if (userId) {
+            // Update existing user (Admin override mode)
+            await userService.update(userId, formData);
+         } else if (isSelf) {
             // My Account (Logged in user) - Save to DB AND update local state
             await userService.update(userProfile._id, formData);
             saveProfile({ ...formData });
@@ -275,12 +277,12 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
       })();
 
       await addPromise(saveAction, {
-         loading: userOverride && !userOverride.id ? 'Creating user...' : 'Updating profile...',
-         success: userOverride && !userOverride.id ? 'User created successfully.' : 'Profile details updated successfully.',
+         loading: isCreating ? 'Creating user...' : 'Updating profile...',
+         success: isCreating ? 'User created successfully.' : 'Profile details updated successfully.',
          error: 'Failed to save changes.'
       });
 
-      if (onBack && userOverride && !userOverride.id) {
+      if (onBack && isCreating) {
          // If we were creating, go back to list
          onBack();
       } else {

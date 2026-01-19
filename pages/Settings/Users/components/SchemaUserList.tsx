@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { userService } from '../../../../services/api';
 import SchemaTable from '../../../../components/Schema/SchemaTable';
 import { useToast } from '../../../../components/Toast';
+import { useTranslation } from 'react-i18next';
 
 export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
+    const { t } = useTranslation();
     const { addToast } = useToast();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
 
     const columns = [
         {
-            header: 'Name',
+            header: t('Name'),
             accessor: (item: any) => {
                 const initials = ((item.firstName?.[0] || '') + (item.lastName?.[0] || '')).toUpperCase() || '?';
                 return (
@@ -44,33 +46,33 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
                         </div>
                         <div className="flex flex-col">
                             <span className="font-bold text-slate-800 dark:text-slate-200">{item.name || `${item.firstName || ''} ${item.lastName || ''}`.trim() || 'N/A'}</span>
-                            <span className="text-[10px] text-slate-400 capitalize">{item.jobTitle || 'No Title'}</span>
+                            <span className="text-[10px] text-slate-400 capitalize">{item.jobTitle || t('No Title')}</span>
                         </div>
                     </div>
                 );
             }
         },
         {
-            header: 'Email',
+            header: t('Email'),
             accessor: 'email'
         },
         {
-            header: 'Role',
+            header: t('Role'),
             accessor: (item: any) => (
                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${item.role === 'Product Admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
-                        item.role === 'Admin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                            'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                    item.role === 'Admin' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                        'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                     }`}>
-                    {item.role || 'User'}
+                    {item.role || t('User')}
                 </span>
             )
         },
         {
-            header: 'Last Active',
-            accessor: (item: any) => item.lastActiveAt ? new Date(item.lastActiveAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Never'
+            header: t('Last Active'),
+            accessor: (item: any) => item.lastActiveAt ? new Date(item.lastActiveAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('Never')
         },
         {
-            header: 'Logins',
+            header: t('Logins'),
             accessor: (item: any) => (
                 <div className="flex items-center gap-1">
                     <span className="font-medium">{item.loginCount || 0}</span>
@@ -78,25 +80,25 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
             )
         },
         {
-            header: 'Status',
+            header: t('Status'),
             accessor: (item: any) => (
                 <div className="flex items-center gap-1.5">
                     <div className={`w-1.5 h-1.5 rounded-full ${item.status ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
                     <span className={item.status ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-400'}>
-                        {item.status ? 'Active' : 'Inactive'}
+                        {item.status ? t('Active') : t('Inactive')}
                     </span>
                 </div>
             )
         }
     ];
 
-    if (loading) return <div className="p-8 text-center text-slate-500">Loading Users...</div>;
+    if (loading) return <div className="p-8 text-center text-slate-500">{t("Loading Users...")}</div>;
 
     return (
         <SchemaTable
             data={filteredUsers}
             columns={columns}
-            title="Users"
+            title={t("Users")}
             onEdit={onSelectUser}
         />
     );
