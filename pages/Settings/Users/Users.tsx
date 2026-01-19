@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
     Users, Plus, Search, Edit2, ChevronLeft,
     CheckCircle, XCircle, MoreHorizontal, Mail, Phone,
@@ -7,6 +8,7 @@ import {
 } from '../../../components/Icons';
 import { useToast } from '../../../components/Toast';
 import { BasicDetails } from '../../MyAccount/BasicDetails';
+import { SchemaUserList } from './components/SchemaUserList';
 import { MOCK_USERS_LIST } from '../../../data';
 
 // Extended Mock Data for Users Table
@@ -36,6 +38,7 @@ interface UsersSettingsProps {
 
 export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
     const { addToast } = useToast();
+    const navigate = useNavigate();
     const [view, setView] = useState<'LIST' | 'CREATE'>('LIST');
     const [users, setUsers] = useState(USERS_DATA);
     const [searchQuery, setSearchQuery] = useState('');
@@ -45,29 +48,10 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
     const [newUser, setNewUser] = useState<any>(null);
 
     // --- Handlers ---
-
     const handleEditUser = (user: any) => {
-        // If parent handler exists, use it to open global edit view
-        if (onSelectUser) {
-            // Transform to match BasicDetails schema which expects firstName/lastName
-            const nameParts = user.name ? user.name.split(' ') : [''];
-            const firstName = user.firstName || nameParts[0] || '';
-            const lastName = user.lastName || nameParts.slice(1).join(' ') || '';
-
-            const preparedUser = {
-                ...user,
-                firstName,
-                lastName,
-                // Map 'mobile' from table data to 'phone' for profile form if needed
-                phone: user.phone || (user.mobile ? user.mobile.replace(/^\+1\s/, '') : ''),
-                countryCode: user.countryCode || 'US',
-                activeClient: user.activeClient || 'TRC Talent Solutions',
-                // Ensure color is a valid name (like 'Blue') instead of a tailwind class string if possible, or default
-                color: (user.color && !user.color.includes('bg-')) ? user.color : 'Blue'
-            };
-
-            onSelectUser(preparedUser);
-        }
+        // Use MongoDB _id for navigation if available
+        const userId = user._id || user.id || 'new';
+        navigate(`/settings/Users/userprofile/basicdetails/${userId}`);
     };
 
     const handleCreateUser = () => {
@@ -198,106 +182,9 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
                     </div>
                 )}
 
-                {/* Table */}
-                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm whitespace-nowrap">
-                            <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-200 dark:border-slate-700">
-                                <tr>
-                                    <th className="px-4 py-4 w-12 text-center">
-                                        <input
-                                            type="checkbox"
-                                            className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 cursor-pointer"
-                                            checked={selectedIds.size === filteredUsers.length && filteredUsers.length > 0}
-                                            onChange={toggleSelectAll}
-                                        />
-                                    </th>
-                                    <th className="px-4 py-4">User Name</th>
-                                    <th className="px-4 py-4">Role</th>
-                                    <th className="px-4 py-4">Contact Info</th>
-                                    <th className="px-4 py-4">Status</th>
-                                    <th className="px-4 py-4">Created</th>
-                                    <th className="px-4 py-4">Last Updated</th>
-                                    <th className="px-4 py-4 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                {filteredUsers.map(user => (
-                                    <tr
-                                        key={user.id}
-                                        className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer ${selectedIds.has(user.id) ? 'bg-blue-50/30 dark:bg-blue-900/10' : ''}`}
-                                        onClick={() => handleEditUser(user)}
-                                    >
-                                        <td className="px-4 py-4 text-center" onClick={(e) => e.stopPropagation()}>
-                                            <input
-                                                type="checkbox"
-                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:bg-slate-700 dark:border-slate-600 cursor-pointer"
-                                                checked={selectedIds.has(user.id)}
-                                                onChange={() => toggleSelection(user.id)}
-                                            />
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${user.color} shadow-sm border border-white dark:border-slate-700`}>
-                                                    {user.initials}
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                        {user.name}
-                                                    </div>
-                                                    <div className="text-[10px] text-slate-400 font-mono">{user.id}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
-                                                <Shield size={10} /> {user.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            <div className="flex flex-col gap-1 text-xs">
-                                                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                                                    <Mail size={12} className="text-slate-400" /> {user.email}
-                                                </div>
-                                                <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                                                    <Phone size={12} className="text-slate-400" /> {user.mobile}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-4">
-                                            {user.status === 'Active' ? (
-                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800">
-                                                    <CheckCircle size={10} /> Active
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                                                    <XCircle size={10} /> Inactive
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">
-                                            {user.createdDate}
-                                        </td>
-                                        <td className="px-4 py-4 text-xs text-slate-500 dark:text-slate-400">
-                                            {user.updatedDate}
-                                        </td>
-                                        <td className="px-4 py-4 text-right">
-                                            <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded transition-colors">
-                                                <Edit2 size={16} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                {filteredUsers.length === 0 && (
-                                    <tr>
-                                        <td colSpan={8} className="py-12 text-center text-slate-400">
-                                            No users found matching "{searchQuery}"
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                {/* Schema User List */}
+                <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden p-0">
+                    <SchemaUserList searchQuery={searchQuery} onSelectUser={handleEditUser} />
                 </div>
             </div>
         </div>

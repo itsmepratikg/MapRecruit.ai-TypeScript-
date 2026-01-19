@@ -1,7 +1,7 @@
 
-import { 
+import {
   User, FileText, Activity, MessageCircle, Briefcase, FolderOpen, Video, ThumbsUp, Copy,
-  MessageSquare, SlidersHorizontal, Calendar, Shield, Lock, Bell, Clock,
+  MessageSquare, SlidersHorizontal, Calendar, Shield, Lock, Bell, Clock, Settings,
   Building2, Search, GitBranch, ClipboardList, Tag, Database, Mail, CreditCard, Palette, Layout,
   Key, BarChart2
 } from '../Icons';
@@ -19,14 +19,16 @@ export const PROFILE_TABS = [
 ];
 
 export const USER_MANAGEMENT_MENU = [
-    { id: 'BASIC_DETAILS', label: 'Basic Details', icon: User },
-    { id: 'COMM_PREFS', label: 'Communication', icon: MessageSquare },
-    { id: 'USER_PREFS', label: 'Appearance', icon: SlidersHorizontal },
-    { id: 'CALENDAR', label: 'Calendar', icon: Calendar },
-    { id: 'ROLES_PERMISSIONS', label: 'Roles & Permissions', icon: Shield },
-    { id: 'AUTH_SYNC', label: 'Password & Auth', icon: Lock },
-    { id: 'USER_NOTIFICATIONS', label: 'Notifications', icon: Bell },
-    { id: 'LAST_LOGIN', label: 'Login History', icon: Clock },
+  { id: 'BASIC_DETAILS', label: 'Basic Details', icon: User },
+  { id: 'COMM_PREFS', label: 'Communication', icon: MessageSquare },
+  { id: 'USER_PREFS', label: 'Appearance', icon: SlidersHorizontal },
+  { id: 'CALENDAR', label: 'Calendar', icon: Calendar },
+  { id: 'ROLES_PERMISSIONS', label: 'Roles & Permissions', icon: Shield },
+  { id: 'AUTH_SYNC', label: 'Password & Auth', icon: Lock },
+  { id: 'USER_NOTIFICATIONS', label: 'Notifications', icon: Bell },
+  { id: 'LAST_LOGIN', label: 'Login History', icon: Clock },
+  { id: 'SETTINGS', label: 'Settings', icon: Settings },
+  { id: 'ACTIVITIES', label: 'Activities', icon: Activity },
 ];
 
 export const SETTINGS_CATEGORIES = [
@@ -75,14 +77,14 @@ export const SETTINGS_CATEGORIES = [
 ];
 
 export const MY_ACCOUNT_MENU = [
-    { id: 'BASIC_DETAILS', label: 'Basic Details', icon: User },
-    { id: 'COMM_PREFS', label: 'Communication', icon: MessageSquare },
-    { id: 'USER_PREFS', label: 'Appearance', icon: SlidersHorizontal },
-    { id: 'CALENDAR', label: 'Calendar', icon: Calendar },
-    { id: 'ROLES_PERMISSIONS', label: 'Roles & Permissions', icon: Shield },
-    { id: 'AUTH_SYNC', label: 'Password & Authentication', icon: Lock },
-    { id: 'USER_NOTIFICATIONS', label: 'User Notifications', icon: Bell },
-    { id: 'LAST_LOGIN', label: 'Last Login Sessions', icon: Clock },
+  { id: 'BASIC_DETAILS', label: 'Basic Details', icon: User },
+  { id: 'COMM_PREFS', label: 'Communication', icon: MessageSquare },
+  { id: 'USER_PREFS', label: 'Appearance', icon: SlidersHorizontal },
+  { id: 'CALENDAR', label: 'Calendar', icon: Calendar },
+  { id: 'ROLES_PERMISSIONS', label: 'Roles & Permissions', icon: Shield },
+  { id: 'AUTH_SYNC', label: 'Password & Authentication', icon: Lock },
+  { id: 'USER_NOTIFICATIONS', label: 'User Notifications', icon: Bell },
+  { id: 'LAST_LOGIN', label: 'Last Login Sessions', icon: Clock },
 ];
 
 export const PROFILES_CATEGORIES = [

@@ -7,6 +7,7 @@ import {
 import { useToast } from '../../components/Toast';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useMsal } from '@azure/msal-react';
+import { authService } from '../../services/api';
 
 interface LoginProps {
     onLogin: () => void;
@@ -30,29 +31,19 @@ export const Login = ({ onLogin }: LoginProps) => {
 
         setIsLoading(true);
 
-        // Simulate API Call using Promise
-        const loginAction = new Promise<void>((resolve, reject) => {
-            setTimeout(() => {
-                // Mock validation - fail if email contains 'fail'
-                if (email.includes('fail')) {
-                    reject(new Error("Invalid credentials"));
-                } else {
-                    localStorage.setItem('authToken', 'mock-jwt-token-123');
-                    resolve();
-                }
-            }, 1500);
-        });
+        const loginAction = async () => {
+            await authService.login(email, password);
+        };
 
         try {
-            await addPromise(loginAction, {
-                loading: 'Authenticating...',
+            await addPromise(loginAction(), {
+                loading: 'Authenticating with Backend...',
                 success: 'Successfully logged in!',
                 error: 'Authentication failed. Please check credentials.'
             });
             onLogin();
         } catch (error) {
             console.error(error);
-            // Error toast is handled by addPromise automatically
         } finally {
             setIsLoading(false);
         }

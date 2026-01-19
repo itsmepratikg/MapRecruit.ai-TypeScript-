@@ -24,21 +24,21 @@ export const MyAccountMenu = ({
 
     const getPath = (id: string) => {
         const map: Record<string, string> = {
-            'BASIC_DETAILS': 'BasicDetails',
-            'COMM_PREFS': 'Communication',
-            'USER_PREFS': 'Appearance',
-            'CALENDAR': 'Calendar',
-            'ROLES_PERMISSIONS': 'RolesPermissions',
-            'AUTH_SYNC': 'AuthSync',
-            'USER_NOTIFICATIONS': 'UserNotifications',
-            'LAST_LOGIN': 'LastLogin'
+            'BASIC_DETAILS': 'basicdetails',
+            'COMM_PREFS': 'communication',
+            'USER_PREFS': 'appearance',
+            'CALENDAR': 'calendar',
+            'ROLES_PERMISSIONS': 'rolepermissions',
+            'AUTH_SYNC': 'authsync',
+            'USER_NOTIFICATIONS': 'usernotifications',
+            'LAST_LOGIN': 'loginsessions'
         };
         if (map[id]) return map[id];
         return id.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
     }
 
-    // /account/BasicDetails -> BasicDetails
-    const currentPath = location.pathname.split('/account/')[1] || 'BasicDetails';
+    // /myaccount/basicdetails -> basicdetails
+    const currentPath = location.pathname.split('/myaccount/')[1] || 'basicdetails';
 
     return (
         <div className="animate-in slide-in-from-left duration-300 ease-out">
@@ -64,7 +64,7 @@ export const MyAccountMenu = ({
                                 icon={item.icon}
                                 label={item.label}
                                 activeTab={currentPath === path}
-                                to={`/account/${path}`}
+                                to={`/myaccount/${path}`}
                                 onClick={() => {
                                     setActiveAccountTab(item.id);
                                     if (!isDesktop) setIsSidebarOpen(false);

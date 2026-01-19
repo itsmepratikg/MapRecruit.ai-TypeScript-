@@ -118,7 +118,7 @@ export const AccountMenuContent = ({
             <div className="py-2 bg-white dark:bg-slate-800 rounded-b-lg overflow-y-auto max-h-[600px] custom-scrollbar">
                 <button
                     onClick={() => {
-                        if (onNavigate) onNavigate('/account/BasicDetails');
+                        if (onNavigate) onNavigate('/myaccount/basicdetails');
                         if (closeMenu) closeMenu();
                     }}
                     data-tour="nav-account-details"
@@ -151,7 +151,7 @@ export const AccountMenuContent = ({
                 <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
                     <UserCog size={16} /> Product Admin Settings
                 </button>
-                <button onClick={() => { if (onNavigate) onNavigate('/account/AuthSync'); if (closeMenu) closeMenu(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
+                <button onClick={() => { if (onNavigate) onNavigate('/myaccount/authsync'); if (closeMenu) closeMenu(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
                     <Lock size={16} /> Change Password
                 </button>
 

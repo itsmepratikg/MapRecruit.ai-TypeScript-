@@ -12,6 +12,10 @@ export interface UserProfileData {
   activeClient: string;
   avatar: string | null;
   teams: string[];
+  lastActiveAt?: string;
+  lastLoginAt?: string;
+  loginCount?: number;
+  timeZone?: string;
 }
 
 export const PROFILE_CLIENTS = [
@@ -32,9 +36,9 @@ export const COLORS = [
 ];
 
 export const INITIAL_PROFILE_DATA: UserProfileData = {
-  firstName: "Pratik",
-  lastName: "Gaurav",
-  email: "pratik.gaurav@trcdemo.com",
+  firstName: "User",
+  lastName: "Name",
+  email: "user@example.com",
   phone: "7004029399",
   countryCode: "IN",
   role: "Product Admin",

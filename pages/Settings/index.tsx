@@ -7,6 +7,7 @@ import { ReachOutLayouts } from './ReachOutLayouts';
 import { CompanyInfo } from './CompanyInfo';
 import { RolesPermissions } from './Roles/RolesPermissions';
 import { UsersSettings } from './Users/Users';
+import { UserProfileContainer } from './Users/UserProfileContainer';
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -64,11 +65,13 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
 
     return (
         <Routes>
-            <Route path="/" element={<Navigate to={getPath('COMPANY_INFO')} replace />} />
+            <Route path="/" element={<Navigate to={`/settings/${getPath('COMPANY_INFO')}`} replace />} />
             <Route path={getPath('COMPANY_INFO')} element={<CompanyInfo />} />
             <Route path={getPath('ROLES')} element={<RolesPermissions />} />
             <Route path={getPath('USERS')} element={<UsersSettings onSelectUser={onSelectUser} />} />
             <Route path={getPath('REACHOUT_LAYOUTS')} element={<ReachOutLayouts />} />
+            <Route path="Users/userprofile/:section/:id" element={<UserProfileContainer />} />
+            <Route path="Users/userprofile/:section" element={<UserProfileContainer />} />
             {/* Add routes for other settings items */}
             {Object.keys(SETTINGS_CONTENT).map(id => {
                 // Only render placeholder for items not explicitly routed above
@@ -77,7 +80,7 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
                 }
                 return null;
             })}
-            <Route path="*" element={<Navigate to={getPath('COMPANY_INFO')} replace />} />
+            <Route path="*" element={<Navigate to={`/settings/${getPath('COMPANY_INFO')}`} replace />} />
         </Routes>
     );
 };

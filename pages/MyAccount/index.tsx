@@ -11,6 +11,7 @@ import { CalendarSettings } from './CalendarSettings';
 import { RolesPermissions } from './RolesPermissions';
 import { AuthSync } from './AuthSync';
 import { UserNotifications } from './UserNotifications';
+import { LoginSessions } from './LoginSessions';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 interface MyAccountProps {
@@ -22,17 +23,17 @@ export const MyAccount = ({ userOverride }: MyAccountProps) => {
 
   const getPath = (id: string) => {
     const map: Record<string, string> = {
-      'BASIC_DETAILS': 'BasicDetails',
-      'COMM_PREFS': 'Communication',
-      'USER_PREFS': 'Appearance',
-      'CALENDAR': 'Calendar',
-      'ROLES_PERMISSIONS': 'RolesPermissions',
-      'AUTH_SYNC': 'AuthSync',
-      'USER_NOTIFICATIONS': 'UserNotifications',
-      'LAST_LOGIN': 'LastLogin'
+      'BASIC_DETAILS': 'basicdetails',
+      'COMM_PREFS': 'communication',
+      'USER_PREFS': 'appearance',
+      'CALENDAR': 'calendar',
+      'ROLES_PERMISSIONS': 'rolepermissions',
+      'AUTH_SYNC': 'authsync',
+      'USER_NOTIFICATIONS': 'usernotifications',
+      'LAST_LOGIN': 'loginsessions'
     };
     if (map[id]) return map[id];
-    return id.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
+    return id.split('_').map(w => w.charAt(0).toLowerCase() + w.slice(1).toLowerCase()).join('');
   }
 
   return (
@@ -47,7 +48,7 @@ export const MyAccount = ({ userOverride }: MyAccountProps) => {
           <Route path={getPath('ROLES_PERMISSIONS')} element={<RolesPermissions />} />
           <Route path={getPath('AUTH_SYNC')} element={<AuthSync />} />
           <Route path={getPath('USER_NOTIFICATIONS')} element={<UserNotifications />} />
-          <Route path={getPath('LAST_LOGIN')} element={<div className="p-8 lg:p-12"><AccountPlaceholder title="Last Login Sessions" description={`Review recent login activity for ${userOverride ? userOverride.name : 'your account'}.`} icon={Clock} /></div>} />
+          <Route path={getPath('LAST_LOGIN')} element={<LoginSessions />} />
           <Route path="*" element={<Navigate to={getPath('BASIC_DETAILS')} replace />} />
         </Routes>
       </div>

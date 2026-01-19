@@ -73,7 +73,6 @@ export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => vo
    const { userProfile } = useUserProfile();
    const [timeData, setTimeData] = useState({
       greeting: 'Good Evening',
-      lastLogin: '',
       bgGradient: 'from-indigo-900 to-indigo-800'
    });
 
@@ -81,7 +80,7 @@ export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => vo
    const initials = (userProfile.firstName.charAt(0) + userProfile.lastName.charAt(0)).toUpperCase();
 
    useEffect(() => {
-      const updateTime = () => {
+      const updateGreeting = () => {
          const now = new Date();
          const hour = now.getHours();
          let greeting = 'Good Evening';
@@ -94,23 +93,26 @@ export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => vo
             greeting = 'Good Afternoon';
             bgGradient = 'from-blue-600 to-yellow-500';
          }
-
-         const lastLogin = now.toLocaleString('en-US', {
-            month: '2-digit',
-            day: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-         });
-
-         setTimeData({ greeting, lastLogin, bgGradient });
+         setTimeData({ greeting, bgGradient });
       };
 
-      updateTime();
-      const timer = setInterval(updateTime, 60000);
+      updateGreeting();
+      const timer = setInterval(updateGreeting, 60000);
       return () => clearInterval(timer);
    }, []);
+
+   const formatDisplayTime = (dateStr?: string) => {
+      if (!dateStr) return 'N/A';
+      const date = new Date(dateStr);
+      return date.toLocaleString('en-US', {
+         month: 'short',
+         day: 'numeric',
+         hour: '2-digit',
+         minute: '2-digit',
+         hour12: true,
+         timeZone: 'UTC'
+      }) + ' UTC';
+   };
 
    return (
       <div className={`bg-gradient-to-br ${timeData.bgGradient} rounded-2xl p-6 text-white flex flex-col h-full relative overflow-hidden shadow-lg border border-white/10 dark:border-slate-600 transition-colors duration-1000`}>
@@ -119,10 +121,20 @@ export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => vo
 
          <div className="z-10 flex-1">
             <div className="flex justify-between items-start mb-4">
-               <h2 className="text-xl font-bold tracking-tight">{timeData.greeting}, {userProfile.firstName}</h2>
-               <span className="text-[10px] text-white/80 bg-black/20 px-2 py-1 rounded border border-white/10 whitespace-nowrap">
-                  Last Login: {timeData.lastLogin}
-               </span>
+               <div>
+                  <h2 className="text-xl font-bold tracking-tight">{timeData.greeting}, {userProfile.firstName}</h2>
+                  <p className="text-[10px] text-white/60 mt-0.5">Timezone: {userProfile.timeZone || 'Asia/Kolkata (IST)'}</p>
+               </div>
+               <div className="flex flex-col items-end gap-1">
+                  <span className="text-[10px] text-white/80 bg-black/20 px-2 py-1 rounded border border-white/10 whitespace-nowrap">
+                     Last Active: {formatDisplayTime(userProfile.lastActiveAt)}
+                  </span>
+                  {userProfile.loginCount !== undefined && (
+                     <span className="text-[9px] text-white/60">
+                        Login count: {userProfile.loginCount}
+                     </span>
+                  )}
+               </div>
             </div>
             <p className="text-white/80 text-xs mb-6 flex items-center gap-2">
                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.5)]"></span>
@@ -140,7 +152,7 @@ export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                   )}
                </div>
                <div className="min-w-0">
-                  <p className="font-bold text-base truncate">{userProfile.firstName}</p>
+                  <p className="font-bold text-base truncate">{userProfile.firstName} {userProfile.lastName}</p>
                   <div className="flex items-center gap-1.5 mt-1 text-[10px] text-white/90 bg-white/10 px-2 py-0.5 rounded-full w-fit border border-white/10 backdrop-blur-sm">
                      <Briefcase size={10} />
                      <span className="truncate">{userProfile.activeClient}</span>

@@ -27,6 +27,7 @@ import { useUserProfile } from './hooks/useUserProfile';
 import { GLOBAL_CAMPAIGNS } from './data';
 import { GlobalSearch } from './components/GlobalSearch'; // Import Global Search
 import clarity from '@microsoft/clarity';
+import { useSessionTimeout } from './hooks/useSessionTimeout';
 
 // Import New Menu Components
 import { DashboardMenu } from './components/Menu/DashboardMenu';
@@ -88,11 +89,20 @@ export const App = () => {
 
   // Check Authentication on Mount
   useEffect(() => {
+    const userStr = localStorage.getItem('user');
     const token = localStorage.getItem('authToken');
-    if (token) {
+    if (userStr || token) {
       setIsAuthenticated(true);
     }
   }, []);
+
+  // Session Timeout (30 minutes of inactivity)
+  useSessionTimeout(() => {
+    if (isAuthenticated) {
+      addToast('Session expired due to inactivity.', 'info');
+      handleLogout();
+    }
+  });
 
   // Update Clarity User Info on Authentication
   useEffect(() => {
@@ -131,6 +141,7 @@ export const App = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
     setIsAuthenticated(false);
     // Reset view states
     setActiveView('DASHBOARD');
@@ -316,16 +327,30 @@ export const App = () => {
               {/* Redirect legacy /profiles to view */}
               <Route path="/profiles" element={<Navigate to="/profiles/view/Search" replace />} />
 
-              <Route path="/settings/*" element={
-                <SettingsMenu
-                  onBack={() => navigate('/dashboard')}
+              <Route path="/settings/Users/userprofile/*" element={
+                <UserAdminMenu
+                  onBack={() => navigate('/settings/Users')}
+                  activeAdminUserTab={''}
+                  setActiveAdminUserTab={setActiveAdminUserTab}
+                  selectedAdminUser={selectedAdminUser}
                   isCollapsed={isCollapsed}
                   setIsSidebarOpen={setIsSidebarOpen}
                 />
               } />
-              <Route path="/account/*" element={
+              <Route path="/settings/*" element={
+                <SettingsMenu
+                  onBack={() => navigate('/dashboard')}
+                  activeSettingsTab={activeSettingsTab}
+                  setActiveSettingsTab={setActiveSettingsTab}
+                  isCollapsed={isCollapsed}
+                  setIsSidebarOpen={setIsSidebarOpen}
+                />
+              } />
+              <Route path="/myaccount/*" element={
                 <MyAccountMenu
                   onBack={() => navigate('/dashboard')}
+                  activeAccountTab={activeAccountTab}
+                  setActiveAccountTab={setActiveAccountTab}
                   isCollapsed={isCollapsed}
                   setIsSidebarOpen={setIsSidebarOpen}
                 />
@@ -351,7 +376,7 @@ export const App = () => {
                       'CAMPAIGNS': '/campaigns',
                       'METRICS': '/metrics',
                       'SETTINGS': '/settings/CompanyInfo',
-                      'MY_ACCOUNT': '/account',
+                      'MY_ACCOUNT': '/myaccount',
                       'ACTIVITIES': '/activities',
                       'HISTORY': '/history',
                       'NOTIFICATIONS': '/notifications',
@@ -386,7 +411,7 @@ export const App = () => {
               onNavigate={(view) => {
                 const routeMap: Record<string, string> = {
                   'SETTINGS': '/settings/CompanyInfo',
-                  'MY_ACCOUNT': '/account/BasicDetails',
+                  'MY_ACCOUNT': '/myaccount/basicdetails',
                   'LOGIN': '/login'
                 };
                 const target = view.startsWith('/') ? view : (routeMap[view] || '/dashboard');
@@ -441,7 +466,7 @@ export const App = () => {
               <SettingsPage onSelectUser={handleUserSelect} />
             } />
 
-            <Route path="/account/*" element={<MyAccount activeTab={activeAccountTab} />} />
+            <Route path="/myaccount/*" element={<MyAccount activeTab={activeAccountTab} />} />
 
             <Route path="/activities" element={<Activities />} />
             <Route path="/history" element={<PreviousHistory onNavigate={(view, config) => handleGlobalNavigate('NAV', { view, ...config })} />} />
