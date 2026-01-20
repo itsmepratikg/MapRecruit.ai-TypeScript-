@@ -3,8 +3,8 @@ import React from 'react';
 
 // Wrapper for FontAwesome Icons to mimic Lucide API
 const Icon = ({ className = "", size = 24, iconClass, style = {} }: any) => (
-  <i 
-    className={`${iconClass} ${className}`} 
+  <i
+    className={`${iconClass} ${className}`}
     style={{ fontSize: size, width: size, height: size, lineHeight: `${size}px`, textAlign: 'center', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', ...style }}
   ></i>
 );
@@ -125,6 +125,7 @@ export const Send = (props: any) => <Icon {...props} iconClass="fa-solid fa-pape
 export const Settings = (props: any) => <Icon {...props} iconClass="fa-solid fa-gear" />;
 export const Share2 = (props: any) => <Icon {...props} iconClass="fa-solid fa-share-nodes" />;
 export const Shield = (props: any) => <Icon {...props} iconClass="fa-solid fa-shield-halved" />;
+export const ShieldCheck = (props: any) => <Icon {...props} iconClass="fa-solid fa-shield-check" />;
 export const Sidebar = (props: any) => <Icon {...props} iconClass="fa-solid fa-table-columns" />;
 export const Slash = (props: any) => <Icon {...props} iconClass="fa-solid fa-slash" />;
 export const SlidersHorizontal = (props: any) => <Icon {...props} iconClass="fa-solid fa-sliders" />;

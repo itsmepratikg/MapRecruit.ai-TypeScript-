@@ -73,7 +73,7 @@ const WidgetPlaceholder = ({ id, onRemove, readOnly }: any) => {
 export const Appearance = () => {
     const {
         theme, updateTheme,
-        languageCode, updateLanguage,
+        language, languageCode, updateLanguage,
         dateFormat,
         dashboardLayouts, updateDashboardLayout, resetDashboard, saveSettings
     } = useUserPreferences();
@@ -205,8 +205,23 @@ export const Appearance = () => {
         setLayoutState(prev => prev.filter(w => w.id !== id));
     };
 
-    const handleSaveLayout = () => {
+    const handleSaveLayout = async () => {
+        // Construct the full object to avoid stale state issues
+        const updatedPrefs = {
+            theme,
+            languageCode,
+            language,
+            dateFormat,
+            dashboardConfig: {
+                layouts: {
+                    ...dashboardLayouts,
+                    [activeViewMode]: layoutState
+                }
+            }
+        };
+
         updateDashboardLayout(layoutState, activeViewMode);
+        await saveSettings(updatedPrefs);
         setIsEditing(false);
         addToast('Layout saved successfully', 'success');
     };

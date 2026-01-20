@@ -106,6 +106,28 @@ export const campaignService = {
             return GLOBAL_CAMPAIGNS;
         }
     },
+    getStats: async () => {
+        try {
+            const response = await api.get('/campaigns/stats');
+            return response.data;
+        } catch (error) {
+            console.warn("API Error: Stats fallback");
+            return {
+                active: GLOBAL_CAMPAIGNS.filter(c => c.status === 'Active').length,
+                closed: GLOBAL_CAMPAIGNS.filter(c => c.status === 'Closed').length,
+                archived: GLOBAL_CAMPAIGNS.filter(c => c.status === 'Archived').length,
+            };
+        }
+    },
+    getRecent: async () => {
+        try {
+            const response = await api.get('/campaigns/recent');
+            return response.data;
+        } catch (error) {
+            console.warn("API Error: Recent campaigns fallback");
+            return GLOBAL_CAMPAIGNS.slice(0, 5);
+        }
+    },
     create: async (campaignData) => {
         const response = await api.post('/campaigns', campaignData);
         return response.data;
@@ -126,6 +148,28 @@ export const profileService = {
         const response = await api.post('/profiles', profileData);
         return response.data;
     },
+};
+
+export const passkeyService = {
+    getRegistrationOptions: async (deviceType) => {
+        const response = await api.post('/auth/passkey/register-options', { deviceType });
+        return response.data;
+    },
+    verifyRegistration: async (body, deviceType) => {
+        const response = await api.post('/auth/passkey/register-verify', { body, deviceType });
+        return response.data;
+    },
+    getAuthenticationOptions: async (email) => {
+        const response = await api.post('/auth/passkey/login-options', { email });
+        return response.data;
+    },
+    verifyLogin: async (email, body) => {
+        const response = await api.post('/auth/passkey/login-verify', { email, body });
+        if (response.data.token) {
+            localStorage.setItem('user', JSON.stringify(response.data));
+        }
+        return response.data;
+    }
 };
 
 export default api;

@@ -5,12 +5,16 @@ const campaignSchema = mongoose.Schema({
         type: mongoose.Schema.Types.Mixed
     },
     companyID: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: true,
         index: true
     },
     clientID: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        index: true
+    },
+    userID: {
+        type: mongoose.Schema.Types.ObjectId,
         index: true
     },
     // Meta-status from root of JSON
@@ -23,7 +27,7 @@ const campaignSchema = mongoose.Schema({
         mainSchema: {
             // Core indexed fields for searching/filtering
             title: { type: String, index: true },
-            ownerID: { type: [String], index: true },
+            ownerID: { type: [mongoose.Schema.Types.Mixed], index: true },
             status: { type: String, default: 'Active', index: true },
 
             // Flexible bucket for everything else

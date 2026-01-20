@@ -94,7 +94,11 @@ const updateUser = async (req, res) => {
                     ...req.body.accessibilitySettings,
                     dashboardConfig: {
                         ...(user.accessibilitySettings?.dashboardConfig || {}),
-                        ...(req.body.accessibilitySettings?.dashboardConfig || {})
+                        ...(req.body.accessibilitySettings?.dashboardConfig || {}),
+                        layouts: {
+                            ...(user.accessibilitySettings?.dashboardConfig?.layouts || {}),
+                            ...(req.body.accessibilitySettings?.dashboardConfig?.layouts || {})
+                        }
                     }
                 };
                 user.markModified('accessibilitySettings');

@@ -4,8 +4,8 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 
 // Generate JWT
-const generateToken = (id, companyID, activeClientID, role) => {
-    return jwt.sign({ id, companyID, activeClientID, role }, process.env.JWT_SECRET, {
+const generateToken = (id, email, companyID, activeClientID, role) => {
+    return jwt.sign({ id, email, companyID, activeClientID, role }, process.env.JWT_SECRET, {
         expiresIn: '30d',
     });
 };
@@ -60,7 +60,7 @@ const registerUser = async (req, res) => {
                 role: user.role,
                 companyID: user.companyID,
                 activeClientID: user.activeClientID,
-                token: generateToken(user._id, user.companyID, user.activeClientID, user.role),
+                token: generateToken(user._id, user.email, user.companyID, user.activeClientID, user.role),
             });
         } else {
             res.status(400).json({ message: 'Invalid user data' });
@@ -94,7 +94,7 @@ const loginUser = async (req, res) => {
 
             res.json({
                 ...userObj,
-                token: generateToken(user._id, user.companyID, user.activeClientID, user.role),
+                token: generateToken(user._id, user.email, user.companyID, user.activeClientID, user.role),
             });
         } else {
             res.status(401).json({ message: 'Invalid credentials' });

@@ -8,7 +8,8 @@ import {
 import { useToast } from '../../components/Toast';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useMsal } from '@azure/msal-react';
-import { authService } from '../../services/api';
+import { authService, passkeyService } from '../../services/api';
+import { startAuthentication } from '@simplewebauthn/browser';
 
 interface LoginProps {
     onLogin: () => void;
@@ -52,6 +53,7 @@ export const Login = ({ onLogin }: LoginProps) => {
     };
 
     const handlePasskeyLogin = async () => {
+        // Check for WebAuthn support
         if (!window.PublicKeyCredential) {
             addToast(t("WebAuthn is not supported on this device."), "error");
             return;
@@ -59,39 +61,36 @@ export const Login = ({ onLogin }: LoginProps) => {
 
         setIsLoading(true);
         try {
-            // Mock challenge
-            const challenge = new Uint8Array(32);
-            window.crypto.getRandomValues(challenge);
+            // 1. Get authentication options from server (email optional)
+            // If email is provided -> User Verification
+            // If email is NOT provided -> User Identification (Resident Key)
+            const options = await passkeyService.getAuthenticationOptions(email || undefined);
 
-            // In a real app, you would fetch `allowCredentials` from the server based on the username
-            // Here we just trigger the browser prompt to simulate the flow
-            const credential = await navigator.credentials.get({
-                publicKey: {
-                    challenge,
-                    rpId: window.location.hostname,
-                    userVerification: "preferred",
-                }
+            // 2. Start WebAuthn authentication
+            const credential = await startAuthentication({
+                optionsJSON: options,
             });
 
-            if (credential) {
-                console.log("Passkey authenticated:", credential);
-                const passkeyAction = new Promise<void>((resolve) => {
-                    setTimeout(() => {
-                        localStorage.setItem('authToken', 'mock-passkey-token-456');
-                        resolve();
-                    }, 500);
-                });
+            // 3. Verify response with server
+            const loginAction = async () => {
+                await passkeyService.verifyLogin(email || undefined, credential);
+            };
 
-                await addPromise(passkeyAction, {
-                    loading: t('Verifying passkey...'),
-                    success: t('Authenticated with Biometrics'),
-                    error: t('Passkey verification failed.')
-                });
-                onLogin();
-            }
+            await addPromise(loginAction(), {
+                loading: t('Verifying passkey...'),
+                success: t('Authenticated with Passkey!'),
+                error: t('Passkey verification failed.')
+            });
+
+            onLogin();
         } catch (err: any) {
             console.error("Passkey Auth Error:", err);
-            addToast(t("Passkey authentication failed or cancelled."), "error");
+            // Handle specific WebAuthn errors
+            if (err.name === 'NotAllowedError') {
+                addToast(t("Passkey authentication was cancelled."), "info");
+            } else {
+                addToast(t("Passkey authentication failed. Please try again or use password."), "error");
+            }
         } finally {
             setIsLoading(false);
         }

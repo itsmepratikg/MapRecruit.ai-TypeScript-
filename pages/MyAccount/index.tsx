@@ -12,6 +12,7 @@ import { RolesPermissions } from './RolesPermissions';
 import { AuthSync } from './AuthSync';
 import { UserNotifications } from './UserNotifications';
 import { LoginSessions } from './LoginSessions';
+import { PasskeySettings } from './PasskeySettings';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 interface MyAccountProps {
@@ -30,6 +31,7 @@ export const MyAccount = ({ userOverride }: MyAccountProps) => {
       'ROLES_PERMISSIONS': 'rolepermissions',
       'AUTH_SYNC': 'authsync',
       'USER_NOTIFICATIONS': 'usernotifications',
+      'SECURITY': 'security',
       'LAST_LOGIN': 'loginsessions'
     };
     if (map[id]) return map[id];
@@ -48,6 +50,7 @@ export const MyAccount = ({ userOverride }: MyAccountProps) => {
           <Route path={getPath('ROLES_PERMISSIONS')} element={<RolesPermissions />} />
           <Route path={getPath('AUTH_SYNC')} element={<AuthSync />} />
           <Route path={getPath('USER_NOTIFICATIONS')} element={<UserNotifications />} />
+          <Route path={getPath('SECURITY')} element={<PasskeySettings />} />
           <Route path={getPath('LAST_LOGIN')} element={<LoginSessions />} />
           <Route path="*" element={<Navigate to={getPath('BASIC_DETAILS')} replace />} />
         </Routes>

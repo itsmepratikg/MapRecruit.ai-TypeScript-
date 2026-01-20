@@ -6,6 +6,7 @@ import { Layout } from '../components/Icons';
 import { useUserPreferences } from '../hooks/useUserPreferences';
 import { useScreenSize } from '../hooks/useScreenSize';
 import { useTranslation } from 'react-i18next';
+import { campaignService } from '../services/api';
 
 interface HomeProps {
     onNavigate: (tab: string) => void;
@@ -16,6 +17,19 @@ export const Home = ({ onNavigate }: HomeProps) => {
     const gridRef = useRef<GridStack | null>(null);
     const { dashboardLayouts } = useUserPreferences();
     const { isMobile, isTablet } = useScreenSize();
+    const [counts, setCounts] = useState({ active: 0, closed: 0, archived: 0 });
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await campaignService.getStats();
+                setCounts(data);
+            } catch (err) {
+                console.error("Failed to fetch dashboard stats:", err);
+            }
+        };
+        fetchStats();
+    }, []);
 
     // Determine current layout mode
     const currentMode = useMemo(() => {
@@ -35,7 +49,7 @@ export const Home = ({ onNavigate }: HomeProps) => {
     }, [dashboardLayouts, currentMode]);
 
     // Create widget registry with navigation handler
-    const widgetRegistry = useMemo(() => createWidgetRegistry(onNavigate, t), [onNavigate, t]);
+    const widgetRegistry = useMemo(() => createWidgetRegistry(onNavigate, t, counts), [onNavigate, t, counts]);
 
     useEffect(() => {
         // Destroy previous instance if re-initializing to prevent artifacts

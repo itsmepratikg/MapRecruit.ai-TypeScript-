@@ -15,6 +15,12 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Support large JSON payloads for schemaless data
 
+// Logging Middleware
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
+    next();
+});
+
 // Database Connection
 const connectDB = async () => {
     try {
@@ -31,9 +37,32 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/campaigns', require('./routes/campaignRoutes'));
 app.use('/api/profiles', require('./routes/profileRoutes'));
+app.get('/api/debug', (req, res) => res.json({
+    message: 'Backend is alive',
+    time: new Date().toISOString(),
+    env: process.env.NODE_ENV,
+    rpID: process.env.RP_ID
+}));
 
 app.get('/', (req, res) => {
     res.send('MapRecruit Schema API is running...');
+});
+
+// 404 Handler for /api
+app.use('/api', (req, res) => {
+    console.warn(`API 404: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({
+        message: `Route ${req.method} ${req.originalUrl} not found`,
+        availablePaths: [
+            '/api/auth/register',
+            '/api/auth/login',
+            '/api/auth/me',
+            '/api/auth/passkey/register-options',
+            '/api/auth/passkey/register-verify',
+            '/api/auth/passkey/login-options',
+            '/api/auth/passkey/login-verify'
+        ]
+    });
 });
 
 const PORT = process.env.PORT || 5000;

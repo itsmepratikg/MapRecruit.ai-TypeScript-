@@ -6,13 +6,21 @@ const userSchema = mongoose.Schema({
         type: mongoose.Schema.Types.Mixed
     },
     companyID: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: true,
         index: true
     },
     activeClientID: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         index: true
+    },
+    passkeys: {
+        desktop: { type: mongoose.Schema.Types.Mixed },
+        mobile: { type: mongoose.Schema.Types.Mixed },
+        tablet: { type: mongoose.Schema.Types.Mixed }
+    },
+    currentChallenge: {
+        type: String // Temporarily store challenge for WebAuthn
     },
     email: {
         type: String,

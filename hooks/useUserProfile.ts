@@ -137,8 +137,39 @@ export const useUserProfile = () => {
         });
     };
 
+    const refetchProfile = async () => {
+        // Trigger manual fetch logic similar to polling
+        if (!localStorage.getItem('user')) return;
+
+        try {
+            const { default: api } = await import('../services/api');
+            const response = await api.get('/auth/me');
+            if (response.status === 200 && response.data) {
+                const currentAuthStr = localStorage.getItem('user');
+                if (currentAuthStr) {
+                    const currentAuth = JSON.parse(currentAuthStr);
+                    const updatedAuth = { ...currentAuth, ...response.data };
+                    if (currentAuth.token && !updatedAuth.token) {
+                        updatedAuth.token = currentAuth.token;
+                    }
+                    localStorage.setItem('user', JSON.stringify(updatedAuth));
+                    window.dispatchEvent(new Event(EVENT_KEY));
+                    // Manually update state as well to be sure
+                    setUserProfile(prev => ({
+                        ...prev,
+                        ...response.data
+                    }));
+                }
+            }
+        } catch (error) {
+            console.error("Manual refetch failed", error);
+            throw error; // Let caller know it failed
+        }
+    };
+
     return {
         userProfile,
+        refetchProfile,
         clients: PROFILE_CLIENTS,
         saveProfile,
         updateAvatar

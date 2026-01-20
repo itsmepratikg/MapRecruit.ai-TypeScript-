@@ -52,7 +52,9 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
 
     const filteredCampaigns = campaigns.filter(c => {
         // Strict status mapping based on MongoDB data structure
-        const cStatus = c.schemaConfig?.mainSchema?.status || (c.status === true || c.status === 'Active' ? 'Active' : 'Closed');
+        const cStatus = c.schemaConfig?.mainSchema?.status ||
+            (c.status === 'Archived' ? 'Archived' :
+                (c.status === true || c.status === 'Active' ? 'Active' : 'Closed'));
 
         // Ensure requested status matches accurately
         if (cStatus !== status) return false;
@@ -102,7 +104,7 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
         },
         {
             header: t('Status'),
-            accessor: (item: any) => <StatusBadge status={item.schemaConfig?.mainSchema?.status || (item.status === true || item.status === 'Active' ? 'Active' : 'Closed')} />
+            accessor: (item: any) => <StatusBadge status={item.schemaConfig?.mainSchema?.status || (item.status === 'Archived' ? 'Archived' : (item.status === true || item.status === 'Active' ? 'Active' : 'Closed'))} />
         },
         {
             header: t('Created'),

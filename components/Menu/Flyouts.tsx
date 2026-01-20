@@ -197,6 +197,7 @@ export const CampaignMenuContent = ({
     const [expandedClient, setExpandedClient] = useState<string>(activeClient);
     const [searchQuery, setSearchQuery] = useState('');
     const [campaigns, setCampaigns] = useState<any[]>([]);
+    const [counts, setCounts] = useState({ active: 0, closed: 0, archived: 0 });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -204,9 +205,14 @@ export const CampaignMenuContent = ({
     }, [activeClient]);
 
     useEffect(() => {
-        const fetchCampaigns = async () => {
+        const fetchSidebarData = async () => {
             try {
                 setLoading(true);
+                // Fetch Stats
+                const statsData = await campaignService.getStats();
+                setCounts(statsData);
+
+                // Fetch All Campaigns for the list
                 const data = await campaignService.getAll();
                 const activeOnes = data.filter((c: any) => {
                     const status = c.schemaConfig?.mainSchema?.status || (c.status === true || c.status === 'Active' ? 'Active' : 'Closed');
@@ -214,12 +220,12 @@ export const CampaignMenuContent = ({
                 });
                 setCampaigns(activeOnes);
             } catch (error) {
-                console.error("Error fetching sidebar campaigns:", error);
+                console.error("Error fetching sidebar data:", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchCampaigns();
+        fetchSidebarData();
     }, []);
 
     const groupedClients = campaigns.reduce((acc: any[], camp: any) => {
@@ -250,11 +256,6 @@ export const CampaignMenuContent = ({
         onClose();
     };
 
-    const counts = {
-        active: campaigns.length,
-        closed: 0,
-        archived: 0
-    };
 
     return (
         <div className="w-80 bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">

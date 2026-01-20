@@ -70,7 +70,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // --- WIDGET COMPONENTS ---
 
-export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => void }) => {
+export const WelcomeHeader = ({ onNavigate, counts }: { onNavigate?: (tab: string) => void, counts?: any }) => {
    const { userProfile } = useUserProfile();
    const [timeData, setTimeData] = useState({
       greeting: 'Good Evening',
@@ -168,7 +168,9 @@ export const WelcomeHeader = ({ onNavigate }: { onNavigate?: (tab: string) => vo
                className="text-left group cursor-pointer hover:bg-white/10 rounded p-2 transition-colors -ml-2"
                onClick={() => onNavigate && onNavigate('Active')}
             >
-               <span className="block text-2xl font-bold text-white group-hover:text-green-300 transition-colors">1</span>
+               <span className="block text-2xl font-bold text-white group-hover:text-green-300 transition-colors">
+                  {counts?.active || 0}
+               </span>
                <span className="text-[9px] text-white/60 uppercase tracking-wider font-semibold group-hover:text-white">{t("New Campaigns")}</span>
             </div>
             <div className="text-left border-l border-white/10 pl-4 group cursor-pointer hover:bg-white/10 rounded p-2 transition-colors">
@@ -494,13 +496,13 @@ export const WIDGET_DEFINITIONS = [
 ];
 
 // Registry Factory for Dynamic Loading
-export const createWidgetRegistry = (onNavigate: (tab: string) => void, t: any): Record<string, React.ReactNode> => ({
-   'welcome': <WelcomeHeader onNavigate={onNavigate} />,
+export const createWidgetRegistry = (onNavigate: (tab: string) => void, t: any, counts: any = {}): Record<string, React.ReactNode> => ({
+   'welcome': <WelcomeHeader onNavigate={onNavigate} counts={counts} />,
    'active_campaigns': (
       <div className="h-full" data-tour="widget-active-campaigns">
          <MetricCard
             title={t("Active Campaigns")}
-            value={SIDEBAR_CAMPAIGN_DATA.activeCount}
+            value={counts.active ?? SIDEBAR_CAMPAIGN_DATA.activeCount}
             icon={Briefcase}
             colorClass="text-green-600"
             iconBg="bg-green-50"
@@ -512,7 +514,7 @@ export const createWidgetRegistry = (onNavigate: (tab: string) => void, t: any):
       <div className="h-full" data-tour="widget-closed-campaigns">
          <MetricCard
             title={t("Closed Campaigns")}
-            value={SIDEBAR_CAMPAIGN_DATA.closedCount}
+            value={counts.closed ?? SIDEBAR_CAMPAIGN_DATA.closedCount}
             icon={Briefcase}
             colorClass="text-red-500"
             iconBg="bg-red-50"

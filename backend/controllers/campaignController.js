@@ -8,7 +8,75 @@ const getCampaigns = async (req, res) => {
         const campaigns = await Campaign.find({ companyID: req.user.companyID });
         res.status(200).json(campaigns);
     } catch (error) {
-        console.error(error);
+        console.error('getCampaigns Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Get campaign statistics (counts)
+// @route   GET /api/campaigns/stats
+// @access  Private
+const getCampaignStats = async (req, res) => {
+    try {
+        const companyID = req.user.companyID;
+
+        // Count Active
+        const active = await Campaign.countDocuments({
+            companyID,
+            $or: [
+                { "schemaConfig.mainSchema.status": "Active" },
+                { status: "Active" },
+                { status: true }
+            ]
+        });
+
+        // Count Closed
+        const closed = await Campaign.countDocuments({
+            companyID,
+            $or: [
+                { "schemaConfig.mainSchema.status": "Closed" },
+                { status: "Closed" },
+                { status: false }
+            ]
+        });
+
+        // Count Archived
+        const archived = await Campaign.countDocuments({
+            companyID,
+            $or: [
+                { "schemaConfig.mainSchema.status": "Archived" },
+                { status: "Archived" }
+            ]
+        });
+
+        res.status(200).json({ active, closed, archived });
+    } catch (error) {
+        console.error('Stats Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Get recent campaigns for dashboard
+// @route   GET /api/campaigns/recent
+// @access  Private
+const getRecentCampaigns = async (req, res) => {
+    try {
+        const companyID = req.user.companyID;
+        // Fetch 5 most recent active campaigns
+        const campaigns = await Campaign.find({
+            companyID,
+            $or: [
+                { "schemaConfig.mainSchema.status": "Active" },
+                { status: "Active" },
+                { status: true }
+            ]
+        })
+            .sort({ createdAt: -1 })
+            .limit(5);
+
+        res.status(200).json(campaigns);
+    } catch (error) {
+        console.error('Recent Campaigns Error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
@@ -106,6 +174,8 @@ const deleteCampaign = async (req, res) => {
 module.exports = {
     getCampaigns,
     getCampaign,
+    getCampaignStats,
+    getRecentCampaigns,
     createCampaign,
     updateCampaign,
     deleteCampaign,

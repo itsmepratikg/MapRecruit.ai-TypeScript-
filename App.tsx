@@ -3,19 +3,20 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate, useParams } from 'react-router-dom';
 import { Menu, X, ChevronRight } from './components/Icons';
 import { useToast } from './components/Toast';
-import { Home } from './pages/Home';
-import { Profiles } from './pages/Profiles/index';
-import { Campaigns } from './pages/Campaigns/index';
-import { Metrics } from './pages/Metrics';
-import { CandidateProfile } from './pages/CandidateProfile';
-import { CampaignDashboard } from './pages/Campaign/index';
-import { SettingsPage } from './pages/Settings/index';
-import { MyAccount } from './pages/MyAccount/index';
-import { Login } from './pages/Login/index';
-import { Activities } from './pages/Activities/index';
-import { PreviousHistory } from './pages/PreviousHistory/index';
-import { Notifications } from './pages/Notifications/index';
-import { TalentChat } from './pages/TalentChat/index';
+// Lazy Load Pages for Performance Optimization
+const Home = React.lazy(() => import('./pages/Home').then(module => ({ default: module.Home })));
+const Profiles = React.lazy(() => import('./pages/Profiles/index').then(module => ({ default: module.Profiles })));
+const Campaigns = React.lazy(() => import('./pages/Campaigns/index').then(module => ({ default: module.Campaigns })));
+const Metrics = React.lazy(() => import('./pages/Metrics').then(module => ({ default: module.Metrics })));
+const CandidateProfile = React.lazy(() => import('./pages/CandidateProfile').then(module => ({ default: module.CandidateProfile })));
+const CampaignDashboard = React.lazy(() => import('./pages/Campaign/index').then(module => ({ default: module.CampaignDashboard })));
+const SettingsPage = React.lazy(() => import('./pages/Settings/index').then(module => ({ default: module.SettingsPage })));
+const MyAccount = React.lazy(() => import('./pages/MyAccount/index').then(module => ({ default: module.MyAccount })));
+const Login = React.lazy(() => import('./pages/Login/index').then(module => ({ default: module.Login })));
+const Activities = React.lazy(() => import('./pages/Activities/index').then(module => ({ default: module.Activities })));
+const PreviousHistory = React.lazy(() => import('./pages/PreviousHistory/index').then(module => ({ default: module.PreviousHistory })));
+const Notifications = React.lazy(() => import('./pages/Notifications/index').then(module => ({ default: module.Notifications })));
+const TalentChat = React.lazy(() => import('./pages/TalentChat/index').then(module => ({ default: module.TalentChat })));
 import { Campaign } from './types';
 import { CreateProfileModal } from './components/CreateProfileModal';
 import { CreateFolderModal } from './pages/Profiles/FoldersMetrics/CreateFolderModal';
@@ -139,6 +140,7 @@ export const App = () => {
 
   const handleLogin = () => {
     setIsAuthenticated(true);
+    navigate('/dashboard', { replace: true });
   };
 
   const handleLogout = () => {
@@ -150,6 +152,7 @@ export const App = () => {
     setSelectedCandidateId(null);
     setSelectedCampaign(null);
     setSelectedAdminUser(null);
+    navigate('/', { replace: true });
   };
 
   const openPlaceholder = (title: string, message: string) => {
@@ -255,6 +258,8 @@ export const App = () => {
           onNavigate={handleGlobalNavigate}
         />
 
+        {/* ... (Sidebar logic remains same, wrapped in parent div) ... */}
+
         {/* Mobile Sidebar Overlay - Only when fully open */}
         {isSidebarOpen && !isDesktop && (
           <div
@@ -275,19 +280,16 @@ export const App = () => {
               )
             }
               `}>
+          {/* ... Sidebar Header ... */}
           <div className={`h-16 flex items-center ${isCollapsed ? 'justify-center px-0' : 'px-6'} border-b border-slate-200 dark:border-slate-700 shrink-0 bg-white dark:bg-slate-900 transition-all duration-300`}>
             {isCollapsed ? (
-              // Mobile Mini Header: Just a Menu Button to expand
               <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-slate-500 hover:text-emerald-600 transition-colors">
                 <Menu size={24} />
               </button>
             ) : (
-              // Full Header
               <>
                 <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-sm shrink-0">M</div>
                 <span className="font-bold text-lg text-slate-800 dark:text-slate-100 tracking-tight ml-3">MapRecruit</span>
-
-                {/* Mobile Close Button */}
                 {!isDesktop && (
                   <button onClick={() => setIsSidebarOpen(false)} className="ml-auto text-slate-400 hover:text-slate-600"><X size={20} /></button>
                 )}
@@ -296,8 +298,6 @@ export const App = () => {
           </div>
 
           <div className={`flex-1 ${!location.pathname.startsWith('/profiles') && !location.pathname.startsWith('/settings') ? 'overflow-visible' : 'overflow-y-auto custom-scrollbar'} py-4 ${isCollapsed ? 'px-2' : 'px-3'} space-y-1`}>
-
-            {/* Logic to determine which menu to show based on Route */}
             <Routes>
               <Route path="/campaigns/:id/*" element={
                 <CampaignsMenu
@@ -433,53 +433,59 @@ export const App = () => {
 
         {/* Main Content */}
         <div className={`flex-1 flex flex-col h-full overflow-hidden w-full relative bg-slate-50 dark:bg-slate-900 transition-colors ${!isDesktop && !isSidebarOpen ? 'pl-16' : ''}`}>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Home onNavigate={(tab) => navigate(`/campaigns?tab=${tab}`)} />} />
+          <React.Suspense fallback={
+            <div className="flex items-center justify-center h-full text-slate-400">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+            </div>
+          }>
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Home onNavigate={(tab) => navigate(`/campaigns?tab=${tab}`)} />} />
 
-            <Route path="/profiles/view/*" element={
-              <Profiles onNavigateToProfile={(id) => navigate(`/profiles/${id || '1'}`)} />
-            } />
-            <Route path="/profiles/:id" element={
-              <div className="h-full flex flex-col animate-in fade-in duration-300">
-                <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center gap-2 shrink-0">
-                  <button onClick={() => navigate('/profiles')} className="text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 transition-colors">
-                    <ChevronRight size={14} className="rotate-180" /> Back to Search
-                  </button>
-                  <span className="text-slate-300 dark:text-slate-600">|</span>
-                  <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Candidate Profile</span>
+              <Route path="/profiles/view/*" element={
+                <Profiles onNavigateToProfile={(id) => navigate(`/profiles/${id || '1'}`)} />
+              } />
+              <Route path="/profiles/:id" element={
+                <div className="h-full flex flex-col animate-in fade-in duration-300">
+                  <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center gap-2 shrink-0">
+                    <button onClick={() => navigate('/profiles')} className="text-sm text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 transition-colors">
+                      <ChevronRight size={14} className="rotate-180" /> Back to Search
+                    </button>
+                    <span className="text-slate-300 dark:text-slate-600">|</span>
+                    <span className="text-sm font-medium text-slate-800 dark:text-slate-200">Candidate Profile</span>
+                  </div>
+                  <CandidateProfile activeTab={activeProfileTab} />
                 </div>
-                <CandidateProfile activeTab={activeProfileTab} />
-              </div>
-            } />
+              } />
 
-            <Route path="/campaigns" element={
-              <Campaigns onNavigateToCampaign={(c: any) => {
-                const id = c.id || c._id?.$oid || c._id;
-                navigate(`/campaigns/${id}`);
-              }} initialTab={targetCampaignTab} />
-            } />
+              <Route path="/campaigns" element={
+                <Campaigns onNavigateToCampaign={(c: any) => {
+                  const id = c.id || c._id?.$oid || c._id;
+                  navigate(`/campaigns/${id}`);
+                }} initialTab={targetCampaignTab} />
+              } />
 
-            <Route path="/campaigns/:id/*" element={
-              // We need to pass the campaign object. ideally fetch by ID. For now using selectedCampaign state which needs to be set.
-              // In a real app, CampaignDashboard would fetch by ID.
-              // We will check if selectedCampaign is set, if not try to find it from GLOBAL_CAMPAIGNS or redirect.
-              <CampaignDashboardWrapper />
-            } />
+              <Route path="/campaigns/:id/*" element={
+                // We need to pass the campaign object. ideally fetch by ID. For now using selectedCampaign state which needs to be set.
+                // In a real app, CampaignDashboard would fetch by ID.
+                // We will check if selectedCampaign is set, if not try to find it from GLOBAL_CAMPAIGNS or redirect.
+                <CampaignDashboardWrapper />
+              } />
 
-            <Route path="/metrics" element={<Metrics />} />
+              <Route path="/metrics" element={<Metrics />} />
 
-            <Route path="/settings/*" element={
-              <SettingsPage onSelectUser={handleUserSelect} />
-            } />
+              <Route path="/settings/*" element={
+                <SettingsPage onSelectUser={handleUserSelect} />
+              } />
 
-            <Route path="/myaccount/*" element={<MyAccount activeTab={activeAccountTab} />} />
+              <Route path="/myaccount/*" element={<MyAccount activeTab={activeAccountTab} />} />
 
-            <Route path="/activities" element={<Activities />} />
-            <Route path="/history" element={<PreviousHistory onNavigate={(view, config) => handleGlobalNavigate('NAV', { view, ...config })} />} />
-            <Route path="/notifications" element={<Notifications onNavigate={(view, config) => handleGlobalNavigate('NAV', { view, ...config })} />} />
-            <Route path="/talent-chat/*" element={<TalentChat />} />
-          </Routes>
+              <Route path="/activities" element={<Activities />} />
+              <Route path="/history" element={<PreviousHistory onNavigate={(view, config) => handleGlobalNavigate('NAV', { view, ...config })} />} />
+              <Route path="/notifications" element={<Notifications onNavigate={(view, config) => handleGlobalNavigate('NAV', { view, ...config })} />} />
+              <Route path="/talent-chat/*" element={<TalentChat />} />
+            </Routes>
+          </React.Suspense>
         </div>
 
         {/* Create Profile Modal */}

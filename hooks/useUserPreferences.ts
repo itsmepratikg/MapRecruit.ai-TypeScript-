@@ -55,21 +55,23 @@ export const useUserPreferences = () => {
   const [preferences, setPreferences] = useState(getInitialState);
 
   // --- Explicit Save Action ---
-  const saveSettings = async () => {
+  const saveSettings = async (overridingPrefs?: any) => {
     const authUserStr = localStorage.getItem('user');
+    const prefsToSave = overridingPrefs || preferences;
+
     if (authUserStr) {
       try {
         const user = JSON.parse(authUserStr);
 
         // 1. Persist to LocalStorage (User Object)
-        user.accessibilitySettings = preferences;
+        user.accessibilitySettings = prefsToSave;
         localStorage.setItem('user', JSON.stringify(user));
 
         // 2. Persist to Backend
         const userId = user._id || user.id;
         if (userId) {
           await addPromise(
-            userService.update(userId, { accessibilitySettings: preferences }),
+            userService.update(userId, { accessibilitySettings: prefsToSave }),
             {
               loading: 'Saving changes...',
               success: 'Settings saved',
@@ -84,7 +86,7 @@ export const useUserPreferences = () => {
       // Guest Fallback
       localStorage.setItem('userAccount', JSON.stringify({
         ...DEFAULT_USER_ACCOUNT,
-        preferences: preferences
+        preferences: prefsToSave
       }));
     }
   };
