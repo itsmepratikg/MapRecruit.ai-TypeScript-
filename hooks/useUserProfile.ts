@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { INITIAL_PROFILE_DATA, PROFILE_CLIENTS, UserProfileData } from '../data/profile';
+import { INITIAL_PROFILE_DATA, UserProfileData } from '../data/profile';
 
 const STORAGE_KEY = 'user_profile_v1';
 const EVENT_KEY = 'profile-updated';
@@ -173,13 +173,13 @@ export const useUserProfile = () => {
 
     useEffect(() => {
         // Fetch clients on mount
-        import('../services/clientService').then(({ clientService }) => {
+        // Fetch clients on mount
+        import('../services/api').then(({ clientService }) => {
             clientService.getAll().then(data => {
                 setAvailableClients(data);
             }).catch(err => {
                 console.error("Failed to fetch clients for profile", err);
-                // Fallback to hardcoded list if API fails, but map them to object structure
-                setAvailableClients(PROFILE_CLIENTS.map(name => ({ clientName: name, clientType: 'Client' })));
+                setAvailableClients([]);
             });
         });
     }, []);

@@ -6,7 +6,13 @@ const User = require('../models/User');
 // @access  Private
 const getUsers = async (req, res) => {
     try {
+        // Disable Caching
+        res.set('Cache-Control', 'no-store');
+
+        // Exact match as Schema and Data are now both ObjectId
         const users = await User.find({ companyID: req.user.companyID }).select('-password');
+
+        console.log(`GET /users - Found ${users.length} users`);
         res.status(200).json(users);
     } catch (error) {
         console.error(error);
@@ -19,14 +25,12 @@ const getUsers = async (req, res) => {
 // @access  Private
 const getUserById = async (req, res) => {
     try {
-        // Construct query to handle both String and ObjectId types for _id
-        let idQuery = [{ _id: req.params.id }];
-        if (mongoose.Types.ObjectId.isValid(req.params.id)) {
-            idQuery.push({ _id: new mongoose.Types.ObjectId(req.params.id) });
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid User ID format' });
         }
 
         const user = await User.findOne({
-            $or: idQuery,
+            _id: new mongoose.Types.ObjectId(req.params.id),
             companyID: req.user.companyID
         }).select('-password');
 
@@ -45,23 +49,73 @@ const getUserById = async (req, res) => {
 // @access  Private
 const createUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        console.log('POST /users - Payload:', JSON.stringify(req.body));
+        const { email, password, clients } = req.body;
+        const { companyID, id: actingUserId } = req.user;
 
         const userExists = await User.findOne({ email });
         if (userExists) {
+            console.warn(`User creation failed: ${email} already exists`);
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        const user = await User.create({
-            ...req.body,
-            companyID: req.user.companyID // Ensure tenant context
+        // --- STRICT CLIENT VALIDATION START ---
+        // 1. Fetch Acting User
+        const actingUser = await User.findById(actingUserId);
+        if (!actingUser) return res.status(401).json({ message: 'Acting user not found' });
+
+        // 2. Fetch Company Master List
+        const company = await mongoose.connection.collection('companiesDB').findOne({
+            _id: new mongoose.Types.ObjectId(companyID)
         });
+        const companyClientIds = (company?.clients || []).map(id => id.toString());
+
+        // 3. Determine Allowed Clients for Acting User
+        let allowedForActor = [];
+        const isAdmin = ['Product Admin', 'Admin', 'Super Admin'].includes(actingUser.role);
+
+        if (isAdmin) {
+            allowedForActor = companyClientIds;
+        } else {
+            const userClientIds = (actingUser.clients || []).map(id => id.toString());
+            allowedForActor = companyClientIds.filter(id => userClientIds.includes(id));
+        }
+
+        // 4. Check Requested Clients against Allowed List
+        const requestedClientIds = (clients || [])
+            .filter(id => mongoose.Types.ObjectId.isValid(id)); // Filter valid IDs first specific to request
+
+        const unauthorizedClients = requestedClientIds.filter(id => !allowedForActor.includes(id));
+
+        if (unauthorizedClients.length > 0) {
+            console.warn(`User ${actingUserId} attempted to assign unauthorized clients: ${unauthorizedClients}`);
+            return res.status(403).json({
+                message: 'You cannot assign clients you do not have access to.'
+            });
+        }
+        // --- STRICT CLIENT VALIDATION END ---
+
+        // Process Client ObjectIds (Valid ones only, which we now know are authorized)
+        const clientObjectIds = requestedClientIds.map(id => new mongoose.Types.ObjectId(id));
+
+        const userData = {
+            ...req.body,
+            password: password || 'Domain12!', // Default password if not provided
+            role: req.body.role || 'Recruiter', // Default role if not provided
+            clients: clientObjectIds, // Ensure ObjectIds
+            companyID: req.user.companyID // Ensure tenant context
+        };
+
+        console.log('Creating User with Data:', JSON.stringify({ ...userData, password: '***' }, null, 2));
+
+        const user = await User.create(userData);
 
         const createdUser = await User.findById(user._id).select('-password');
         res.status(201).json(createdUser);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server Error' });
+        console.error('CREATE USER FATAL ERROR:', error);
+        console.error('Stack:', error.stack);
+        res.status(500).json({ message: 'Server Error', error: error.message });
     }
 };
 
@@ -70,14 +124,12 @@ const createUser = async (req, res) => {
 // @access  Private
 const updateUser = async (req, res) => {
     try {
-        // Construct query to handle both String and ObjectId types for _id
-        let idQuery = [{ _id: req.params.id }];
-        if (mongoose.Types.ObjectId.isValid(req.params.id)) {
-            idQuery.push({ _id: new mongoose.Types.ObjectId(req.params.id) });
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid User ID format' });
         }
 
         const user = await User.findOne({
-            $or: idQuery,
+            _id: new mongoose.Types.ObjectId(req.params.id),
             companyID: req.user.companyID
         });
 
@@ -86,6 +138,8 @@ const updateUser = async (req, res) => {
         }
 
         // Update fields
+        const restrictedFields = ['password', '_id', 'clients']; // Handle clients separately
+
         Object.keys(req.body).forEach(key => {
             if (key === 'accessibilitySettings') {
                 // Deep merge for accessibilitySettings to allow partial updates
@@ -102,10 +156,53 @@ const updateUser = async (req, res) => {
                     }
                 };
                 user.markModified('accessibilitySettings');
-            } else if (key !== 'password' && key !== '_id') {
+            } else if (!restrictedFields.includes(key)) {
                 user[key] = req.body[key];
             }
         });
+
+        // Handle clients update with STRICT VALIDATION
+        if (req.body.clients) {
+            const { companyID, id: actingUserId } = req.user;
+            const actingUser = await User.findById(actingUserId);
+
+            if (actingUser) {
+                // Fetch Company Master List
+                const company = await mongoose.connection.collection('companiesDB').findOne({
+                    _id: new mongoose.Types.ObjectId(companyID)
+                });
+                const companyClientIds = (company?.clients || []).map(id => id.toString());
+
+                // Determine Allowed Clients for Acting User
+                let allowedForActor = [];
+                const isAdmin = ['Product Admin', 'Admin', 'Super Admin'].includes(actingUser.role);
+
+                if (isAdmin) {
+                    allowedForActor = companyClientIds;
+                } else {
+                    const userClientIds = (actingUser.clients || []).map(id => id.toString());
+                    allowedForActor = companyClientIds.filter(id => userClientIds.includes(id));
+                }
+
+                // Check Requested Clients against Allowed List
+                const requestedClientIds = (req.body.clients || [])
+                    .filter(id => mongoose.Types.ObjectId.isValid(id));
+
+                const unauthorizedClients = requestedClientIds.filter(id => !allowedForActor.includes(id));
+
+                if (unauthorizedClients.length > 0) {
+                    console.warn(`User ${actingUserId} attempted to assign unauthorized clients in UPDATE: ${unauthorizedClients}`);
+                    // We can either block the whole request or just filter them out. 
+                    // Blocking is safer and clearer to the user (via frontend error).
+                    return res.status(403).json({
+                        message: 'You cannot assign clients you do not have access to.'
+                    });
+                }
+
+                // Assign validated clients
+                user.clients = requestedClientIds.map(id => new mongoose.Types.ObjectId(id));
+            }
+        }
 
         // Handle password update separately if needed
         if (req.body.password) {

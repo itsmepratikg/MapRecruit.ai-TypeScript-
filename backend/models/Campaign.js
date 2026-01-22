@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const campaignSchema = mongoose.Schema({
     _id: {
-        type: mongoose.Schema.Types.Mixed
+        type: mongoose.Schema.Types.ObjectId
     },
     companyID: {
         type: mongoose.Schema.Types.ObjectId,

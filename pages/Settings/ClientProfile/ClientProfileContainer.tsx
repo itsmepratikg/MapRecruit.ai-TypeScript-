@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { clientService } from '../../../services/clientService';
+import { clientService } from '../../../services/api';
 import { ClientData } from '../../../Schema/ClientSchema';
 import { ChevronLeft } from '../../../components/Icons';
 import { PlaceholderView } from '../components/PlaceholderView';

@@ -35,6 +35,7 @@ const connectDB = async () => {
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/clients', require('./routes/clientRoutes'));
 app.use('/api/campaigns', require('./routes/campaignRoutes'));
 app.use('/api/profiles', require('./routes/profileRoutes'));
 app.get('/api/debug', (req, res) => res.json({

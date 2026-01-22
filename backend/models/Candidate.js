@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 
 const candidateSchema = mongoose.Schema({
     _id: {
-        type: mongoose.Schema.Types.Mixed
+        type: mongoose.Schema.Types.ObjectId
     },
     companyID: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: true,
         index: true
     },

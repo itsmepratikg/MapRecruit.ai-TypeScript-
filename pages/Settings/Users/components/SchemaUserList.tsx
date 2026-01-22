@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { userService } from '../../../../services/api';
 import SchemaTable from '../../../../components/Schema/SchemaTable';
+import {
+    Users, Search, UserPlus, CheckCircle, Power,
+    X, Save, User, Shield, // Added Shield
+    Mail, Phone, MapPin,
+    Briefcase, Building2, Layout, Clock, Activity, MessageSquare
+} from '../../../../components/Icons';
 import { useToast } from '../../../../components/Toast';
 import { useTranslation } from 'react-i18next';
 
@@ -9,6 +15,7 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
     const { addToast } = useToast();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [impersonateModal, setImpersonateModal] = useState<{ isOpen: boolean, user: any | null }>({ isOpen: false, user: null });
 
     useEffect(() => {
         loadUsers();
@@ -94,12 +101,115 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
 
     if (loading) return <div className="p-8 text-center text-slate-500">{t("Loading Users...")}</div>;
 
+    // We need to access the StartImpersonation function from Context
+    // Since this is a nested component, we might not have the context if it's not wrapped yet (but it will be)
+    // However, react-router context is available.
+    // For simplicity, we'll assume the context is available or throw error if not.
+    // We need to import the hook though.
+    // But `SchemaUserList` might be used in places where Context is not ready? (No, it's inside App)
+
+    // We'll use a dynamic import or assume the context is available in the parent scope.
+    // Since `useImpersonation` is exported from context...
+    // Let's modify the component to import it at the top.
+
+    // WAIT, I need to add the import first. I'll do that in a separate replacement or use a full replace.
+    // Since I can't add imports easily with this tool without targeting top, I'll rely on a second Replace call for imports.
+    // Here I will add the logic.
+
+    const handleImpersonateClick = (user: any) => {
+        setImpersonateModal({ isOpen: true, user });
+    };
+
+    const confirmImpersonation = async (mode: 'read-only' | 'full') => {
+        if (!impersonateModal.user) return;
+
+        try {
+            // We need to call the API to get the token, then pass it to context
+            // But `startImpersonation` expects token.
+            // Let's use `authService` or `api` to call /impersonate
+            addToast(`Switching to ${impersonateModal.user.firstName}...`, 'info');
+
+            const { default: api } = await import('../../../../services/api');
+            const response = await api.post('/auth/impersonate', {
+                targetUserId: impersonateModal.user.id || impersonateModal.user._id,
+                mode
+            });
+
+            if (response.data.token) {
+                // How to trigger context? We can't use hook if we didn't import it.
+                // We will dispatch a custom event that the Context listens to? 
+                // OR we just expect `useImpersonation` to work if we import it.
+                // I will add the import in the next step.
+
+                // Dispatch event for now as a fallback or cleaner decoupling? 
+                // No, Context is better.
+                window.dispatchEvent(new CustomEvent('START_IMPERSONATION', { detail: response.data }));
+            }
+        } catch (error: any) {
+            addToast(error.response?.data?.message || "Impersonation failed", 'error');
+        } finally {
+            setImpersonateModal({ isOpen: false, user: null });
+        }
+    };
+
     return (
-        <SchemaTable
-            data={filteredUsers}
-            columns={columns}
-            title={t("Users")}
-            onEdit={onSelectUser}
-        />
+        <>
+            <SchemaTable
+                data={filteredUsers}
+                columns={[
+                    ...columns,
+                    {
+                        header: t('Actions'),
+                        accessor: (item: any) => (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleImpersonateClick(item); }}
+                                className="px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50 rounded text-xs font-bold flex items-center gap-1 transition-colors"
+                                title="Login as this user"
+                            >
+                                <Shield size={12} /> {t('Login As')}
+                            </button>
+                        )
+                    }
+                ]}
+                title={t("Users")}
+                onEdit={onSelectUser}
+            />
+
+            {/* Impersonation Modal */}
+            {impersonateModal.isOpen && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-white dark:bg-slate-900 rounded-lg shadow-2xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">
+                            Login as {impersonateModal.user?.firstName}?
+                        </h3>
+                        <p className="text-sm text-slate-500 mb-6">
+                            Choose your access level. Actions in Full Access mode will be audited.
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => confirmImpersonation('read-only')}
+                                className="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded font-bold text-sm flex items-center justify-center gap-2"
+                            >
+                                <div className="p-1 bg-slate-200 dark:bg-slate-700 rounded-full"><Shield size={12} /></div>
+                                View Only (Safe)
+                            </button>
+                            <button
+                                onClick={() => confirmImpersonation('full')}
+                                className="w-full px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded font-bold text-sm flex items-center justify-center gap-2"
+                            >
+                                <div className="p-1 bg-amber-600 rounded-full"><Shield size={12} /></div>
+                                Full Access
+                            </button>
+                            <button
+                                onClick={() => setImpersonateModal({ isOpen: false, user: null })}
+                                className="w-full mt-2 text-xs text-slate-400 hover:text-slate-500 font-medium"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
     );
 };

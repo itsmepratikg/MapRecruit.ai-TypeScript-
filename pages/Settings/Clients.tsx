@@ -6,7 +6,7 @@ import {
     X, Save, Building2
 } from '../../components/Icons';
 import { useToast } from '../../components/Toast';
-import { clientService } from '../../services/clientService'; // We just created this
+import { clientService } from '../../services/api';
 import { CLIENT_SCHEMA, ClientData } from '../../Schema/ClientSchema'; // We just created this
 import SchemaTable from '../../components/Schema/SchemaTable';
 

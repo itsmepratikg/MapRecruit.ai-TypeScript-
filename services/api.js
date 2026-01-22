@@ -1,12 +1,7 @@
 import axios from 'axios';
-import {
-    MOCK_USERS_LIST,
-    GLOBAL_CAMPAIGNS,
-    MOCK_PROFILES,
-    DEFAULT_USER_ACCOUNT
-} from '../data';
-
 const API_URL = 'http://localhost:5000/api';
+
+import { attachSafetyInterceptor } from './SafetyInterceptor';
 
 const api = axios.create({
     baseURL: API_URL,
@@ -14,6 +9,9 @@ const api = axios.create({
         'Content-Type': 'application/json',
     },
 });
+
+// Attach Safety Interceptor
+attachSafetyInterceptor(api);
 
 // Add a request interceptor to attach the Token
 api.interceptors.request.use(
@@ -59,22 +57,12 @@ export const authService = {
 
 export const userService = {
     getAll: async () => {
-        try {
-            const response = await api.get('/users');
-            return response.data;
-        } catch (error) {
-            console.warn("API Error: Using local Users data");
-            return MOCK_USERS_LIST;
-        }
+        const response = await api.get('/users');
+        return response.data;
     },
     getById: async (id) => {
-        try {
-            const response = await api.get(`/users/${id}`);
-            return response.data;
-        } catch (error) {
-            console.warn("API Error: User fallback");
-            return MOCK_USERS_LIST.find(u => u.id === id) || null;
-        }
+        const response = await api.get(`/users/${id}`);
+        return response.data;
     },
     create: async (userData) => {
         const response = await api.post('/users', userData);
@@ -98,35 +86,16 @@ export const userService = {
 
 export const campaignService = {
     getAll: async () => {
-        try {
-            const response = await api.get('/campaigns');
-            return response.data;
-        } catch (error) {
-            console.warn("API Error: Using local Campaigns data");
-            return GLOBAL_CAMPAIGNS;
-        }
+        const response = await api.get('/campaigns');
+        return response.data;
     },
     getStats: async () => {
-        try {
-            const response = await api.get('/campaigns/stats');
-            return response.data;
-        } catch (error) {
-            console.warn("API Error: Stats fallback");
-            return {
-                active: GLOBAL_CAMPAIGNS.filter(c => c.status === 'Active').length,
-                closed: GLOBAL_CAMPAIGNS.filter(c => c.status === 'Closed').length,
-                archived: GLOBAL_CAMPAIGNS.filter(c => c.status === 'Archived').length,
-            };
-        }
+        const response = await api.get('/campaigns/stats');
+        return response.data;
     },
     getRecent: async () => {
-        try {
-            const response = await api.get('/campaigns/recent');
-            return response.data;
-        } catch (error) {
-            console.warn("API Error: Recent campaigns fallback");
-            return GLOBAL_CAMPAIGNS.slice(0, 5);
-        }
+        const response = await api.get('/campaigns/recent');
+        return response.data;
     },
     create: async (campaignData) => {
         const response = await api.post('/campaigns', campaignData);
@@ -134,15 +103,21 @@ export const campaignService = {
     },
 };
 
+export const clientService = {
+    getAll: async () => {
+        const response = await api.get('/clients');
+        return response.data;
+    },
+    getById: async (id) => {
+        const response = await api.get(`/clients/${id}`);
+        return response.data;
+    }
+};
+
 export const profileService = {
     getAll: async () => {
-        try {
-            const response = await api.get('/profiles');
-            return response.data;
-        } catch (error) {
-            console.warn("API Error: Using local Profiles data");
-            return MOCK_PROFILES;
-        }
+        const response = await api.get('/profiles');
+        return response.data;
     },
     create: async (profileData) => {
         const response = await api.post('/profiles', profileData);

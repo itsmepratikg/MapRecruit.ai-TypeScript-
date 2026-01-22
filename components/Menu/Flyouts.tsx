@@ -286,7 +286,8 @@ export const CampaignMenuContent = ({
             try {
                 setLoading(true);
                 // Dynamically import clientService here to avoid circular dependencies if any
-                const { clientService } = await import('../../services/clientService');
+                // Dynamically import clientService here to avoid circular dependencies if any
+                const { clientService } = await import('../../services/api');
 
                 // Fetch Stats
                 const statsData = await campaignService.getStats();

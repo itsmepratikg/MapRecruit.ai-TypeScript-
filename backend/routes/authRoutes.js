@@ -23,4 +23,7 @@ router.post('/passkey/register-verify', protect, verifyRegistration);
 router.post('/passkey/login-options', getAuthenticationOptions);
 router.post('/passkey/login-verify', verifyLogin);
 
+// Impersonation Route
+router.post('/impersonate', protect, require('../controllers/authController').impersonateUser);
+
 module.exports = router;

@@ -110,13 +110,11 @@ const loginUser = async (req, res) => {
 // @access  Private
 const getMe = async (req, res) => {
     try {
-        // Construct query to handle both String and ObjectId types for _id
-        let idQuery = [{ _id: req.user.id }];
-        if (mongoose.Types.ObjectId.isValid(req.user.id)) {
-            idQuery.push({ _id: new mongoose.Types.ObjectId(req.user.id) });
+        if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+            return res.status(400).json({ message: 'Invalid User ID format' });
         }
 
-        const user = await User.findOne({ $or: idQuery }).select('-password');
+        const user = await User.findOne({ _id: new mongoose.Types.ObjectId(req.user.id) }).select('-password');
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -140,8 +138,54 @@ const getMe = async (req, res) => {
     }
 };
 
+// @desc    Impersonate another user (Admin only)
+// @route   POST /api/auth/impersonate
+// @access  Private (Product Admin)
+const impersonateUser = async (req, res) => {
+    try {
+        const { targetUserId, mode = 'read-only' } = req.body;
+
+        // 1. Verify Requestor is Admin
+        if (req.user.role !== 'Product Admin') {
+            return res.status(403).json({ message: 'Not authorized for impersonation' });
+        }
+
+        // 2. Find Target User
+        const targetUser = await User.findById(targetUserId);
+        if (!targetUser) {
+            return res.status(404).json({ message: 'Target user not found' });
+        }
+
+        // 4. Generate Impersonation Token
+        const token = jwt.sign({
+            id: targetUser._id,
+            email: targetUser.email,
+            companyID: targetUser.companyID,
+            activeClientID: targetUser.activeClientID,
+            role: targetUser.role,
+            // Impersonation Claims
+            impersonatorId: req.user.id,
+            mode: mode // 'read-only' | 'full'
+        }, process.env.JWT_SECRET, {
+            expiresIn: '1h',
+        });
+
+        res.json({
+            ...targetUser.toObject(),
+            token,
+            isImpersonated: true,
+            mode
+        });
+
+    } catch (error) {
+        console.error('Impersonation Error:', error);
+        res.status(500).json({ message: 'Server Error during impersonation' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     getMe,
+    impersonateUser
 };
