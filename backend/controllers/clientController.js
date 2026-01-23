@@ -7,8 +7,11 @@ const User = require('../models/User');
 // @access  Private
 const getClients = async (req, res) => {
     try {
-        const { companyID, id: userId } = req.user;
-        console.log(`[DEBUG] getClients - User: ${userId}, CompanyID: ${companyID}`);
+        // Prioritize currentCompanyID for context-aware fetching
+        const { id: userId } = req.user;
+        const companyID = req.user.currentCompanyID || req.user.companyID;
+
+        console.log(`[DEBUG] getClients - User: ${userId}, Context CompanyID: ${companyID}`);
 
         if (!companyID) {
             console.warn('[DEBUG] getClients - No Company ID found in user token');

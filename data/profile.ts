@@ -7,10 +7,13 @@ export interface UserProfileData {
   phone: string;
   countryCode: string;
   role: string;
+  roleID?: any; // Contains nested permissions (accessibilitySettings)
   jobTitle: string;
   location: string;
   color: string;
   activeClient: string;
+  companyID: string;
+  activeClientID: string;
   clientID: string[]; // List of Client IDs user has access to
   avatar: string | null;
   teams: string[];
@@ -49,6 +52,8 @@ export const INITIAL_PROFILE_DATA: UserProfileData = {
   location: "Hyderabad, Telangana, India",
   color: "Blue",
   activeClient: "TRC Talent Solutions",
+  companyID: "61127e5ec9147f673d28c6e1", // Mock ID
+  activeClientID: "6112806bc9147f673d28c6ec", // Mock ID
   clientID: ["6112806bc9147f673d28c6ec", "69678733d29171da0766d0ae"], // Mock IDs
   avatar: null,
   teams: []

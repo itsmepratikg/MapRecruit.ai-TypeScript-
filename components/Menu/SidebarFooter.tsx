@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PlusCircle, Building2, Search, Command } from '../Icons';
+import { PlusCircle, Building2, Search, Command, Globe } from '../Icons';
 import { useScreenSize } from '../../hooks/useScreenSize';
 import { COLORS } from '../../data/profile';
-import { CreateMenuContent, ClientMenuContent, AccountMenuContent } from './Flyouts';
+import { CreateMenuContent, ClientMenuContent, AccountMenuContent, CompanySwitcherContent } from './Flyouts';
 
 interface SidebarFooterProps {
     setIsCreateProfileOpen: (v: boolean) => void;
@@ -19,6 +19,8 @@ interface SidebarFooterProps {
     clients: any[];
     onSwitchClient: (client: string) => void;
     setActiveAccountTab: (tab: string) => void;
+    onOpenSupport: () => void;
+    isCapturingSupport?: boolean;
 }
 
 export const SidebarFooter = ({
@@ -33,13 +35,22 @@ export const SidebarFooter = ({
     userProfile,
     clients,
     onSwitchClient,
-    setActiveAccountTab
+    setActiveAccountTab,
+    onOpenSupport,
+    isCapturingSupport
 }: SidebarFooterProps) => {
     const { t } = useTranslation();
     const { isDesktop } = useScreenSize();
     const [activePopover, setActivePopover] = useState<string | null>(null);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState<'client' | 'account' | 'create' | null>(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState<'client' | 'account' | 'create' | 'company' | null>(null);
     const [metaKey, setMetaKey] = useState('Ctrl'); // Default
+
+    // Helper to safely check permissions even if roleID is not fully populated yet
+    const hasPermission = (setting: string) => {
+        if (!userProfile?.roleID || typeof userProfile.roleID !== 'object') return false;
+        return userProfile.roleID.accessibilitySettings?.settings?.[setting] === true;
+    };
+
 
     // Detect OS for shortcut hint
     useEffect(() => {
@@ -58,7 +69,7 @@ export const SidebarFooter = ({
 
     const userColorObj = COLORS.find(c => c.name === userProfile.color) || COLORS[0];
 
-    const handleMenuClick = (menu: 'client' | 'account' | 'create') => {
+    const handleMenuClick = (menu: 'client' | 'account' | 'create' | 'company') => {
         if (!isDesktop) {
             setMobileMenuOpen(menu);
         }
@@ -104,6 +115,19 @@ export const SidebarFooter = ({
 
     return (
         <div className="p-2 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 mt-auto space-y-1 shrink-0 transition-colors pb-4 lg:pb-2" onClick={(e) => e.stopPropagation()}>
+            {/* DEBUG: Temporary Diagnostic UI */}
+            {(!userProfile?.roleID || typeof userProfile.roleID === 'string') && (
+                <div className="text-[10px] text-red-500 p-1 bg-red-50 mb-1 border border-red-200 rounded max-w-xs overflow-hidden">
+                    ❌ Role Data Missing.<br />
+                    Keys: {Object.keys(userProfile).join(', ')}<br />
+                    RoleVal: {JSON.stringify(userProfile.role)}
+                </div>
+            )}
+            {userProfile?.roleID && typeof userProfile.roleID === 'object' && !hasPermission('clientSwitcher') && (
+                <div className="text-[10px] text-orange-500 p-1 bg-orange-50 mb-1 border border-orange-200 rounded">
+                    ⚠ Perms Loaded but 'clientSwitcher' is false.
+                </div>
+            )}
 
             {/* Global Search Trigger */}
             <div className="relative mb-2">
@@ -150,23 +174,47 @@ export const SidebarFooter = ({
             </div>
 
             {/* Switch Client */}
-            <div className="relative" onMouseEnter={() => isDesktop && handlePopoverEnter('client')} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
-                <button
-                    data-tour="nav-client-switcher"
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors ${activePopover === 'client' ? 'bg-slate-50 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400' : ''}`}
-                    onClick={() => handleMenuClick('client')}
-                >
-                    <Building2 size={18} className={activePopover === 'client' ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"} />
-                    <span className="text-sm font-medium truncate" title={userProfile.activeClient}>{userProfile.activeClient}</span>
-                </button>
+            {hasPermission('clientSwitcher') && (
+                <div className="relative" onMouseEnter={() => isDesktop && handlePopoverEnter('client')} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
+                    <button
+                        data-tour="nav-client-switcher"
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors ${activePopover === 'client' ? 'bg-slate-50 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400' : ''}`}
+                        onClick={() => handleMenuClick('client')}
+                    >
+                        <Building2 size={18} className={activePopover === 'client' ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"} />
+                        <span className="text-sm font-medium truncate" title={clients.find(c => (c._id || c.id) === userProfile.activeClientID)?.clientName || userProfile.activeClient}>
+                            {clients.find(c => (c._id || c.id) === userProfile.activeClientID)?.clientName || userProfile.activeClient}
+                        </span>
+                    </button>
 
-                {/* Desktop Client List Popover */}
-                {isDesktop && (
-                    <div className={`${getPopupClass('client')} w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg`}>
-                        <ClientMenuContent activeClient={userProfile.activeClient} clients={clients} onSwitchClient={handleClientSelect} onClose={() => setActivePopover(null)} />
-                    </div>
-                )}
-            </div>
+                    {/* Desktop Client List Popover */}
+                    {isDesktop && (
+                        <div className={`${getPopupClass('client')} w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg`}>
+                            <ClientMenuContent activeClient={userProfile.activeClient} clients={clients} onSwitchClient={handleClientSelect} onClose={() => setActivePopover(null)} />
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Switch Company (Permission Based) */}
+            {hasPermission('companySwitcher') && (
+                <div className="relative" onMouseEnter={() => isDesktop && handlePopoverEnter('company')} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
+                    <button
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors ${activePopover === 'company' ? 'bg-slate-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400' : ''}`}
+                        onClick={() => handleMenuClick('company')}
+                    >
+                        <Globe size={18} className={activePopover === 'company' ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"} />
+                        <span className="text-sm font-medium">{t("Admin Switcher")}</span>
+                    </button>
+
+                    {/* Desktop Company Switcher Popover */}
+                    {isDesktop && (
+                        <div className={`${getPopupClass('company')} w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg`}>
+                            <CompanySwitcherContent onClose={() => setActivePopover(null)} />
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* User Account */}
             <div className="relative pt-2" onMouseEnter={() => isDesktop && handlePopoverEnter('account')} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
@@ -199,6 +247,8 @@ export const SidebarFooter = ({
                             userProfile={userProfile}
                             closeMenu={() => setActivePopover(null)}
                             setActiveAccountTab={setActiveAccountTab}
+                            onOpenSupport={onOpenSupport}
+                            isCapturingSupport={isCapturingSupport}
                         />
                     </div>
                 )}
@@ -226,8 +276,11 @@ export const SidebarFooter = ({
                                 onLogout={onLogout}
                                 userProfile={userProfile}
                                 setActiveAccountTab={setActiveAccountTab}
+                                onOpenSupport={onOpenSupport}
+                                isCapturingSupport={isCapturingSupport}
                             />
                         )}
+                        {mobileMenuOpen === 'company' && <CompanySwitcherContent onClose={() => setMobileMenuOpen(null)} />}
                     </div>
                 </div>
             )}

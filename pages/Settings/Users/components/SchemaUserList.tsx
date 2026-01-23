@@ -9,6 +9,7 @@ import {
 } from '../../../../components/Icons';
 import { useToast } from '../../../../components/Toast';
 import { useTranslation } from 'react-i18next';
+import { useImpersonation } from '../../../../context/ImpersonationContext';
 
 export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
     const { t } = useTranslation();
@@ -101,16 +102,7 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
 
     if (loading) return <div className="p-8 text-center text-slate-500">{t("Loading Users...")}</div>;
 
-    // We need to access the StartImpersonation function from Context
-    // Since this is a nested component, we might not have the context if it's not wrapped yet (but it will be)
-    // However, react-router context is available.
-    // For simplicity, we'll assume the context is available or throw error if not.
-    // We need to import the hook though.
-    // But `SchemaUserList` might be used in places where Context is not ready? (No, it's inside App)
-
-    // We'll use a dynamic import or assume the context is available in the parent scope.
-    // Since `useImpersonation` is exported from context...
-    // Let's modify the component to import it at the top.
+    const { startImpersonation } = useImpersonation();
 
     // WAIT, I need to add the import first. I'll do that in a separate replacement or use a full replace.
     // Since I can't add imports easily with this tool without targeting top, I'll rely on a second Replace call for imports.
@@ -124,28 +116,24 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
         if (!impersonateModal.user) return;
 
         try {
-            // We need to call the API to get the token, then pass it to context
-            // But `startImpersonation` expects token.
-            // Let's use `authService` or `api` to call /impersonate
-            addToast(`Switching to ${impersonateModal.user.firstName}...`, 'info');
+            const target = impersonateModal.user;
+            const targetId = target.id || target._id?.$oid || target._id;
+
+            addToast(`Switching to ${target.firstName || target.name || 'User'}...`, 'info');
+            console.log("Starting impersonation for:", target.email, "ID:", targetId, "Mode:", mode);
 
             const { default: api } = await import('../../../../services/api');
             const response = await api.post('/auth/impersonate', {
-                targetUserId: impersonateModal.user.id || impersonateModal.user._id,
+                targetUserId: targetId,
                 mode
             });
 
             if (response.data.token) {
-                // How to trigger context? We can't use hook if we didn't import it.
-                // We will dispatch a custom event that the Context listens to? 
-                // OR we just expect `useImpersonation` to work if we import it.
-                // I will add the import in the next step.
-
-                // Dispatch event for now as a fallback or cleaner decoupling? 
-                // No, Context is better.
-                window.dispatchEvent(new CustomEvent('START_IMPERSONATION', { detail: response.data }));
+                console.log("Impersonation token received for:", response.data.email);
+                startImpersonation(response.data.token, response.data, mode);
             }
         } catch (error: any) {
+            console.error("Impersonation Error:", error);
             addToast(error.response?.data?.message || "Impersonation failed", 'error');
         } finally {
             setImpersonateModal({ isOpen: false, user: null });

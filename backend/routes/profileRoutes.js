@@ -9,13 +9,15 @@ const {
 } = require('../controllers/profileController');
 const { protect } = require('../middleware/authMiddleware');
 
+const { tenantGuard } = require('../middleware/guardMiddleware');
+
 router.route('/')
     .get(protect, getProfiles)
     .post(protect, createProfile);
 
 router.route('/:id')
-    .get(protect, getProfile)
-    .put(protect, updateProfile)
-    .delete(protect, deleteProfile);
+    .get(protect, tenantGuard('Candidate'), getProfile)
+    .put(protect, tenantGuard('Candidate'), updateProfile)
+    .delete(protect, tenantGuard('Candidate'), deleteProfile);
 
 module.exports = router;

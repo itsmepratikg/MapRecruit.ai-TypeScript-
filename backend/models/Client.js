@@ -5,6 +5,11 @@ const clientSchema = mongoose.Schema({
         type: String,
         required: true
     },
+    franchiseID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Franchise',
+        index: true
+    },
     // Flexible schema for other fields
 }, {
     timestamps: true,
@@ -12,6 +17,6 @@ const clientSchema = mongoose.Schema({
     collection: 'clientsdb' // Explicitly point to the existing collection
 });
 
-const Client = mongoose.model('Client', clientSchema);
+const Client = mongoose.model('Client', clientSchema, 'clientsdb');
 
 module.exports = Client;

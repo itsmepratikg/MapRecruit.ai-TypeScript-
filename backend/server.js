@@ -9,11 +9,14 @@ dotenv.config();
 // Set mongoose options
 mongoose.set('strictQuery', false);
 
+const { resolveTenant } = require('./middleware/tenantMiddleware');
+
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Support large JSON payloads for schemaless data
+app.use(resolveTenant);
 
 // Logging Middleware
 app.use((req, res, next) => {
@@ -38,6 +41,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/clients', require('./routes/clientRoutes'));
 app.use('/api/campaigns', require('./routes/campaignRoutes'));
 app.use('/api/profiles', require('./routes/profileRoutes'));
+app.use('/api/company', require('./routes/companyRoutes'));
 app.get('/api/debug', (req, res) => res.json({
     message: 'Backend is alive',
     time: new Date().toISOString(),

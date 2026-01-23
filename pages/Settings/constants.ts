@@ -1,14 +1,15 @@
 
-import { 
-  Building2, Shield, User, Briefcase, Palette, FileText, Tag, 
-  MessageSquare, Lock, Search, CreditCard, Mail, GitBranch, 
-  ClipboardList, Database, SlidersHorizontal 
+import {
+  Building2, Shield, User, Briefcase, Palette, FileText, Tag,
+  MessageSquare, Lock, Search, CreditCard, Mail, GitBranch,
+  ClipboardList, Database, SlidersHorizontal
 } from '../../components/Icons';
 
 export const SETTINGS_CONTENT: Record<string, { title: string, desc: string, icon: any }> = {
   COMPANY_INFO: { title: "Company Information", desc: "Manage your company profile, logos, address details, and regional settings.", icon: Building2 },
   ROLES: { title: "Roles & Permissions", desc: "Configure access levels, define user roles, and manage permissions for your team members.", icon: Shield },
   USERS: { title: "User Management", desc: "Add, remove, or update user accounts and assign roles to your team members.", icon: User },
+  FRANCHISE: { title: "Franchise Management", desc: "Organize clients into franchises for centralized management and reporting.", icon: GitBranch },
   CLIENTS: { title: "Client Management", desc: "Manage client profiles, billing details, and specific configurations for different accounts.", icon: Briefcase },
   THEMES: { title: "Theme Customization", desc: "Customize the look and feel of the application to match your brand identity.", icon: Palette },
   CUSTOM_FIELD: { title: "Custom Fields", desc: "Define custom data fields for candidates, jobs, and applications to track specific metrics.", icon: FileText },

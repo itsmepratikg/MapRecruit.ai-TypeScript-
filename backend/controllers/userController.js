@@ -1,6 +1,15 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
 
+// Helper to generate password from domain
+const getDomainPassword = (email) => {
+    if (!email) return 'Domain12!'; // Fallback if no email
+    const domain = email.split('@')[1];
+    if (!domain) return 'Domain12!';
+    const name = domain.split('.')[0];
+    return name.charAt(0).toUpperCase() + name.slice(1) + '12!';
+};
+
 // @desc    Get all users for the tenant
 // @route   GET /api/users
 // @access  Private
@@ -100,7 +109,7 @@ const createUser = async (req, res) => {
 
         const userData = {
             ...req.body,
-            password: password || 'Domain12!', // Default password if not provided
+            password: password || getDomainPassword(email), // Dynamic domain-based password
             role: req.body.role || 'Recruiter', // Default role if not provided
             clients: clientObjectIds, // Ensure ObjectIds
             companyID: req.user.companyID // Ensure tenant context
@@ -239,9 +248,9 @@ const resetPassword = async (req, res) => {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        user.password = 'Domain12!';
+        user.password = getDomainPassword(user.email);
         await user.save();
-        res.status(200).json({ success: true, message: 'Password reset to Domain12!' });
+        res.status(200).json({ success: true, message: `Password reset to ${user.password}` });
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
     }

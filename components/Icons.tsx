@@ -138,6 +138,7 @@ export const Star = (props: any) => <Icon {...props} iconClass="fa-solid fa-star
 export const Sun = (props: any) => <Icon {...props} iconClass="fa-solid fa-sun" />;
 export const Tablet = (props: any) => <Icon {...props} iconClass="fa-solid fa-tablet-screen-button" />;
 export const Tag = (props: any) => <Icon {...props} iconClass="fa-solid fa-tag" />;
+export const ShieldAlert = (props: any) => <Icon {...props} iconClass="fa-solid fa-shield-halved" />;
 export const Target = (props: any) => <Icon {...props} iconClass="fa-solid fa-bullseye" />;
 export const ThumbsDown = (props: any) => <Icon {...props} iconClass="fa-solid fa-thumbs-down" />;
 export const ThumbsUp = (props: any) => <Icon {...props} iconClass="fa-solid fa-thumbs-up" />;

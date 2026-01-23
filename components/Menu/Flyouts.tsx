@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import {
     X, CheckCircle, UserPlus, Briefcase, FolderPlus, Tag, User,
     Settings, UserCog, Lock, Palette, LogOut, Search, ChevronRight, ChevronDown,
-    Activity, History, Bell
+    Activity, History, Bell, HelpCircle, Globe, Building2
 } from '../Icons';
 import { SIDEBAR_CAMPAIGN_DATA, GLOBAL_CAMPAIGNS } from '../../data';
 import { PROFILES_CATEGORIES, SETTINGS_CATEGORIES, TALENT_CHAT_MENU } from './constants';
@@ -115,6 +115,89 @@ export const ClientMenuContent = ({ activeClient, clients, onSwitchClient, onClo
     );
 };
 
+// --- Company Switcher (Product Admin) ---
+export const CompanySwitcherContent = ({ onClose }: { onClose: () => void }) => {
+    const { t } = useTranslation();
+    const [companies, setCompanies] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    useEffect(() => {
+        const fetchCompanies = async () => {
+            try {
+                const { default: api } = await import('../../services/api');
+                const response = await api.get('/company/all');
+                setCompanies(response.data);
+            } catch (error) {
+                console.error("Failed to fetch companies", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCompanies();
+    }, []);
+
+    const filtered = companies.filter(c =>
+        c.companyProfile?.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const handleSwitch = async (companyId: string) => {
+        try {
+            const { authService } = await import('../../services/api');
+            await authService.switchCompany(companyId);
+
+            // Notify user and reload to refresh all context/themes
+            window.location.reload();
+        } catch (error) {
+            console.error("Failed to switch company context", error);
+        }
+    };
+
+    return (
+        <div className="flex flex-col h-full max-h-[400px]">
+            <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-t">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t("Switch Company Environment")}</span>
+            </div>
+            <div className="p-3 border-b border-slate-100 dark:border-slate-700">
+                <div className="relative">
+                    <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                    <input
+                        type="text"
+                        placeholder={t("Search companies...")}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-1.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                        autoFocus
+                    />
+                </div>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-1 space-y-1">
+                {loading ? (
+                    <div className="p-4 text-center text-xs text-slate-400 animate-pulse">{t("Loading...")}</div>
+                ) : filtered.length > 0 ? (
+                    filtered.map(company => (
+                        <button
+                            key={company._id}
+                            onClick={() => handleSwitch(company._id)}
+                            className="w-full text-left px-3 py-2.5 text-sm rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between group transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-700">
+                                    <Building2 size={16} className="text-slate-400" />
+                                </div>
+                                <span className="font-medium text-slate-700 dark:text-slate-200">{company.companyProfile?.companyName}</span>
+                            </div>
+                            <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 text-slate-400" />
+                        </button>
+                    ))
+                ) : (
+                    <div className="p-8 text-center text-slate-400 text-xs italic">{t("No companies found")}</div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // --- Create Menu ---
 export const CreateMenuContent = ({
     onCreateProfile,
@@ -164,14 +247,18 @@ export const AccountMenuContent = ({
     onNavigate,
     onLogout,
     userProfile,
-    setActiveAccountTab
+    setActiveAccountTab,
+    onOpenSupport,
+    isCapturingSupport
 }: {
     setIsThemeSettingsOpen: (v: boolean) => void,
     closeMenu?: () => void,
     onNavigate?: (view: any) => void,
     onLogout: () => void,
     userProfile: any,
-    setActiveAccountTab?: (tab: string) => void
+    setActiveAccountTab?: (tab: string) => void,
+    onOpenSupport: () => void,
+    isCapturingSupport?: boolean
 }) => {
     const { t } = useTranslation();
     const userColorObj = COLORS.find(c => c.name === userProfile.color) || COLORS[0];
@@ -244,6 +331,23 @@ export const AccountMenuContent = ({
 
                 <button onClick={() => { setIsThemeSettingsOpen(true); if (closeMenu) closeMenu(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
                     <Palette size={16} /> {t("Themes")}
+                </button>
+
+                <button
+                    onClick={() => { onOpenSupport(); if (closeMenu && !isCapturingSupport) closeMenu(); }}
+                    disabled={isCapturingSupport}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all font-medium disabled:opacity-50"
+                >
+                    {isCapturingSupport ? (
+                        <>
+                            <div className="w-4 h-4 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
+                            <span className="animate-pulse">Capturing Screen...</span>
+                        </>
+                    ) : (
+                        <>
+                            <HelpCircle size={16} /> {t("Support Request")}
+                        </>
+                    )}
                 </button>
 
                 <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>

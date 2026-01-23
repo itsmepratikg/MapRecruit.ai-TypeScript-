@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
     Shield, Plus, Copy, Search, Edit2, Trash2, ChevronLeft,
     Save, CheckCircle, AlertCircle, ChevronDown, ChevronRight,
@@ -203,18 +203,50 @@ export const RolesPermissions = () => {
     const { t } = useTranslation();
     const { addToast } = useToast();
     const [view, setView] = useState<'LIST' | 'EDITOR'>('LIST');
+    const [roles, setRoles] = useState<any[]>([]);
     const [currentRole, setCurrentRole] = useState<any>(null);
-    const [roleForm, setRoleForm] = useState<any>({ name: '', description: '', permissions: {} });
+    const [roleForm, setRoleForm] = useState<any>({
+        roleName: '',
+        description: '',
+        accessibilitySettings: {},
+        companyID: []
+    });
     const [searchQuery, setSearchQuery] = useState('');
+    const [currentCompanyID, setCurrentCompanyID] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            try {
+                const { default: api, companyService } = await import('../../../services/api');
+                const [rolesRes, companyRes] = await Promise.all([
+                    api.get('/auth/roles'),
+                    companyService.get()
+                ]);
+                setRoles(rolesRes.data);
+                // Assume companyRes is the current company object
+                if (companyRes && companyRes._id) {
+                    // Store current company ID for creating new roles
+                    setCurrentCompanyID(companyRes._id);
+                }
+            } catch (error) {
+                console.error("Failed to fetch initial data", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchInitialData();
+    }, [view]);
 
     // --- Handlers ---
 
     const handleEditRole = (role: any) => {
         setCurrentRole(role);
         setRoleForm({
-            name: role.name,
+            roleName: role.roleName,
             description: role.description,
-            permissions: JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)) // Reset to default structure for demo, normally load from backend
+            accessibilitySettings: role.accessibilitySettings || JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)),
+            companyID: role.companyID
         });
         setView('EDITOR');
     };
@@ -222,9 +254,10 @@ export const RolesPermissions = () => {
     const handleCreateRole = () => {
         setCurrentRole(null);
         setRoleForm({
-            name: '',
+            roleName: '',
             description: '',
-            permissions: JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS))
+            accessibilitySettings: JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS)),
+            companyID: currentCompanyID
         });
         setView('EDITOR');
     };
@@ -241,13 +274,25 @@ export const RolesPermissions = () => {
         }
     };
 
-    const handleSaveRole = () => {
-        if (!roleForm.name) {
+    const handleSaveRole = async () => {
+        if (!roleForm.roleName) {
             addToast(t("Role Name is required"), "error");
             return;
         }
-        addToast(`${t("Role")} "${roleForm.name}" ${t("saved successfully")}`, 'success');
-        setView('LIST');
+        try {
+            const { default: api } = await import('../../../services/api');
+            if (currentRole) {
+                await api.put(`/auth/roles/${currentRole._id}`, roleForm);
+                addToast(t("Role updated successfully"), 'success');
+            } else {
+                await api.post('/auth/roles', roleForm);
+                addToast(t("Role created successfully"), 'success');
+            }
+            setView('LIST');
+        } catch (error) {
+            console.error("Save failed", error);
+            addToast(t("Failed to save role"), "error");
+        }
     };
 
     const handlePermissionToggle = (path: string[], value: boolean) => {
@@ -266,7 +311,7 @@ export const RolesPermissions = () => {
 
     // --- RENDER: LIST VIEW ---
     if (view === 'LIST') {
-        const filteredRoles = MOCK_ROLES.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        const filteredRoles = roles.filter(r => (r.roleName || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
         return (
             <div className="h-full overflow-hidden flex flex-col">
@@ -314,16 +359,16 @@ export const RolesPermissions = () => {
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                     {filteredRoles.map(role => (
                                         <tr
-                                            key={role.id}
+                                            key={role._id}
                                             className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group cursor-pointer"
                                             onClick={() => handleEditRole(role)}
                                         >
                                             <td className="px-6 py-4">
                                                 <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                                                    {role.name}
-                                                    {role.id === 'R-SUPER-ADMIN' && <Lock size={12} className="text-amber-500" title={t("System Role")} />}
+                                                    {role.roleName}
+                                                    {role.roleName === 'Super Administrator' && <Lock size={12} className="text-amber-500" title={t("System Role")} />}
                                                 </div>
-                                                <div className="text-[10px] font-mono text-slate-400">{role.id}</div>
+                                                <div className="text-[10px] font-mono text-slate-400">{role._id}</div>
                                             </td>
                                             <td className="px-6 py-4 text-slate-500 dark:text-slate-400 max-w-[250px] truncate">
                                                 {role.description}
@@ -334,7 +379,7 @@ export const RolesPermissions = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-slate-500 dark:text-slate-400 text-xs">
-                                                {role.updated}
+                                                {role.updatedAt ? new Date(role.updatedAt).toLocaleDateString() : 'N/A'}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -405,8 +450,8 @@ export const RolesPermissions = () => {
                                     type="text"
                                     className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                                     placeholder="e.g. Senior Recruiter"
-                                    value={roleForm.name}
-                                    onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
+                                    value={roleForm.roleName}
+                                    onChange={(e) => setRoleForm({ ...roleForm, roleName: e.target.value })}
                                 />
                             </div>
                             <div className="space-y-1.5">
@@ -420,11 +465,13 @@ export const RolesPermissions = () => {
                                 />
                             </div>
                         </div>
+
+                        {/* Multi-Tenant Scope Removed - Roles are now company specific */}
                     </div>
 
                     {/* Permissions Editor */}
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                        {Object.keys(roleForm.permissions).map((category) => (
+                        {Object.keys(roleForm.accessibilitySettings || {}).map((category) => (
                             <div key={category} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden h-full">
                                 <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center">
                                     <h4 className="font-bold text-slate-800 dark:text-slate-200">{t(category)}</h4>
@@ -432,7 +479,7 @@ export const RolesPermissions = () => {
                                 </div>
                                 <div className="p-6">
                                     <RecursivePermissionGroup
-                                        data={roleForm.permissions[category]}
+                                        data={roleForm.accessibilitySettings[category]}
                                         path={[category]}
                                         onToggle={handlePermissionToggle}
                                     />

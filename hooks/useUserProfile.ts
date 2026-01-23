@@ -23,8 +23,13 @@ export const useUserProfile = () => {
                     firstName: authUser.firstName || profile.firstName,
                     lastName: authUser.lastName || profile.lastName,
                     role: authUser.role || profile.role,
+                    roleID: authUser.roleID || profile.roleID,
                     activeClient: authUser.activeClient || profile.activeClient, // Ensure this exists in auth response
-                    clientID: authUser.clientID || profile.clientID,
+                    companyID: authUser.companyID || profile.companyID,
+                    activeClientID: authUser.activeClientID || profile.activeClientID,
+                    clientID: authUser.clientID || authUser.clients || profile.clientID,
+                    clients: authUser.clients || authUser.clientID || profile.clients,
+                    currentCompanyID: authUser.currentCompanyID || profile.currentCompanyID,
                     lastLoginAt: authUser.lastLoginAt,
                     loginCount: authUser.loginCount,
                     lastActiveAt: authUser.lastActiveAt,
@@ -54,8 +59,13 @@ export const useUserProfile = () => {
                     firstName: authUser.firstName || profile.firstName,
                     lastName: authUser.lastName || profile.lastName,
                     role: authUser.role || profile.role,
+                    roleID: authUser.roleID || profile.roleID,
                     activeClient: authUser.activeClient || profile.activeClient,
-                    clientID: authUser.clientID || profile.clientID,
+                    companyID: authUser.companyID || profile.companyID,
+                    activeClientID: authUser.activeClientID || profile.activeClientID,
+                    clientID: authUser.clientID || authUser.clients || profile.clientID,
+                    clients: authUser.clients || authUser.clientID || profile.clients,
+                    currentCompanyID: authUser.currentCompanyID || profile.currentCompanyID,
                     lastLoginAt: authUser.lastLoginAt,
                     loginCount: authUser.loginCount,
                     lastActiveAt: authUser.lastActiveAt,
@@ -78,8 +88,24 @@ export const useUserProfile = () => {
         import('../services/api').then(({ default: api }) => {
             const fetchUser = async () => {
                 try {
+                    // Check if we need to force refresh (e.g. if roleID is just a string ID instead of object)
+                    const currentStored = localStorage.getItem('user');
+                    let forceRefresh = false;
+                    if (currentStored) {
+                        const parsed = JSON.parse(currentStored);
+                        // Force refresh if roleID is missing OR if it's a string (unpopulated)
+                        if (!parsed.roleID || typeof parsed.roleID === 'string') {
+                            forceRefresh = true;
+                        }
+                    }
+
+                    const headers: any = {};
+                    if (!forceRefresh && etagRef.current) {
+                        headers['If-None-Match'] = etagRef.current;
+                    }
+
                     const response = await api.get('/auth/me', {
-                        headers: etagRef.current ? { 'If-None-Match': etagRef.current } : {},
+                        headers,
                         validateStatus: (status) => status < 300 || status === 304
                     });
 

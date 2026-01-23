@@ -11,6 +11,7 @@ import { UsersSettings } from './Users/Users';
 import { UserProfileContainer } from './Users/UserProfileContainer';
 import { ClientsSettings } from './Clients';
 import { ClientProfileContainer } from './ClientProfile/ClientProfileContainer';
+import { FranchiseSettings } from './Franchise';
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -39,6 +40,7 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
             'ROLES': 'roles',
             'USERS': 'users',
             'CLIENTS': 'clients',
+            'FRANCHISE': 'franchise',
             'REACHOUT_LAYOUTS': 'reachoutlayouts',
             // Add others as needed, or fallback to TitleCase
         };
@@ -79,6 +81,7 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
             <Route path={getPath('ROLES')} element={<RolesPermissions />} />
             <Route path={getPath('USERS')} element={<UsersSettings onSelectUser={onSelectUser} />} />
             <Route path={getPath('CLIENTS')} element={<ClientsSettings />} /> {/* Add Route */}
+            <Route path={getPath('FRANCHISE')} element={<FranchiseSettings />} />
             <Route path={getPath('REACHOUT_LAYOUTS')} element={<ReachOutLayouts />} />
             <Route path="users/userprofile/:section/:id" element={<UserProfileContainer />} />
             <Route path="users/userprofile/:section" element={<UserProfileContainer />} />
@@ -86,7 +89,7 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
             {/* Add routes for other settings items */}
             {Object.keys(SETTINGS_CONTENT).map(id => {
                 // Only render placeholder for items not explicitly routed above
-                if (!['COMPANY_INFO', 'ROLES', 'USERS', 'REACHOUT_LAYOUTS', 'CLIENTS'].includes(id)) {
+                if (!['COMPANY_INFO', 'ROLES', 'USERS', 'REACHOUT_LAYOUTS', 'CLIENTS', 'FRANCHISE'].includes(id)) {
                     return <Route key={id} path={getPath(id)} element={<SettingsContentWrapper id={id} />} />;
                 }
                 return null;

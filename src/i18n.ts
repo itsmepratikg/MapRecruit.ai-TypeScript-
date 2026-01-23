@@ -167,7 +167,7 @@ const resources = {
             "Authentication": "Authentication",
             "API Credits": "API Credits",
 
-            "ReachOut Layouts": "ReachOut Layouts",
+
 
             "Search & Source": "Search & Source",
             "Search Profiles": "Search Profiles",

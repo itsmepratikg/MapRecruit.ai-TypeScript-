@@ -3,7 +3,22 @@
 
 All notable changes to the **MapRecruit ATS Dashboard** project will be documented in this file.
 
+
+## [1.6.0] - 2026-01-23
+
+### Database Schema Alignment & Persistent Context
+- **Context Persistence**: Implemented `/api/auth/switch-context` to save `currentCompanyID` and `activeClientID` on the backend.
+- **Dynamic Branding**: Integrated `useCompanyTheme` to update colors/logos from `themesdata`.
+  - Added Support for `companyLogo` (header) and `companyMinifiedLogo` (sidebar).
+  - Robust fallback to company initials with `#3b82f6` blue background.
+- **Franchise Support**: Added `franchiseID` ObjectIDs and dynamic "Franchise Preview" in Settings.
+- **Platform Alignment**:
+  - Strictly filtered clients by the active company context.
+  - Standardized schema keys: `franchise` (boolean) and `defaultTimeFormat`.
+  - Implemented `lastActiveClients` map for per-company client memory.
+
 ## [1.5.0] - 2026-01-20
+
 
 ### Client Profile Management Improvements
 - **Client Profile Editor**: Implemented a comprehensive, multi-tabbed editor for Client Profiles, mirroring the User Profile experience.

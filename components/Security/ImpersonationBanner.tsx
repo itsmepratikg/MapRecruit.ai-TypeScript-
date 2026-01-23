@@ -7,24 +7,27 @@ export const ImpersonationBanner = () => {
 
     if (!isImpersonating || !targetUser) return null;
 
-    return createPortal(
-        <div className="fixed top-0 left-0 right-0 h-10 bg-amber-500 text-white z-[9999] flex items-center justify-between px-4 shadow-md animate-in slide-in-from-top duration-300">
+    const displayName = targetUser.name || `${targetUser.firstName || ''} ${targetUser.lastName || ''}`.trim() || targetUser.email;
+
+    return (
+        <div className="w-full bg-amber-500 text-white flex items-center justify-between px-6 py-2 shadow-lg z-[9999] border-b border-amber-600 animate-in slide-in-from-top duration-300">
             <div className="flex items-center gap-4 text-sm font-medium">
-                <span className="bg-white/20 px-2 py-0.5 rounded text-xs uppercase tracking-wider font-bold">
+                <span className="bg-white/20 px-2 py-0.5 rounded text-[10px] uppercase tracking-wider font-extrabold border border-white/30 truncate">
                     {mode === 'read-only' ? 'VIEW ONLY' : 'FULL ACCESS'}
                 </span>
-                <span>
-                    Viewing as: <strong>{targetUser.firstName} {targetUser.lastName}</strong> ({targetUser.email})
+                <span className="flex items-center gap-1.5 truncate">
+                    Viewing application as: <strong className="font-bold">{displayName}</strong>
+                    <span className="opacity-80 hidden md:inline">({targetUser.email})</span>
                 </span>
             </div>
             <button
                 onClick={stopImpersonation}
-                className="bg-black/20 hover:bg-black/40 text-xs font-bold px-3 py-1 rounded transition-colors uppercase tracking-wide"
+                className="bg-red-600 hover:bg-red-700 text-white text-[10px] font-black px-3 py-1.5 rounded shadow-sm transition-all uppercase tracking-widest flex items-center gap-2 shrink-0"
             >
-                Exit Impersonation
+                <span className="hidden sm:inline">EXIT IMPERSONATION</span>
+                <span className="sm:hidden">EXIT</span>
             </button>
-        </div>,
-        document.body
+        </div>
     );
 };
 

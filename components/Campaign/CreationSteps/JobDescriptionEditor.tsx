@@ -22,7 +22,7 @@ export const JobDescriptionEditor: React.FC<JobDescriptionEditorProps> = ({ valu
             </label>
             <div className="rounded-xl overflow-hidden border border-slate-300 dark:border-slate-600 focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-colors">
                 <Editor
-                    apiKey="o9pcamp5uwp8ltrbro1lxw3aev7rw18u5hey91n1x88f684e"
+                    apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
                     onInit={(evt, editor) => editorRef.current = editor}
                     value={value}
                     onEditorChange={(content) => onChange(content)}

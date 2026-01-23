@@ -1,9 +1,6 @@
 const mongoose = require('mongoose');
 
 const candidateSchema = mongoose.Schema({
-    _id: {
-        type: mongoose.Schema.Types.ObjectId
-    },
     companyID: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,

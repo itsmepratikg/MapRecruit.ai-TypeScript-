@@ -2,12 +2,14 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = mongoose.Schema({
-    _id: {
-        type: mongoose.Schema.Types.ObjectId
-    },
     companyID: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
+        index: true
+    },
+    currentCompanyID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company',
         index: true
     },
     activeClientID: {
@@ -34,6 +36,11 @@ const userSchema = mongoose.Schema({
     role: {
         type: String, // e.g., "Product Admin", "Recruiter"
         required: true
+    },
+    roleID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role',
+        index: true
     },
     status: {
         type: Boolean,

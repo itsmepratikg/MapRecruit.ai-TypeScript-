@@ -53,6 +53,13 @@ export const authService = {
     logout: () => {
         localStorage.removeItem('user');
     },
+    switchCompany: async (companyId, clientId) => {
+        const response = await api.post('/auth/switch-context', { companyId, clientId });
+        if (response.data.token) {
+            localStorage.setItem('user', JSON.stringify(response.data));
+        }
+        return response.data;
+    }
 };
 
 export const userService = {
@@ -143,6 +150,17 @@ export const passkeyService = {
         if (response.data.token) {
             localStorage.setItem('user', JSON.stringify(response.data));
         }
+        return response.data;
+    }
+};
+
+export const companyService = {
+    get: async () => {
+        const response = await api.get('/company');
+        return response.data;
+    },
+    update: async (companyData) => {
+        const response = await api.put('/company', companyData);
         return response.data;
     }
 };

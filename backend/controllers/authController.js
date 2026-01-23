@@ -2,10 +2,42 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const Role = require('../models/Role');
+const Client = require('../models/Client');
+
+/**
+ * Filter user.clients to only include those belonging to the current context
+ */
+const filterClientsByContext = async (userObject) => {
+    const clients = userObject.clients || [];
+    const contextCompanyID = userObject.currentCompanyID || userObject.companyID;
+
+    if (!contextCompanyID || clients.length === 0) return [];
+
+    // Fetch clients that are assigned to this user AND belongs to the current company
+    const validClients = await Client.find({
+        _id: { $in: clients },
+        companyID: contextCompanyID
+    }).select('_id name clientLogo');
+
+    // Fetch company info for logo fallback
+    const Company = require('../models/Company');
+    const company = await Company.findById(contextCompanyID).select('companyProfile.companyLogo');
+    const companyLogo = company?.companyProfile?.companyLogo || null;
+
+    return validClients.map(c => ({
+        _id: c._id,
+        name: c.name,
+        clientLogo: c.clientLogo || companyLogo
+    }));
+};
 
 // Generate JWT
-const generateToken = (id, email, companyID, activeClientID, role) => {
-    return jwt.sign({ id, email, companyID, activeClientID, role }, process.env.JWT_SECRET, {
+const generateToken = (id, email, companyID, activeClientID, role, roleID, currentCompanyID, productAdmin) => {
+    const payload = { id, email, companyID, activeClientID, role, roleID };
+    if (currentCompanyID) payload.currentCompanyID = currentCompanyID;
+    if (productAdmin !== undefined) payload.productAdmin = productAdmin;
+    return jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: '30d',
     });
 };
@@ -60,7 +92,7 @@ const registerUser = async (req, res) => {
                 role: user.role,
                 companyID: user.companyID,
                 activeClientID: user.activeClientID,
-                token: generateToken(user._id, user.email, user.companyID, user.activeClientID, user.role),
+                token: generateToken(user._id, user.email, user.companyID, user.activeClientID, user.role, user.roleID, null, user.accessibilitySettings?.productAdmin),
             });
         } else {
             res.status(400).json({ message: 'Invalid user data' });
@@ -82,6 +114,22 @@ const loginUser = async (req, res) => {
         const user = await User.findOne({ email });
 
         if (user && (await user.matchPassword(password))) {
+            // Populate Role to check tenant access
+            const populatedUser = await User.findById(user._id).populate('roleID');
+
+            if (populatedUser && populatedUser.roleID && populatedUser.roleID.companyID) {
+                const companyIDs = Array.isArray(populatedUser.roleID.companyID)
+                    ? populatedUser.roleID.companyID
+                    : [populatedUser.roleID.companyID];
+
+                const hasAccess = companyIDs.some(id => id.toString() === user.companyID.toString());
+
+                if (!hasAccess) {
+                    console.warn(`[Auth] Blocked login: Role ${populatedUser.roleID.roleName} is not valid for Company ${user.companyID}`);
+                    return res.status(403).json({ message: 'Current role is not authorized for this company tenant.' });
+                }
+            }
+
             // Update login tracking
             user.loginCount = (user.loginCount || 0) + 1;
             user.lastLoginAt = new Date();
@@ -89,12 +137,17 @@ const loginUser = async (req, res) => {
             await user.save();
 
             // Exclude password from response
-            const userObj = user.toObject();
+            const userObj = populatedUser.toObject();
             delete userObj.password;
+
+            // Normalize field names for frontend compatibility
+            userObj.id = userObj._id;
+            userObj.clientID = await filterClientsByContext(userObj);
+            userObj.clients = userObj.clientID;
 
             res.json({
                 ...userObj,
-                token: generateToken(user._id, user.email, user.companyID, user.activeClientID, user.role),
+                token: generateToken(user._id, user.email, user.companyID, user.activeClientID, user.role, user.roleID, user.currentCompanyID, user.accessibilitySettings?.productAdmin),
             });
         } else {
             res.status(401).json({ message: 'Invalid credentials' });
@@ -114,7 +167,12 @@ const getMe = async (req, res) => {
             return res.status(400).json({ message: 'Invalid User ID format' });
         }
 
-        const user = await User.findOne({ _id: new mongoose.Types.ObjectId(req.user.id) }).select('-password');
+        const user = await User.findOne({ _id: new mongoose.Types.ObjectId(req.user.id) })
+            .select('-password')
+            .populate({
+                path: 'roleID',
+                select: 'roleName accessibilitySettings companyID'
+            });
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -131,7 +189,15 @@ const getMe = async (req, res) => {
             return res.status(304).end();
         }
 
-        res.status(200).json(user);
+        console.log('[API] /auth/me Responding for user:', user.email);
+        console.log('[API] /auth/me RoleID:', user.roleID); // Should be object
+
+        const userObj = user.toObject();
+        userObj.id = userObj._id;
+        userObj.clientID = await filterClientsByContext(userObj);
+        userObj.clients = userObj.clientID;
+
+        res.status(200).json(userObj);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server Error' });
@@ -161,6 +227,7 @@ const impersonateUser = async (req, res) => {
             id: targetUser._id,
             email: targetUser.email,
             companyID: targetUser.companyID,
+            currentCompanyID: targetUser.currentCompanyID,
             activeClientID: targetUser.activeClientID,
             role: targetUser.role,
             // Impersonation Claims
@@ -183,9 +250,153 @@ const impersonateUser = async (req, res) => {
     }
 };
 
+// @desc    List all system roles
+// @route   GET /api/auth/roles
+// @access  Private
+const listRoles = async (req, res) => {
+    try {
+        const roles = await Role.find({});
+        res.json(roles);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Create a new role
+// @route   POST /api/auth/roles
+const createRole = async (req, res) => {
+    try {
+        const { roleName, description, accessibilitySettings, companyID } = req.body;
+        const role = await Role.create({
+            roleName,
+            description,
+            accessibilitySettings,
+            companyID
+        });
+        res.status(201).json(role);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Update a role
+// @route   PUT /api/auth/roles/:id
+const updateRole = async (req, res) => {
+    try {
+        const role = await Role.findById(req.params.id);
+        if (!role) return res.status(404).json({ message: 'Role not found' });
+
+        Object.assign(role, req.body);
+        await role.save();
+        res.json(role);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Switch Company Environment
+// @route   POST /api/auth/switch-company
+// @access  Private
+const switchCompany = async (req, res) => {
+    try {
+        const { companyId, clientId } = req.body;
+        if (!companyId || !mongoose.Types.ObjectId.isValid(companyId)) {
+            return res.status(400).json({ message: 'Invalid Company ID' });
+        }
+
+        console.log(`[DEBUG] Switch-Context request for UserID: ${req.user.id} to Company: ${companyId}, Client: ${clientId || 'AUTO'}`);
+
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // 1. Update currentCompanyID
+        user.currentCompanyID = new mongoose.Types.ObjectId(companyId);
+
+        // 2. Determine activeClientID
+        const lastActiveMap = user.accessibilitySettings?.lastActiveClients || {};
+        const savedClientId = lastActiveMap[companyId.toString()];
+
+        if (clientId && mongoose.Types.ObjectId.isValid(clientId)) {
+            user.activeClientID = new mongoose.Types.ObjectId(clientId);
+        } else if (savedClientId && mongoose.Types.ObjectId.isValid(savedClientId)) {
+            user.activeClientID = new mongoose.Types.ObjectId(savedClientId);
+            console.log(`[DEBUG] Restored last active client ${savedClientId} for company ${companyId}`);
+        } else {
+            // Auto-pick logic if switching company or clientId not provided
+            const company = await mongoose.connection.collection('companiesDB').findOne({
+                _id: new mongoose.Types.ObjectId(companyId)
+            });
+
+            if (company && company.clients && company.clients.length > 0) {
+                // Find all active clients in the company
+                const Client = require('../models/Client');
+                const queryIds = company.clients.map(id => {
+                    return mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id;
+                });
+
+                const activeClient = await Client.findOne({
+                    _id: { $in: queryIds },
+                    enable: true
+                });
+
+                if (activeClient) {
+                    user.activeClientID = activeClient._id;
+                    console.log(`[DEBUG] Auto-selected Client: ${activeClient._id} for Company: ${companyId}`);
+                } else {
+                    // Fallback to first available client if none are 'enabled'
+                    user.activeClientID = queryIds[0];
+                    console.log(`[DEBUG] Fallback-selected first Client: ${queryIds[0]} for Company: ${companyId}`);
+                }
+            } else {
+                console.warn(`[DEBUG] No clients found for Company: ${companyId}. User.activeClientID remains unchanged or null.`);
+            }
+        }
+
+        // 3. Save Client preference per Company for persistence
+        if (!user.accessibilitySettings) user.accessibilitySettings = {};
+        if (!user.accessibilitySettings.lastActiveClients) {
+            user.accessibilitySettings.lastActiveClients = {};
+        }
+
+        // Use a string key for the map to ensure stability in Mixed types
+        user.accessibilitySettings.lastActiveClients[companyId.toString()] = user.activeClientID;
+
+        // Mark as modified if it's a Nested Mixed type
+        user.markModified('accessibilitySettings.lastActiveClients');
+
+        await user.save();
+        console.log(`[DEBUG] Context Switched for User: ${user.email}. Target Company: ${user.currentCompanyID}, Client: ${user.activeClientID}`);
+
+        // Populate Role for token payload
+        const populatedUser = await User.findById(user._id).populate('roleID');
+        const userObj = populatedUser.toObject();
+        delete userObj.password;
+
+        // Normalize field names
+        userObj.id = userObj._id;
+        userObj.clientID = await filterClientsByContext(userObj);
+        userObj.clients = userObj.clientID;
+
+        res.json({
+            ...userObj,
+            token: generateToken(user._id, user.email, user.companyID, user.activeClientID, user.role, user.roleID, user.currentCompanyID, user.accessibilitySettings?.productAdmin),
+        });
+    } catch (error) {
+        console.error('Switch Context Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     getMe,
-    impersonateUser
+    impersonateUser,
+    listRoles,
+    createRole,
+    updateRole,
+    switchCompany
 };
