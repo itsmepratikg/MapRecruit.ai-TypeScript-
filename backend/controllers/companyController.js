@@ -91,10 +91,13 @@ const createFranchise = async (req, res) => {
 // @route   GET /api/company/all
 const listAllCompanies = async (req, res) => {
     try {
+        // console.log(`[DEBUG] listAllCompanies - User Role: ${req.user.role}`);
         if (req.user.role !== 'Product Admin') {
+            // console.warn(`[DEBUG] listAllCompanies - Unauthorized: ${req.user.role}`);
             return res.status(403).json({ message: 'Not authorized' });
         }
         const companies = await Company.find({}).select('companyProfile status');
+        // console.log(`[DEBUG] listAllCompanies - Found ${companies.length} companies`);
         res.json(companies);
     } catch (error) {
         console.error(error);

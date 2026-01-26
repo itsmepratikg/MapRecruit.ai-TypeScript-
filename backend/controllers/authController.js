@@ -9,27 +9,47 @@ const Client = require('../models/Client');
  * Filter user.clients to only include those belonging to the current context
  */
 const filterClientsByContext = async (userObject) => {
-    const clients = userObject.clients || [];
+    // console.log(`[DEBUG] filterClientsByContext - User: ${userObject.email}, Context Company: ${userObject.currentCompanyID || userObject.companyID}`);
+    const rawClients = userObject.clients || [];
     const contextCompanyID = userObject.currentCompanyID || userObject.companyID;
 
-    if (!contextCompanyID || clients.length === 0) return [];
+    if (!contextCompanyID || rawClients.length === 0) {
+        // console.log('[DEBUG] filterClientsByContext - No context company or no raw clients.');
+        return [];
+    }
+
+    // Normalize IDs (handle potential {$oid: ...} structure or raw ObjectIds)
+    const normalizedIds = rawClients.map(c => {
+        if (c && typeof c === 'object') {
+            return c.$oid || (c._id ? (c._id.$oid || c._id) : c);
+        }
+        return c;
+    });
+
+    // console.log(`[DEBUG] filterClientsByContext - Requesting ${normalizedIds.length} IDs from ClientDB:`, normalizedIds);
 
     // Fetch clients that are assigned to this user AND belongs to the current company
     const validClients = await Client.find({
-        _id: { $in: clients },
+        _id: { $in: normalizedIds },
         companyID: contextCompanyID
-    }).select('_id name clientLogo');
+    }).select('_id clientName name clientLogo');
+
+    // console.log(`[DEBUG] filterClientsByContext - Found ${validClients.length} valid client docs.`);
 
     // Fetch company info for logo fallback
     const Company = require('../models/Company');
     const company = await Company.findById(contextCompanyID).select('companyProfile.companyLogo');
     const companyLogo = company?.companyProfile?.companyLogo || null;
 
-    return validClients.map(c => ({
-        _id: c._id,
-        name: c.name,
-        clientLogo: c.clientLogo || companyLogo
-    }));
+    return validClients.map(c => {
+        const name = c.clientName || c.name || 'Unnamed Client';
+        return {
+            _id: c._id,
+            name,
+            clientName: name,
+            clientLogo: c.clientLogo || companyLogo
+        };
+    });
 };
 
 // Generate JWT
@@ -189,8 +209,8 @@ const getMe = async (req, res) => {
             return res.status(304).end();
         }
 
-        console.log('[API] /auth/me Responding for user:', user.email);
-        console.log('[API] /auth/me RoleID:', user.roleID); // Should be object
+        // console.log('[API] /auth/me Responding for user:', user.email);
+        // console.log('[API] /auth/me RoleID:', user.roleID); // Should be object
 
         const userObj = user.toObject();
         userObj.id = userObj._id;
@@ -307,7 +327,7 @@ const switchCompany = async (req, res) => {
             return res.status(400).json({ message: 'Invalid Company ID' });
         }
 
-        console.log(`[DEBUG] Switch-Context request for UserID: ${req.user.id} to Company: ${companyId}, Client: ${clientId || 'AUTO'}`);
+        // console.log(`[DEBUG] Switch-Context request for UserID: ${req.user.id} to Company: ${companyId}, Client: ${clientId || 'AUTO'}`);
 
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });

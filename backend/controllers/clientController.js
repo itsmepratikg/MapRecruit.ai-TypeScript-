@@ -11,7 +11,7 @@ const getClients = async (req, res) => {
         const { id: userId } = req.user;
         const companyID = req.user.currentCompanyID || req.user.companyID;
 
-        console.log(`[DEBUG] getClients - User: ${userId}, Context CompanyID: ${companyID}`);
+        // console.log(`[DEBUG] getClients - User: ${userId}, Context CompanyID: ${companyID}`);
 
         if (!companyID) {
             console.warn('[DEBUG] getClients - No Company ID found in user token');
@@ -33,7 +33,7 @@ const getClients = async (req, res) => {
             console.error(`[DEBUG] getClients - Company NOT FOUND for ID: ${companyID}`);
             return res.status(404).json({ message: 'Company not found' });
         }
-        console.log(`[DEBUG] getClients - Found Company: ${company.name || company.companyName}. Clients count: ${company.clients?.length || 0}`);
+        // console.log(`[DEBUG] getClients - Found Company: ${company.name || company.companyName}. Clients count: ${company.clients?.length || 0}`);
 
         // Normalize Company Clients to Strings
         const companyClientIds = (company.clients || []).map(id => id.toString());
@@ -50,7 +50,7 @@ const getClients = async (req, res) => {
             console.error(`[DEBUG] getClients - User NOT FOUND: ${userId}`);
             return res.status(404).json({ message: 'User not found' });
         }
-        console.log(`[DEBUG] getClients - User Role: ${user.role}. User Assigned Clients: ${user.clients?.length || 0}`);
+        // console.log(`[DEBUG] getClients - User Role: ${user.role}. User Assigned Clients: ${user.clients?.length || 0}`);
 
         // 3. Determine Clients Allowed for this User
         let allowedClientIds = [];
@@ -58,7 +58,7 @@ const getClients = async (req, res) => {
 
         if (isAdmin) {
             allowedClientIds = companyClientIds;
-            console.log(`[DEBUG] getClients - Admin Access. Allowing all ${allowedClientIds.length} company clients.`);
+            // console.log(`[DEBUG] getClients - Admin Access. Allowing all ${allowedClientIds.length} company clients.`);
         } else {
             const userClientIds = (user.clients || []).map(id => id.toString());
             allowedClientIds = companyClientIds.filter(id => userClientIds.includes(id));
@@ -84,7 +84,7 @@ const getClients = async (req, res) => {
             _id: { $in: queryIds }
         });
 
-        console.log(`[DEBUG] getClients - Found ${clients.length} detailed client docs in clientsDB.`);
+        // console.log(`[DEBUG] getClients - Found ${clients.length} detailed client docs in clientsDB.`);
 
         const formattedClients = clients.map(c => {
             const doc = c.toObject ? c.toObject() : c;

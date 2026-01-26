@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const protect = async (req, res, next) => {
     let token;
-    console.log(`[DEBUG] Auth Middleware - Checking ${req.method} ${req.originalUrl}`);
+    // console.log(`[DEBUG] Auth Middleware - Checking ${req.method} ${req.originalUrl}`);
 
     if (
         req.headers.authorization &&

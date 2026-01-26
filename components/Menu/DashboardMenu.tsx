@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Briefcase, Users, BarChart2, Settings, ChevronRight, MessageSquare } from '../Icons';
+import { LayoutDashboard, Briefcase, Users, BarChart2, Settings, ChevronRight, MessageSquare, User } from '../Icons';
 import { NavItem } from './NavItem';
 import { CampaignMenuContent, ProfilesMenuContent, SettingsMenuContent, TalentChatMenuContent } from './Flyouts';
 import { useScreenSize } from '../../hooks/useScreenSize';
+import { Portal } from './Portal';
 
 interface DashboardMenuProps {
     activeView?: string; // Optional now
@@ -40,14 +41,23 @@ export const DashboardMenu = ({
     const location = useLocation();
     const navigate = useNavigate();
     const [activePopover, setActivePopover] = useState<string | null>(null);
+    const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
     const { t } = useTranslation();
 
     // Hover timeout refs
     const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const handlePopoverEnter = (id: string) => {
+    const handlePopoverEnter = (id: string, e: React.MouseEvent) => {
         if (!isDesktop) return;
+
+        // ONLY set position when entering from the trigger (the relative container in the sidebar)
+        // This prevents the flyout from jumping when hovered because it's in a Portal
+        if (e.currentTarget.classList.contains('relative')) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setPopoverPos({ top: rect.top, left: rect.right });
+        }
+
         if (closeTimeoutRef.current) {
             clearTimeout(closeTimeoutRef.current);
             closeTimeoutRef.current = null;
@@ -70,14 +80,21 @@ export const DashboardMenu = ({
         }, 300);
     };
 
-    const closePopover = () => setActivePopover(null);
+    const closePopover = React.useCallback(() => setActivePopover(null), []);
 
-    const getPopoverClass = (id: string) => {
+    const getPopoverStyle = (id: string) => {
         const isActive = activePopover === id;
-        return `absolute left-full top-0 ml-2 z-50 origin-top-left transition-all duration-300 ease-out transform ${isActive
-            ? 'opacity-100 scale-100 translate-x-0 visible pointer-events-auto'
-            : 'opacity-0 scale-95 -translate-x-2 invisible pointer-events-none'
-            }`;
+        return {
+            top: `${popoverPos.top}px`,
+            left: `${popoverPos.left}px`, // No gap here, we use padding inside for the bridge
+            paddingLeft: '8px', // Bridge space
+            marginLeft: '-4px', // Slight overlap for stability
+            position: 'fixed' as const,
+            opacity: isActive ? 1 : 0,
+            transform: isActive ? 'scale(1) translateX(4px)' : 'scale(0.95) translateX(0)',
+            visibility: isActive ? 'visible' as const : 'hidden' as const,
+            pointerEvents: isActive ? 'auto' as const : 'none' as const,
+        };
     };
 
     const isActiveCampaign = location.pathname.startsWith('/campaigns');
@@ -90,7 +107,7 @@ export const DashboardMenu = ({
             <NavItem to="/dashboard" icon={LayoutDashboard} label={t("Dashboard")} isCollapsed={isCollapsed} />
 
             {/* Campaign Fly-out Menu Item */}
-            <div className="relative" onMouseEnter={() => handlePopoverEnter('campaigns')} onMouseLeave={handlePopoverLeave}>
+            <div className="relative" onMouseEnter={(e) => handlePopoverEnter('campaigns', e)} onMouseLeave={handlePopoverLeave}>
                 <NavLink
                     to="/campaigns"
                     data-tour="nav-campaigns"
@@ -105,24 +122,27 @@ export const DashboardMenu = ({
 
                 {/* Desktop Flyout Content */}
                 {isDesktop && (
-                    <div
-                        className={getPopoverClass('campaigns')}
-                        onMouseEnter={() => handlePopoverEnter('campaigns')}
-                        onMouseLeave={handlePopoverLeave}
-                    >
-                        <CampaignMenuContent
-                            onNavigate={(tab) => { handleNavigateToCampaignList(tab); }} // This might need update if onNavigate uses state
-                            onNavigateToCampaign={onNavigateToCampaign}
-                            activeView={isActiveCampaign ? 'CAMPAIGNS' : ''}
-                            activeClient={userProfile.activeClient}
-                            onClose={closePopover}
-                        />
-                    </div>
+                    <Portal>
+                        <div
+                            style={getPopoverStyle('campaigns')}
+                            className="z-[9999] transition-all duration-300 ease-out"
+                            onMouseEnter={(e) => handlePopoverEnter('campaigns', e)}
+                            onMouseLeave={handlePopoverLeave}
+                        >
+                            <CampaignMenuContent
+                                onNavigate={(tab) => { handleNavigateToCampaignList(tab); }} // This might need update if onNavigate uses state
+                                onNavigateToCampaign={onNavigateToCampaign}
+                                activeView={isActiveCampaign ? 'CAMPAIGNS' : ''}
+                                activeClient={userProfile.activeClient}
+                                onClose={closePopover}
+                            />
+                        </div>
+                    </Portal>
                 )}
             </div>
 
             {/* Main Sidebar Profile Item with Hover Menu */}
-            <div className="relative" onMouseEnter={() => handlePopoverEnter('profiles')} onMouseLeave={handlePopoverLeave}>
+            <div className="relative" onMouseEnter={(e) => handlePopoverEnter('profiles', e)} onMouseLeave={handlePopoverLeave}>
                 <NavLink
                     to="/profiles"
                     className={({ isActive }) => `w-full flex items-center justify-between px-3 py-2.5 rounded-md transition-colors ${isActive || activePopover === 'profiles' ? 'bg-emerald-50 dark:bg-emerald-900/10 text-emerald-900 dark:text-emerald-200' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'}`}
@@ -136,28 +156,31 @@ export const DashboardMenu = ({
 
                 {/* Desktop Hover Flyout */}
                 {isDesktop && (
-                    <div
-                        className={getPopoverClass('profiles')}
-                        onMouseEnter={() => handlePopoverEnter('profiles')}
-                        onMouseLeave={handlePopoverLeave}
-                    >
-                        <ProfilesMenuContent
-                            onNavigate={(id) => {
-                                // onNavigate('PROFILES'); // No longer needed if linking
-                                setActiveProfileSubView(id); // Still needed for sub-view state if not fully routed (profiles sub-view might be query param or sub-route)
-                                // Ideally we navigate to /profiles?view=SEARCH
-                            }}
-                            onClose={closePopover}
-                            activeView={isActiveProfile ? activeProfileSubView : ''}
-                        />
-                    </div>
+                    <Portal>
+                        <div
+                            style={getPopoverStyle('profiles')}
+                            className="z-[9999] transition-all duration-300 ease-out"
+                            onMouseEnter={(e) => handlePopoverEnter('profiles', e)}
+                            onMouseLeave={handlePopoverLeave}
+                        >
+                            <ProfilesMenuContent
+                                onNavigate={(id) => {
+                                    // onNavigate('PROFILES'); // No longer needed if linking
+                                    setActiveProfileSubView(id); // Still needed for sub-view state if not fully routed (profiles sub-view might be query param or sub-route)
+                                    // Ideally we navigate to /profiles?view=SEARCH
+                                }}
+                                onClose={closePopover}
+                                activeView={isActiveProfile ? activeProfileSubView : ''}
+                            />
+                        </div>
+                    </Portal>
                 )}
             </div>
 
             <NavItem to="/metrics" icon={BarChart2} label={t("Metrics")} isCollapsed={isCollapsed} data-tour="nav-metrics" />
 
             {/* Main Sidebar Settings Item with Hover Menu */}
-            <div className="relative" onMouseEnter={() => handlePopoverEnter('settings')} onMouseLeave={handlePopoverLeave}>
+            <div className="relative" onMouseEnter={(e) => handlePopoverEnter('settings', e)} onMouseLeave={handlePopoverLeave}>
                 <NavLink
                     to="/settings/CompanyInfo"
                     data-tour="nav-settings"
@@ -172,26 +195,29 @@ export const DashboardMenu = ({
 
                 {/* Desktop Hover Flyout */}
                 {isDesktop && (
-                    <div
-                        className={getPopoverClass('settings')}
-                        onMouseEnter={() => handlePopoverEnter('settings')}
-                        onMouseLeave={handlePopoverLeave}
-                    >
-                        <SettingsMenuContent
-                            onNavigate={(path) => {
-                                // path will now be the full sub-path e.g., 'CompanyInfo' or 'Users'
-                                navigate(`/settings/${path}`);
-                                setActiveSettingsTab(path);
-                            }}
-                            activeTab={isActiveSettings ? location.pathname.split('/settings/')[1] || 'CompanyInfo' : ''}
-                            onClose={closePopover}
-                        />
-                    </div>
+                    <Portal>
+                        <div
+                            style={getPopoverStyle('settings')}
+                            className="z-[9999] transition-all duration-300 ease-out"
+                            onMouseEnter={(e) => handlePopoverEnter('settings', e)}
+                            onMouseLeave={handlePopoverLeave}
+                        >
+                            <SettingsMenuContent
+                                onNavigate={(path) => {
+                                    // path will now be the full sub-path e.g., 'CompanyInfo' or 'Users'
+                                    navigate(`/settings/${path}`);
+                                    setActiveSettingsTab(path);
+                                }}
+                                activeTab={isActiveSettings ? location.pathname.split('/settings/')[1] || 'CompanyInfo' : ''}
+                                onClose={closePopover}
+                            />
+                        </div>
+                    </Portal>
                 )}
             </div>
 
             {/* Talent Chat Item with Hover Menu */}
-            <div className="relative" onMouseEnter={() => handlePopoverEnter('talentchat')} onMouseLeave={handlePopoverLeave}>
+            <div className="relative" onMouseEnter={(e) => handlePopoverEnter('talentchat', e)} onMouseLeave={handlePopoverLeave}>
                 <NavLink
                     to="/talent-chat"
                     data-tour="nav-talent-chat"
@@ -206,21 +232,25 @@ export const DashboardMenu = ({
 
                 {/* Desktop Hover Flyout */}
                 {isDesktop && (
-                    <div
-                        className={getPopoverClass('talentchat')}
-                        onMouseEnter={() => handlePopoverEnter('talentchat')}
-                        onMouseLeave={handlePopoverLeave}
-                    >
-                        <TalentChatMenuContent
-                            onNavigate={(tabId) => {
-                                setActiveTalentChatTab(tabId);
-                            }}
-                            onClose={closePopover}
-                            activeTab={isActiveTalentChat ? activeTalentChatTab : ''}
-                        />
-                    </div>
+                    <Portal>
+                        <div
+                            style={getPopoverStyle('talentchat')}
+                            className="z-[9999] transition-all duration-300 ease-out"
+                            onMouseEnter={(e) => handlePopoverEnter('talentchat', e)}
+                            onMouseLeave={handlePopoverLeave}
+                        >
+                            <TalentChatMenuContent
+                                onNavigate={(tabId) => {
+                                    setActiveTalentChatTab(tabId);
+                                }}
+                                onClose={closePopover}
+                                activeTab={isActiveTalentChat ? activeTalentChatTab : ''}
+                            />
+                        </div>
+                    </Portal>
                 )}
             </div>
+            <NavItem to="/myaccount/basicdetails" icon={User} label={t("My Account")} isCollapsed={isCollapsed} />
         </>
     );
 };

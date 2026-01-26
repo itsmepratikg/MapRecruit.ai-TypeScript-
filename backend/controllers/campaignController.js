@@ -5,7 +5,8 @@ const Campaign = require('../models/Campaign');
 // @access  Private
 const getCampaigns = async (req, res) => {
     try {
-        const campaigns = await Campaign.find({ companyID: req.user.companyID });
+        const campaigns = await Campaign.find({ companyID: req.user.companyID })
+            .populate('clientID', 'name clientName clientType');
         res.status(200).json(campaigns);
     } catch (error) {
         console.error('getCampaigns Error:', error);

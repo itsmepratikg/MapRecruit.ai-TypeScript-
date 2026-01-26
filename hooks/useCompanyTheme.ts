@@ -12,18 +12,18 @@ export const useCompanyTheme = (userProfile: any) => {
         const fetchAndApplyTheme = async () => {
             // If no user, reset to default
             if (!userProfile) {
-                console.log('useCompanyTheme: No userProfile, using default.');
+                // console.log('useCompanyTheme: No userProfile, using default.');
                 applyTheme(DEFAULT_THEME_COLOR);
                 return;
             }
 
             setLoading(true);
-            console.log('useCompanyTheme: Fetching company data for user ID:', userProfile._id || userProfile.id);
+            // console.log('useCompanyTheme: Fetching company data for user ID:', userProfile._id || userProfile.id);
             try {
                 // Fetch current company details
                 // Note: The backend's /company endpoint should resolve the company based on the user's currentCompanyID
                 const companyData = await companyService.get();
-                console.log('useCompanyTheme: Fetched companyData:', companyData);
+                // console.log('useCompanyTheme: Fetched companyData:', companyData);
 
                 // Extract main color from themesdata
                 // themesdata is an array in some company documents
@@ -32,13 +32,13 @@ export const useCompanyTheme = (userProfile: any) => {
                     ? themes[0]?.themeVariables?.mainColor
                     : themes?.themeVariables?.mainColor;
 
-                console.log('useCompanyTheme: Extracted mainColor:', mainColor);
+                // console.log('useCompanyTheme: Extracted mainColor:', mainColor);
 
                 if (mainColor) {
                     setThemeColor(mainColor);
                     applyTheme(mainColor);
                 } else {
-                    console.warn('useCompanyTheme: No mainColor found, using blue fallback.');
+                    // console.warn('useCompanyTheme: No mainColor found, using blue fallback.');
                     setThemeColor(DEFAULT_THEME_COLOR);
                     applyTheme(DEFAULT_THEME_COLOR);
                 }

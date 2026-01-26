@@ -5,6 +5,7 @@ import { PlusCircle, Building2, Search, Command, Globe } from '../Icons';
 import { useScreenSize } from '../../hooks/useScreenSize';
 import { COLORS } from '../../data/profile';
 import { CreateMenuContent, ClientMenuContent, AccountMenuContent, CompanySwitcherContent } from './Flyouts';
+import { Portal } from './Portal';
 
 interface SidebarFooterProps {
     setIsCreateProfileOpen: (v: boolean) => void;
@@ -43,12 +44,17 @@ export const SidebarFooter = ({
     const { isDesktop } = useScreenSize();
     const [activePopover, setActivePopover] = useState<string | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState<'client' | 'account' | 'create' | 'company' | null>(null);
+    const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
     const [metaKey, setMetaKey] = useState('Ctrl'); // Default
 
     // Helper to safely check permissions even if roleID is not fully populated yet
     const hasPermission = (setting: string) => {
         if (!userProfile?.roleID || typeof userProfile.roleID !== 'object') return false;
-        return userProfile.roleID.accessibilitySettings?.settings?.[setting] === true;
+        // Check root-level flags (new format) or nested settings (old format)
+        return (
+            userProfile.roleID.accessibilitySettings?.[setting] === true ||
+            userProfile.roleID.accessibilitySettings?.settings?.[setting] === true
+        );
     };
 
 
@@ -82,7 +88,12 @@ export const SidebarFooter = ({
     };
 
     // Desktop Hover Logic
-    const handlePopoverEnter = (id: string) => {
+    const handlePopoverEnter = (id: string, e: React.MouseEvent) => {
+        if (e.currentTarget.classList.contains('relative') || e.currentTarget.tagName === 'BUTTON') {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setPopoverPos({ top: rect.top, left: rect.right });
+        }
+
         if (closeTimeoutRef.current) {
             clearTimeout(closeTimeoutRef.current);
             closeTimeoutRef.current = null;
@@ -105,12 +116,22 @@ export const SidebarFooter = ({
     };
 
     // Helper for popup transitions
-    const getPopupClass = (id: string) => {
+    const getPopupStyle = (id: string) => {
         const isActive = activePopover === id;
-        return `absolute left-full bottom-0 ml-2 shadow-xl z-50 origin-bottom-left transition-all duration-200 ease-out transform ${isActive
-            ? 'opacity-100 scale-100 translate-x-0 visible pointer-events-auto'
-            : 'opacity-0 scale-95 -translate-x-2 invisible pointer-events-none'
-            }`;
+        const isAccount = id === 'account';
+
+        return {
+            top: isAccount ? 'auto' : `${popoverPos.top}px`,
+            bottom: isAccount ? '16px' : 'auto', // Account menu positions from bottom
+            left: `${popoverPos.left}px`,
+            paddingLeft: '8px',
+            marginLeft: '-4px',
+            position: 'fixed' as const,
+            opacity: isActive ? 1 : 0,
+            transform: isActive ? 'scale(1) translateX(4px)' : 'scale(0.95) translateX(0)',
+            visibility: isActive ? 'visible' as const : 'hidden' as const,
+            pointerEvents: isActive ? 'auto' as const : 'none' as const,
+        };
     };
 
     return (
@@ -149,7 +170,7 @@ export const SidebarFooter = ({
             </div>
 
             {/* Create Dropdown */}
-            <div className="relative" onMouseEnter={() => isDesktop && handlePopoverEnter('create')} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
+            <div className="relative" onMouseEnter={(e) => isDesktop && handlePopoverEnter('create', e)} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
                 <button
                     data-tour="nav-create-trigger"
                     onClick={() => handleMenuClick('create')}
@@ -161,21 +182,30 @@ export const SidebarFooter = ({
 
                 {/* Desktop Create Menu */}
                 {isDesktop && (
-                    <div className={`${getPopupClass('create')} w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg`}>
-                        <CreateMenuContent
-                            onCreateProfile={() => { setIsCreateProfileOpen(true); setActivePopover(null); }}
-                            onCreateCampaign={() => { setIsCreateCampaignOpen(true); setActivePopover(null); }}
-                            onCreateFolder={() => { setIsCreateFolderOpen(true); setActivePopover(null); }}
-                            onOpenPlaceholder={(t, m) => { onOpenPlaceholder(t, m); setActivePopover(null); }}
-                            closeMenu={() => setActivePopover(null)}
-                        />
-                    </div>
+                    <Portal>
+                        <div
+                            style={getPopupStyle('create')}
+                            className="z-[9999] transition-all duration-200 ease-out"
+                            onMouseEnter={(e) => handlePopoverEnter('create', e)}
+                            onMouseLeave={handlePopoverLeave}
+                        >
+                            <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl">
+                                <CreateMenuContent
+                                    onCreateProfile={() => { setIsCreateProfileOpen(true); setActivePopover(null); }}
+                                    onCreateCampaign={() => { setIsCreateCampaignOpen(true); setActivePopover(null); }}
+                                    onCreateFolder={() => { setIsCreateFolderOpen(true); setActivePopover(null); }}
+                                    onOpenPlaceholder={(t, m) => { onOpenPlaceholder(t, m); setActivePopover(null); }}
+                                    closeMenu={() => setActivePopover(null)}
+                                />
+                            </div>
+                        </div>
+                    </Portal>
                 )}
             </div>
 
             {/* Switch Client */}
             {hasPermission('clientSwitcher') && (
-                <div className="relative" onMouseEnter={() => isDesktop && handlePopoverEnter('client')} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
+                <div className="relative" onMouseEnter={(e) => isDesktop && handlePopoverEnter('client', e)} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
                     <button
                         data-tour="nav-client-switcher"
                         className={`w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors ${activePopover === 'client' ? 'bg-slate-50 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400' : ''}`}
@@ -189,16 +219,25 @@ export const SidebarFooter = ({
 
                     {/* Desktop Client List Popover */}
                     {isDesktop && (
-                        <div className={`${getPopupClass('client')} w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg`}>
-                            <ClientMenuContent activeClient={userProfile.activeClient} clients={clients} onSwitchClient={handleClientSelect} onClose={() => setActivePopover(null)} />
-                        </div>
+                        <Portal>
+                            <div
+                                style={getPopupStyle('client')}
+                                className="z-[9999] transition-all duration-200 ease-out"
+                                onMouseEnter={(e) => handlePopoverEnter('client', e)}
+                                onMouseLeave={handlePopoverLeave}
+                            >
+                                <div className="w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl">
+                                    <ClientMenuContent activeClient={userProfile.activeClient} clients={clients} onSwitchClient={handleClientSelect} onClose={() => setActivePopover(null)} />
+                                </div>
+                            </div>
+                        </Portal>
                     )}
                 </div>
             )}
 
             {/* Switch Company (Permission Based) */}
             {hasPermission('companySwitcher') && (
-                <div className="relative" onMouseEnter={() => isDesktop && handlePopoverEnter('company')} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
+                <div className="relative" onMouseEnter={(e) => isDesktop && handlePopoverEnter('company', e)} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
                     <button
                         className={`w-full flex items-center gap-3 px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors ${activePopover === 'company' ? 'bg-slate-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400' : ''}`}
                         onClick={() => handleMenuClick('company')}
@@ -209,15 +248,27 @@ export const SidebarFooter = ({
 
                     {/* Desktop Company Switcher Popover */}
                     {isDesktop && (
-                        <div className={`${getPopupClass('company')} w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg`}>
-                            <CompanySwitcherContent onClose={() => setActivePopover(null)} />
-                        </div>
+                        <Portal>
+                            <div
+                                style={getPopupStyle('company')}
+                                className="z-[9999] transition-all duration-200 ease-out"
+                                onMouseEnter={(e) => handlePopoverEnter('company', e)}
+                                onMouseLeave={handlePopoverLeave}
+                            >
+                                <div className="w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl">
+                                    <CompanySwitcherContent
+                                        isVisible={activePopover === 'company'}
+                                        onClose={() => setActivePopover(null)}
+                                    />
+                                </div>
+                            </div>
+                        </Portal>
                     )}
                 </div>
             )}
 
             {/* User Account */}
-            <div className="relative pt-2" onMouseEnter={() => isDesktop && handlePopoverEnter('account')} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
+            <div className="relative pt-2" onMouseEnter={(e) => isDesktop && handlePopoverEnter('account', e)} onMouseLeave={() => isDesktop && handlePopoverLeave()}>
                 <button
                     data-tour="nav-my-account"
                     className={`w-full flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-md transition-colors ${activePopover === 'account' ? 'bg-slate-50 dark:bg-slate-800' : ''}`}
@@ -238,19 +289,28 @@ export const SidebarFooter = ({
 
                 {/* Desktop Account Popover */}
                 {isDesktop && (
-                    <div className={`${getPopupClass('account')} bottom-2 ml-4 w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg`}>
-                        <div className="absolute bottom-6 -left-2 w-4 h-4 bg-white dark:bg-slate-800 transform rotate-45 border-l border-b border-slate-200 dark:border-slate-700"></div>
-                        <AccountMenuContent
-                            setIsThemeSettingsOpen={setIsThemeSettingsOpen}
-                            onNavigate={onNavigate}
-                            onLogout={onLogout}
-                            userProfile={userProfile}
-                            closeMenu={() => setActivePopover(null)}
-                            setActiveAccountTab={setActiveAccountTab}
-                            onOpenSupport={onOpenSupport}
-                            isCapturingSupport={isCapturingSupport}
-                        />
-                    </div>
+                    <Portal>
+                        <div
+                            style={getPopupStyle('account')}
+                            className="z-[9999] transition-all duration-200 ease-out"
+                            onMouseEnter={(e) => handlePopoverEnter('account', e)}
+                            onMouseLeave={handlePopoverLeave}
+                        >
+                            <div className="w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl relative">
+                                <div className="absolute bottom-6 -left-2 w-4 h-4 bg-white dark:bg-slate-800 transform rotate-45 border-l border-b border-slate-200 dark:border-slate-700"></div>
+                                <AccountMenuContent
+                                    setIsThemeSettingsOpen={setIsThemeSettingsOpen}
+                                    onNavigate={onNavigate}
+                                    onLogout={onLogout}
+                                    userProfile={userProfile}
+                                    closeMenu={() => setActivePopover(null)}
+                                    setActiveAccountTab={setActiveAccountTab}
+                                    onOpenSupport={onOpenSupport}
+                                    isCapturingSupport={isCapturingSupport}
+                                />
+                            </div>
+                        </div>
+                    </Portal>
                 )}
             </div>
 

@@ -55,7 +55,7 @@ const CampaignHeader = ({ campaign, isScrolled, onBack }: { campaign: Campaign, 
             {/* Right Side: Actions */}
             <div className={`flex items-center gap-3 transition-all duration-300 ${isScrolled ? 'pr-6' : 'p-6 pt-2 lg:pt-6'}`}>
                <div className="flex -space-x-2 mr-2">
-                  {campaign.members.map((m, i) => (
+                  {campaign.members?.length > 0 && campaign.members.map((m, i) => (
                      <div key={i} className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${m.color} border-2 border-white dark:border-slate-800 ring-1 ring-white dark:ring-slate-700`} title={m.name}>
                         {m.initials}
                      </div>

@@ -8,6 +8,7 @@ const campaignSchema = mongoose.Schema({
     },
     clientID: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: 'Client',
         index: true
     },
     userID: {

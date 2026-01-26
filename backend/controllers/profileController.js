@@ -8,7 +8,7 @@ const getProfiles = async (req, res) => {
         // Use projection to avoid sending massive payloads for list view
         // Select core fields: full name, email, job title (from currentRole if inferred), etc.
         const profiles = await Candidate.find({ companyID: req.user.companyID })
-            .select('profile.fullName profile.emails professionalSummary.currentRole.jobTitle metaData.mrProfileID');
+            .select('profile.fullName profile.emails profile.locations professionalSummary.currentRole.jobTitle professionalSummary.yearsOfExperience metaData.mrProfileID personnelStatus employmentStatus availability professionalQualification.skills');
         res.status(200).json(profiles);
     } catch (error) {
         console.error(error);

@@ -1,15 +1,27 @@
-
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
-import { 
-  Save, AlertTriangle, X, ZoomOut, ZoomIn, Undo2, Redo2, Retweet, Network
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+    Save, AlertTriangle, X, ZoomOut, ZoomIn, Undo2, Redo2, Retweet, Network, RefreshCw, SlidersHorizontal
 } from '../../../components/Icons';
-import { NODE_TYPES } from '../../../data';
 import { EngageNode, EngageEdge } from '../../../types';
 import { INITIAL_NODES_GRAPH, INITIAL_EDGES_GRAPH } from '../../../components/engage/demoData';
-import { START_NODE_WIDTH, START_NODE_HEIGHT, BUBBLE_SIZE, CARD_WIDTH, CARD_HEIGHT } from '../../../components/engage/constants';
+import {
+    START_NODE_WIDTH, START_NODE_HEIGHT, BUBBLE_SIZE, CARD_WIDTH, CARD_HEIGHT, NODE_TYPES
+} from '../../../components/engage/constants';
 import { NodeCard, BezierEdge } from '../../../components/engage/CanvasNodes';
 import { AutomationPlaceholderModal, NodeConfigurationModal } from '../../../components/engage/ConfigModals';
 import { NetworkGraphModal } from '../../../components/NetworkGraphModal';
+import { JobFitCalibration } from '../../../components/Campaign/JobFitCalibration';
+import { WorkflowShareModal } from '../../../components/engage/WorkflowShareModal';
+
+const INITIAL_JOB_FIT_CONFIG = {
+    answerContext: { enable: true, weightage: 5 },
+    accentNeutrality: { enable: true, weightage: 5 },
+    fluencyFillers: { enable: true, weightage: 5 },
+    fluencyResponsiveness: { enable: true, weightage: 5 },
+    spokenProficiency: { enable: true, weightage: 5 },
+    pronunciation: { enable: true, weightage: 5 }
+};
 
 // --- MODALS ---
 
@@ -67,7 +79,7 @@ const ValidationErrorsModal = ({ isOpen, onClose, errors }: any) => {
 const calculateAutoLayout = (nodes: EngageNode[], edges: EngageEdge[], direction: 'HORIZONTAL' | 'VERTICAL') => {
     // 1. Hierarchy Calc
     const adjacency: Record<string, string[]> = {};
-    const incoming: Record<string, number> = {}; 
+    const incoming: Record<string, number> = {};
     nodes.forEach(n => { adjacency[n.id] = []; incoming[n.id] = 0; });
     edges.forEach(e => {
         if (adjacency[e.from]) adjacency[e.from].push(e.to);
@@ -75,7 +87,7 @@ const calculateAutoLayout = (nodes: EngageNode[], edges: EngageEdge[], direction
     });
 
     const levels: Record<number, string[]> = {};
-    const queue: {id: string, depth: number}[] = [];
+    const queue: { id: string, depth: number }[] = [];
 
     // Find roots (Start or no incoming)
     nodes.filter(n => n.type === 'START' || incoming[n.id] === 0).forEach(n => {
@@ -84,7 +96,7 @@ const calculateAutoLayout = (nodes: EngageNode[], edges: EngageEdge[], direction
 
     const visited = new Set<string>();
     const processQueue = () => {
-        while(queue.length) {
+        while (queue.length) {
             const { id, depth } = queue.shift()!;
             if (visited.has(id)) continue;
             visited.add(id);
@@ -108,14 +120,14 @@ const calculateAutoLayout = (nodes: EngageNode[], edges: EngageEdge[], direction
             const levelNodeIds = levels[d] || [];
             if (levelNodeIds.length === 0) continue;
             let maxW = 0;
-            
+
             const totalHeight = levelNodeIds.reduce((acc, nid) => {
                 const n = nodes.find(x => x.id === nid)!;
                 const h = n.type === 'START' ? START_NODE_HEIGHT : (n.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_HEIGHT);
                 return acc + h;
             }, 0) + (levelNodeIds.length - 1) * GAP_Y;
 
-            let currentY = 350 - (totalHeight / 2); 
+            let currentY = 350 - (totalHeight / 2);
             if (currentY < 50) currentY = 50;
 
             levelNodeIds.forEach(nid => {
@@ -124,7 +136,7 @@ const calculateAutoLayout = (nodes: EngageNode[], edges: EngageEdge[], direction
                 const n = newNodes[nodeIndex];
                 const w = n.type === 'START' ? START_NODE_WIDTH : (n.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_WIDTH);
                 const h = n.type === 'START' ? START_NODE_HEIGHT : (n.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_HEIGHT);
-                
+
                 maxW = Math.max(maxW, w);
                 newNodes[nodeIndex] = { ...n, x: currentX, y: currentY };
                 currentY += h + GAP_Y;
@@ -134,7 +146,7 @@ const calculateAutoLayout = (nodes: EngageNode[], edges: EngageEdge[], direction
     } else {
         // VERTICAL LAYOUT
         let currentY = 50;
-        const CENTER_X = 600; 
+        const CENTER_X = 600;
 
         for (let d = 0; d <= maxDepth; d++) {
             const levelNodeIds = levels[d] || [];
@@ -169,532 +181,626 @@ const calculateAutoLayout = (nodes: EngageNode[], edges: EngageEdge[], direction
 
 // --- WORKFLOW BUILDER LOGIC ---
 
+import { workflowService } from '../../../services/api';
+
 export const WorkflowBuilder = () => {
-  // Graph State
-  const [nodes, setNodes] = useState<EngageNode[]>(INITIAL_NODES_GRAPH);
-  const [edgesList, setEdgesList] = useState<EngageEdge[]>(INITIAL_EDGES_GRAPH);
-  const [layoutDirection, setLayoutDirection] = useState<'HORIZONTAL' | 'VERTICAL'>('HORIZONTAL');
-  
-  // History State
-  const [history, setHistory] = useState<{nodes: EngageNode[], edges: EngageEdge[]}[]>([{nodes: INITIAL_NODES_GRAPH, edges: INITIAL_EDGES_GRAPH}]);
-  const [historyStep, setHistoryStep] = useState(0);
-  const [isSaved, setIsSaved] = useState(true);
+    const { id: campaignId } = useParams<{ id: string }>();
 
-  // Interaction State
-  const [selectedNode, setSelectedNode] = useState<any>(null);
-  const [editingNode, setEditingNode] = useState<EngageNode | null>(null);
-  const [configCriteriaId, setConfigCriteriaId] = useState<string | null>(null);
-  const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [showAnalytics, setShowAnalytics] = useState<string | null>(null);
-  
-  const [zoom, setZoom] = useState(0.85); 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startPan, setStartPan] = useState({ x: 0, y: 0 });
-  const [scrollStart, setScrollStart] = useState({ left: 0, top: 0 });
+    // Graph State
+    const [nodes, setNodes] = useState<EngageNode[]>([]);
+    const [edgesList, setEdgesList] = useState<EngageEdge[]>([]);
+    const [layoutDirection, setLayoutDirection] = useState<'HORIZONTAL' | 'VERTICAL'>('HORIZONTAL');
 
-  // Initial Auto Align
-  useEffect(() => {
-      const aligned = calculateAutoLayout(INITIAL_NODES_GRAPH, INITIAL_EDGES_GRAPH, 'HORIZONTAL');
-      setNodes(aligned);
-      setHistory([{nodes: aligned, edges: INITIAL_EDGES_GRAPH}]);
-  }, []);
+    // History State
+    const [history, setHistory] = useState<{ nodes: EngageNode[], edges: EngageEdge[] }[]>([]);
+    const [historyStep, setHistoryStep] = useState(0);
+    const [isSaved, setIsSaved] = useState(true);
+    const [loading, setLoading] = useState(true);
 
-  // --- HISTORY MANAGEMENT ---
+    // Interaction State
+    const [selectedNode, setSelectedNode] = useState<any>(null);
+    const [editingNode, setEditingNode] = useState<EngageNode | null>(null);
+    const [configCriteriaId, setConfigCriteriaId] = useState<string | null>(null);
+    const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+    const [showSaveModal, setShowSaveModal] = useState(false);
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
+    const [showAnalytics, setShowAnalytics] = useState<string | null>(null);
 
-  const recordHistory = useCallback((newNodes: EngageNode[], newEdges: EngageEdge[]) => {
-      const newHistory = history.slice(0, historyStep + 1);
-      newHistory.push({ nodes: JSON.parse(JSON.stringify(newNodes)), edges: JSON.parse(JSON.stringify(newEdges)) });
-      if (newHistory.length > 50) newHistory.shift();
+    const [zoom, setZoom] = useState(0.85);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startPan, setStartPan] = useState({ x: 0, y: 0 });
+    const [scrollStart, setScrollStart] = useState({ left: 0, top: 0 });
 
-      setHistory(newHistory);
-      setHistoryStep(newHistory.length - 1);
-      setIsSaved(false);
-  }, [history, historyStep]);
+    // Job Fit State
+    const [jobFitConfig, setJobFitConfig] = useState<any>(INITIAL_JOB_FIT_CONFIG);
+    const [showJobFit, setShowJobFit] = useState(false);
 
-  const handleUndo = () => {
-      if (historyStep > 0) {
-          const prevStep = historyStep - 1;
-          const prevState = history[prevStep];
-          setNodes(prevState.nodes);
-          setEdgesList(prevState.edges);
-          setHistoryStep(prevStep);
-          setIsSaved(false);
-      }
-  };
+    // Share State
+    const [sharedWith, setSharedWith] = useState({ accessLevel: 'Private' });
+    const [showShareModal, setShowShareModal] = useState(false);
 
-  const handleRedo = () => {
-      if (historyStep < history.length - 1) {
-          const nextStep = historyStep + 1;
-          const nextState = history[nextStep];
-          setNodes(nextState.nodes);
-          setEdgesList(nextState.edges);
-          setHistoryStep(nextStep);
-          setIsSaved(false);
-      }
-  };
+    // Load Workflow from Backend
+    useEffect(() => {
+        if (!campaignId) return;
 
-  // --- VALIDATION & SAVE ---
+        const fetchWorkflowData = async () => {
+            try {
+                setLoading(true);
+                const data = await workflowService.getByCampaign(campaignId);
 
-  const validateWorkflow = () => {
-      const errors: string[] = [];
-      const adj: Record<string, string[]> = {};
-      nodes.forEach(n => adj[n.id] = []);
-      edgesList.forEach(e => {
-          if (adj[e.from]) adj[e.from].push(e.to);
-      });
+                const finalNodes = data?.nodes?.length ? data.nodes : INITIAL_NODES_GRAPH;
+                const finalEdges = data?.edges?.length ? data.edges : INITIAL_EDGES_GRAPH;
+                if (data?.jobFitPreferences) {
+                    setJobFitConfig(data.jobFitPreferences);
+                }
+                if (data?.sharedWith) {
+                    setSharedWith(data.sharedWith);
+                }
 
-      const startNode = nodes.find(n => n.type === 'START');
-      if (!startNode) {
-          errors.push("Missing Start Node. Workflow must have a start trigger.");
-      } else {
-          const visited = new Set<string>();
-          const queue = [startNode.id];
-          visited.add(startNode.id);
+                const aligned = calculateAutoLayout(finalNodes, finalEdges, 'HORIZONTAL');
+                setNodes(aligned);
+                setEdgesList(finalEdges);
+                setHistory([{ nodes: JSON.parse(JSON.stringify(aligned)), edges: JSON.parse(JSON.stringify(finalEdges)) }]);
+                setHistoryStep(0);
+                setIsSaved(true);
+            } catch (error) {
+                console.error("Failed to fetch workflow:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-          while (queue.length > 0) {
-              const curr = queue.shift()!;
-              const neighbors = adj[curr] || [];
-              neighbors.forEach(n => {
-                  if (!visited.has(n)) {
-                      visited.add(n);
-                      queue.push(n);
-                  }
-              });
-          }
+        fetchWorkflowData();
+    }, [campaignId]);
 
-          const orphans = nodes.filter(n => !visited.has(n.id));
-          if (orphans.length > 0) {
-              orphans.forEach(o => {
-                  errors.push(`Node "${o.title}" is unreachable from Start.`);
-              });
-          }
-      }
+    // --- HISTORY MANAGEMENT ---
 
-      nodes.forEach(n => {
-          if (!n.title || n.title.trim() === '') {
-              errors.push(`A node of type ${n.type} has an empty title.`);
-          }
-      });
+    const recordHistory = useCallback((newNodes: EngageNode[], newEdges: EngageEdge[]) => {
+        const newHistory = history.slice(0, historyStep + 1);
+        newHistory.push({ nodes: JSON.parse(JSON.stringify(newNodes)), edges: JSON.parse(JSON.stringify(newEdges)) });
+        if (newHistory.length > 50) newHistory.shift();
 
-      return errors;
-  };
+        setHistory(newHistory);
+        setHistoryStep(newHistory.length - 1);
+        setIsSaved(false);
+    }, [history, historyStep]);
 
-  const handleSaveRequest = () => {
-      const errors = validateWorkflow();
-      if (errors.length > 0) {
-          setValidationErrors(errors);
-      } else {
-          setShowSaveModal(true);
-      }
-  };
+    const handleUndo = () => {
+        if (historyStep > 0) {
+            const prevStep = historyStep - 1;
+            const prevState = history[prevStep];
+            setNodes(prevState.nodes);
+            setEdgesList(prevState.edges);
+            setHistoryStep(prevStep);
+            setIsSaved(false);
+        }
+    };
 
-  const confirmSave = () => {
-      setIsSaved(true);
-      setHistory([{ nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edgesList)) }]);
-      setHistoryStep(0);
-      setShowSaveModal(false);
-  };
+    const handleRedo = () => {
+        if (historyStep < history.length - 1) {
+            const nextStep = historyStep + 1;
+            const nextState = history[nextStep];
+            setNodes(nextState.nodes);
+            setEdgesList(nextState.edges);
+            setHistoryStep(nextStep);
+            setIsSaved(false);
+        }
+    };
 
-  // --- CANVAS CALCULATIONS ---
+    // --- VALIDATION & SAVE ---
 
-  const contentSize = useMemo(() => {
-      let maxX = 0;
-      let maxY = 0;
-      nodes.forEach(node => {
-          const w = node.type === 'START' ? START_NODE_WIDTH : (node.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_WIDTH);
-          const h = node.type === 'START' ? START_NODE_HEIGHT : (node.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_HEIGHT);
-          maxX = Math.max(maxX, node.x + w);
-          maxY = Math.max(maxY, node.y + h);
-      });
-      return { width: maxX + 400, height: maxY + 400 };
-  }, [nodes]);
+    const validateWorkflow = () => {
+        const errors: string[] = [];
+        const adj: Record<string, string[]> = {};
+        nodes.forEach(n => adj[n.id] = []);
+        edgesList.forEach(e => {
+            if (adj[e.from]) adj[e.from].push(e.to);
+        });
 
-  const edges = useMemo(() => edgesList.map(edge => {
-    const startNode = nodes.find(n => n.id === edge.from);
-    const endNode = nodes.find(n => n.id === edge.to);
-    if (!startNode || !endNode) return null;
-    
-    // Calculate Connection Points based on Layout Direction
-    let startPos = { x: 0, y: 0 };
-    let endPos = { x: 0, y: 0 };
+        const startNode = nodes.find(n => n.type === 'START');
+        if (!startNode) {
+            errors.push("Missing Start Node. Workflow must have a start trigger.");
+        } else {
+            const visited = new Set<string>();
+            const queue = [startNode.id];
+            visited.add(startNode.id);
 
-    if (layoutDirection === 'HORIZONTAL') {
-        // Output Right, Input Left
-        if (startNode.type === 'START') startPos = { x: startNode.x + START_NODE_WIDTH, y: startNode.y + (START_NODE_HEIGHT / 2) };
-        else if (startNode.type === 'CRITERIA') startPos = { x: startNode.x + BUBBLE_SIZE, y: startNode.y + (BUBBLE_SIZE / 2) };
-        else startPos = { x: startNode.x + CARD_WIDTH, y: startNode.y + (CARD_HEIGHT / 2) };
+            while (queue.length > 0) {
+                const curr = queue.shift()!;
+                const neighbors = adj[curr] || [];
+                neighbors.forEach(n => {
+                    if (!visited.has(n)) {
+                        visited.add(n);
+                        queue.push(n);
+                    }
+                });
+            }
 
-        if (endNode.type === 'CRITERIA') endPos = { x: endNode.x, y: endNode.y + (BUBBLE_SIZE / 2) };
-        else endPos = { x: endNode.x, y: endNode.y + (CARD_HEIGHT / 2) };
-    } else {
-        // VERTICAL: Output Bottom, Input Top
-        if (startNode.type === 'START') startPos = { x: startNode.x + (START_NODE_WIDTH / 2), y: startNode.y + START_NODE_HEIGHT };
-        else if (startNode.type === 'CRITERIA') startPos = { x: startNode.x + (BUBBLE_SIZE / 2), y: startNode.y + BUBBLE_SIZE };
-        else startPos = { x: startNode.x + (CARD_WIDTH / 2), y: startNode.y + CARD_HEIGHT };
+            const orphans = nodes.filter(n => !visited.has(n.id));
+            if (orphans.length > 0) {
+                orphans.forEach(o => {
+                    errors.push(`Node "${o.title}" is unreachable from Start.`);
+                });
+            }
+        }
 
-        if (endNode.type === 'CRITERIA') endPos = { x: endNode.x + (BUBBLE_SIZE / 2), y: endNode.y };
-        else endPos = { x: endNode.x + (CARD_WIDTH / 2), y: endNode.y };
-    }
+        nodes.forEach(n => {
+            if (!n.title || n.title.trim() === '') {
+                errors.push(`A node of type ${n.type} has an empty title.`);
+            }
+        });
 
-    return { ...edge, start: startPos, end: endPos };
-  }).filter(Boolean), [nodes, edgesList, layoutDirection]);
+        return errors;
+    };
 
-  // --- HANDLERS ---
+    const handleSaveRequest = () => {
+        const errors = validateWorkflow();
+        if (errors.length > 0) {
+            setValidationErrors(errors);
+        } else {
+            setShowSaveModal(true);
+        }
+    };
 
-  const handleEditNode = (node: EngageNode) => {
-      if (node.type === 'CRITERIA' || node.type === 'START') {
-          setConfigCriteriaId(node.id);
-      } else {
-          setEditingNode(node);
-      }
-  };
+    const confirmSave = async () => {
+        if (!campaignId) return;
+        try {
+            await workflowService.save({
+                campaignID: campaignId,
+                nodes,
+                edges: edgesList,
+                jobFitPreferences: jobFitConfig,
+                sharedWith: sharedWith
+            });
+            setIsSaved(true);
+            setHistory([{ nodes: JSON.parse(JSON.stringify(nodes)), edges: JSON.parse(JSON.stringify(edgesList)) }]);
+            setHistoryStep(0);
+            setShowSaveModal(false);
+        } catch (error) {
+            console.error("Failed to save workflow:", error);
+            alert("Failed to save workflow. Please try again.");
+        }
+    };
 
-  const handleSaveNode = (updatedNode: EngageNode) => {
-    const newNodes = nodes.map(n => n.id === updatedNode.id ? updatedNode : n);
-    setNodes(newNodes);
-    setEditingNode(null);
-    recordHistory(newNodes, edgesList);
-  };
+    // --- CANVAS CALCULATIONS ---
 
-  const handleToggleAutomation = (criteriaId: string, enabled: boolean) => {
-      const newNodes = nodes.map(n => {
-          if (n.id === criteriaId) {
-              return { ...n, data: { ...n.data, config: { ...n.data.config, enabled } } };
-          }
-          return n;
-      });
-      setNodes(newNodes);
-      recordHistory(newNodes, edgesList);
-  };
+    const contentSize = useMemo(() => {
+        let maxX = 0;
+        let maxY = 0;
+        nodes.forEach(node => {
+            const w = node.type === 'START' ? START_NODE_WIDTH : (node.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_WIDTH);
+            const h = node.type === 'START' ? START_NODE_HEIGHT : (node.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_HEIGHT);
+            maxX = Math.max(maxX, node.x + w);
+            maxY = Math.max(maxY, node.y + h);
+        });
+        return { width: maxX + 400, height: maxY + 400 };
+    }, [nodes]);
 
-  const handleStartConnect = (nodeId: string) => {
-      setConnectingNodeId(nodeId);
-  };
+    const edges = useMemo(() => edgesList.map(edge => {
+        const startNode = nodes.find(n => n.id === edge.from);
+        const endNode = nodes.find(n => n.id === edge.to);
+        if (!startNode || !endNode) return null;
 
-  const isConnectionValid = (sourceId: string, targetId: string) => {
-      if (sourceId === targetId) return false;
-      const sourceNode = nodes.find(n => n.id === sourceId);
-      const targetNode = nodes.find(n => n.id === targetId);
-      if (!sourceNode || !targetNode) return false;
-      if (targetNode.type === 'START') return false;
-      if (targetNode.type === 'CRITERIA') return false;
-      // Basic position check (don't connect backwards too easily)
-      if (layoutDirection === 'HORIZONTAL') return targetNode.x > sourceNode.x + 10;
-      else return targetNode.y > sourceNode.y + 10;
-  };
+        // Calculate Connection Points based on Layout Direction
+        let startPos = { x: 0, y: 0 };
+        let endPos = { x: 0, y: 0 };
 
-  const handleEndConnect = (targetNodeId: string) => {
-      if (connectingNodeId && connectingNodeId !== targetNodeId) {
-          if (!isConnectionValid(connectingNodeId, targetNodeId)) {
-              setConnectingNodeId(null);
-              return;
-          }
+        if (layoutDirection === 'HORIZONTAL') {
+            // Output Right, Input Left
+            if (startNode.type === 'START') startPos = { x: startNode.x + START_NODE_WIDTH, y: startNode.y + (START_NODE_HEIGHT / 2) };
+            else if (startNode.type === 'CRITERIA') startPos = { x: startNode.x + BUBBLE_SIZE, y: startNode.y + (BUBBLE_SIZE / 2) };
+            else startPos = { x: startNode.x + CARD_WIDTH, y: startNode.y + (CARD_HEIGHT / 2) };
 
-          const sourceNode = nodes.find(n => n.id === connectingNodeId);
-          const targetNode = nodes.find(n => n.id === targetNodeId);
-          
-          if (!sourceNode || !targetNode) return;
+            if (endNode.type === 'CRITERIA') endPos = { x: endNode.x, y: endNode.y + (BUBBLE_SIZE / 2) };
+            else endPos = { x: endNode.x, y: endNode.y + (CARD_HEIGHT / 2) };
+        } else {
+            // VERTICAL: Output Bottom, Input Top
+            if (startNode.type === 'START') startPos = { x: startNode.x + (START_NODE_WIDTH / 2), y: startNode.y + START_NODE_HEIGHT };
+            else if (startNode.type === 'CRITERIA') startPos = { x: startNode.x + (BUBBLE_SIZE / 2), y: startNode.y + BUBBLE_SIZE };
+            else startPos = { x: startNode.x + (CARD_WIDTH / 2), y: startNode.y + CARD_HEIGHT };
 
-          const isSourceRound = sourceNode.type !== 'START' && sourceNode.type !== 'CRITERIA';
-          const isTargetRound = targetNode.type !== 'CRITERIA';
+            if (endNode.type === 'CRITERIA') endPos = { x: endNode.x + (BUBBLE_SIZE / 2), y: endNode.y };
+            else endPos = { x: endNode.x + (CARD_WIDTH / 2), y: endNode.y };
+        }
 
-          let nextNodes = [...nodes];
-          let nextEdges = [...edgesList];
+        return { ...edge, start: startPos, end: endPos };
+    }).filter(Boolean), [nodes, edgesList, layoutDirection]);
 
-          if (isSourceRound && isTargetRound) {
-              // Automatically Insert Criteria Node
-              const criteriaId = Date.now().toString() + '_auto_c';
-              const midX = (sourceNode.x + targetNode.x) / 2;
-              const midY = (sourceNode.y + targetNode.y) / 2;
-              
-              const newCriteria: EngageNode = {
-                  id: criteriaId, type: 'CRITERIA', title: 'Logic', x: midX, y: midY,
-                  data: { desc: 'Logic', config: { enabled: false } }
-              };
-              
-              nextNodes.push(newCriteria);
-              nextEdges.push({ from: connectingNodeId, to: criteriaId });
-              nextEdges.push({ from: criteriaId, to: targetNodeId });
-          } else {
-              if (!edgesList.some(e => e.from === connectingNodeId && e.to === targetNodeId)) {
-                  nextEdges.push({ from: connectingNodeId, to: targetNodeId });
-              }
-          }
-          
-          // Auto-align immediately on new connection
-          const aligned = calculateAutoLayout(nextNodes, nextEdges, layoutDirection);
-          setNodes(aligned);
-          setEdgesList(nextEdges);
-          recordHistory(aligned, nextEdges);
-          setConnectingNodeId(null);
-      }
-  };
+    // --- HANDLERS ---
 
-  // Gestures
-  useEffect(() => {
-      const container = containerRef.current;
-      if (!container) return;
-      const handleWheel = (e: WheelEvent) => {
-          if (e.ctrlKey) {
-              e.preventDefault();
-              setZoom(prevZoom => Math.min(Math.max(prevZoom - e.deltaY * 0.005, 0.1), 3.0));
-              return;
-          }
-          if (e.shiftKey) {
-              if (Math.abs(e.deltaX) === 0 && Math.abs(e.deltaY) > 0) {
-                   e.preventDefault();
-                   container.scrollLeft += e.deltaY;
-              }
-          }
-      };
-      container.addEventListener('wheel', handleWheel, { passive: false });
-      return () => container.removeEventListener('wheel', handleWheel);
-  }, []);
+    const handleEditNode = (node: EngageNode) => {
+        if (node.type === 'CRITERIA' || node.type === 'START') {
+            setConfigCriteriaId(node.id);
+        } else {
+            setEditingNode(node);
+        }
+    };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-      if ((e.target as HTMLElement).closest('.node-card')) return;
-      setIsDragging(true);
-      setStartPan({ x: e.clientX, y: e.clientY });
-      if (containerRef.current) {
-          setScrollStart({ left: containerRef.current.scrollLeft, top: containerRef.current.scrollTop });
-      }
-  };
+    const handleSaveNode = (updatedNode: EngageNode) => {
+        const newNodes = nodes.map(n => n.id === updatedNode.id ? updatedNode : n);
+        setNodes(newNodes);
+        setEditingNode(null);
+        recordHistory(newNodes, edgesList);
+    };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-      if (!isDragging || !containerRef.current) return;
-      e.preventDefault();
-      const x = e.clientX - startPan.x;
-      const y = e.clientY - startPan.y;
-      containerRef.current.scrollLeft = scrollStart.left - x;
-      containerRef.current.scrollTop = scrollStart.top - y;
-  };
+    const handleToggleAutomation = (criteriaId: string, enabled: boolean) => {
+        const newNodes = nodes.map(n => {
+            if (n.id === criteriaId) {
+                return { ...n, data: { ...n.data, config: { ...n.data.config, enabled } } };
+            }
+            return n;
+        });
+        setNodes(newNodes);
+        recordHistory(newNodes, edgesList);
+    };
 
-  const handleMouseUp = () => {
-      setIsDragging(false);
-  };
+    const handleStartConnect = (nodeId: string) => {
+        setConnectingNodeId(nodeId);
+    };
 
-  useEffect(() => {
-      const handleClickOutside = () => setConnectingNodeId(null);
-      if (connectingNodeId) {
-          window.addEventListener('click', handleClickOutside);
-      }
-      return () => window.removeEventListener('click', handleClickOutside);
-  }, [connectingNodeId]);
+    const isConnectionValid = (sourceId: string, targetId: string) => {
+        if (sourceId === targetId) return false;
+        const sourceNode = nodes.find(n => n.id === sourceId);
+        const targetNode = nodes.find(n => n.id === targetId);
+        if (!sourceNode || !targetNode) return false;
+        if (targetNode.type === 'START') return false;
+        if (targetNode.type === 'CRITERIA') return false;
+        // Basic position check (don't connect backwards too easily)
+        if (layoutDirection === 'HORIZONTAL') return targetNode.x > sourceNode.x + 10;
+        else return targetNode.y > sourceNode.y + 10;
+    };
 
-  const handleAddNode = (type: string) => {
-      // Find the last node based on current direction to place the new one
-      let lastNode;
-      if (layoutDirection === 'HORIZONTAL') {
-          // Right-most
-          const sortedNodes = [...nodes].sort((a, b) => b.x - a.x);
-          lastNode = sortedNodes[0];
-      } else {
-          // Bottom-most
-          const sortedNodes = [...nodes].sort((a, b) => b.y - a.y);
-          lastNode = sortedNodes[0];
-      }
-      
-      if (!lastNode) return; 
+    const handleEndConnect = (targetNodeId: string) => {
+        if (connectingNodeId && connectingNodeId !== targetNodeId) {
+            if (!isConnectionValid(connectingNodeId, targetNodeId)) {
+                setConnectingNodeId(null);
+                return;
+            }
 
-      const lastNodeW = lastNode.type === 'START' ? START_NODE_WIDTH : (lastNode.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_WIDTH);
-      const lastNodeH = lastNode.type === 'START' ? START_NODE_HEIGHT : (lastNode.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_HEIGHT);
-      
-      const criteriaId = `c_${Date.now()}`;
-      const newNodeId = `n_${Date.now()}`;
+            const sourceNode = nodes.find(n => n.id === connectingNodeId);
+            const targetNode = nodes.find(n => n.id === targetNodeId);
 
-      // Default temporary positions
-      let criteriaX = lastNode.x, criteriaY = lastNode.y, nodeX = lastNode.x, nodeY = lastNode.y;
+            if (!sourceNode || !targetNode) return;
 
-      if (layoutDirection === 'HORIZONTAL') {
-          criteriaX = lastNode.x + lastNodeW + 50;
-          criteriaY = lastNode.y + (lastNodeH / 2) - (BUBBLE_SIZE / 2); // Center Y
-          nodeX = criteriaX + BUBBLE_SIZE + 50;
-          nodeY = lastNode.y;
-      } else {
-          criteriaX = lastNode.x + (lastNodeW / 2) - (BUBBLE_SIZE / 2); // Center X
-          criteriaY = lastNode.y + lastNodeH + 50;
-          nodeX = lastNode.x;
-          nodeY = criteriaY + BUBBLE_SIZE + 50;
-      }
+            const isSourceRound = sourceNode.type !== 'START' && sourceNode.type !== 'CRITERIA';
+            const isTargetRound = targetNode.type !== 'CRITERIA';
 
-      const newCriteria: EngageNode = {
-          id: criteriaId, type: 'CRITERIA', title: 'Logic', x: criteriaX, y: criteriaY,
-          data: { desc: 'Logic', config: { enabled: false } }
-      };
+            let nextNodes = [...nodes];
+            let nextEdges = [...edgesList];
 
-      const newNode: EngageNode = {
-          id: newNodeId, type, title: `New ${NODE_TYPES[type]?.label || 'Step'}`, x: nodeX, y: nodeY,
-          data: { desc: 'Configure this step' }
-      };
-      
-      const nextNodes = [...nodes, newCriteria, newNode];
-      const nextEdges = [...edgesList, { from: lastNode.id, to: criteriaId }, { from: criteriaId, to: newNodeId }];
-      
-      // Auto Align immediately
-      const alignedNodes = calculateAutoLayout(nextNodes, nextEdges, layoutDirection);
-      
-      setNodes(alignedNodes);
-      setEdgesList(nextEdges);
-      recordHistory(alignedNodes, nextEdges);
-  };
+            if (isSourceRound && isTargetRound) {
+                // Automatically Insert Criteria Node
+                const criteriaId = Date.now().toString() + '_auto_c';
+                const midX = (sourceNode.x + targetNode.x) / 2;
+                const midY = (sourceNode.y + targetNode.y) / 2;
 
-  const handleToggleLayout = () => {
-      const newDir = layoutDirection === 'HORIZONTAL' ? 'VERTICAL' : 'HORIZONTAL';
-      setLayoutDirection(newDir);
-      const aligned = calculateAutoLayout(nodes, edgesList, newDir);
-      setNodes(aligned);
-      recordHistory(aligned, edgesList);
-  };
+                const newCriteria: EngageNode = {
+                    id: criteriaId, type: 'CRITERIA', title: 'Logic', x: midX, y: midY,
+                    data: { desc: 'Logic', config: { enabled: false } }
+                };
 
-  return (
-    <div className="flex h-full bg-slate-50 dark:bg-slate-900 overflow-hidden relative transition-colors">
-      <SaveConfirmationModal isOpen={showSaveModal} onClose={() => setShowSaveModal(false)} onConfirm={confirmSave} />
-      <ValidationErrorsModal isOpen={validationErrors.length > 0} onClose={() => setValidationErrors([])} errors={validationErrors} />
-      <NetworkGraphModal isOpen={!!showAnalytics} onClose={() => setShowAnalytics(null)} initialRoundType={showAnalytics || 'Screening'} />
+                nextNodes.push(newCriteria);
+                nextEdges.push({ from: connectingNodeId, to: criteriaId });
+                nextEdges.push({ from: criteriaId, to: targetNodeId });
+            } else {
+                if (!edgesList.some(e => e.from === connectingNodeId && e.to === targetNodeId)) {
+                    nextEdges.push({ from: connectingNodeId, to: targetNodeId });
+                }
+            }
 
-      {/* Top Toolbar - Save Action */}
-      <div className="absolute top-4 right-6 z-20">
-          <button 
-            onClick={handleSaveRequest}
-            disabled={isSaved}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-sm transition-all ${
-                isSaved 
-                ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-600' 
-                : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
-            }`}
-          >
-             <Save size={16} /> 
-             {isSaved ? 'Saved' : 'Save Workflow'}
-          </button>
-      </div>
+            // Auto-align immediately on new connection
+            const aligned = calculateAutoLayout(nextNodes, nextEdges, layoutDirection);
+            setNodes(aligned);
+            setEdgesList(nextEdges);
+            recordHistory(aligned, nextEdges);
+            setConnectingNodeId(null);
+        }
+    };
 
-      {connectingNodeId && (
-          <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" style={{ overflow: 'visible' }}>
-              <path 
-                  d={`M ${nodes.find(n => n.id === connectingNodeId)?.x! + (layoutDirection === 'HORIZONTAL' ? CARD_WIDTH : CARD_WIDTH/2)} ${nodes.find(n => n.id === connectingNodeId)?.y! + (layoutDirection === 'HORIZONTAL' ? CARD_HEIGHT/2 : CARD_HEIGHT)} L ${startPan.x} ${startPan.y}`} 
-                  fill="none" 
-                  stroke="#3b82f6" 
-                  strokeWidth="2" 
-                  strokeDasharray="5,5" 
-                  className="animate-pulse"
-              />
-          </svg>
-      )}
-      
-      <div 
-          ref={containerRef}
-          className="flex-1 overflow-auto relative cursor-grab active:cursor-grabbing custom-scrollbar"
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '20px 20px' }}
-      >
-          <div 
-              className="absolute transform origin-top-left transition-transform duration-75"
-              style={{ 
-                  width: contentSize.width, 
-                  height: contentSize.height,
-                  transform: `scale(${zoom})`
-              }}
-          >
-                {/* Edges Layer */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{ overflow: 'visible' }}>
-                    {edges.map((edge, i) => (
-                        <BezierEdge key={i} {...edge} direction={layoutDirection} />
-                    ))}
-                </svg>
+    // Gestures
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+        const handleWheel = (e: WheelEvent) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                setZoom(prevZoom => Math.min(Math.max(prevZoom - e.deltaY * 0.005, 0.1), 3.0));
+                return;
+            }
+            if (e.shiftKey) {
+                if (Math.abs(e.deltaX) === 0 && Math.abs(e.deltaY) > 0) {
+                    e.preventDefault();
+                    container.scrollLeft += e.deltaY;
+                }
+            }
+        };
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        return () => container.removeEventListener('wheel', handleWheel);
+    }, []);
 
-                {/* Nodes Layer */}
-                {nodes.map(node => (
-                    <NodeCard 
-                        key={node.id} 
-                        node={node} 
-                        isSelected={selectedNode?.id === node.id}
-                        onSelect={setSelectedNode}
-                        onEdit={handleEditNode}
-                        onDelete={(id: string) => {
-                            const newNodes = nodes.filter(n => n.id !== id);
-                            const newEdges = edgesList.filter(e => e.from !== id && e.to !== id);
-                            setNodes(newNodes);
-                            setEdgesList(newEdges);
-                            recordHistory(newNodes, newEdges);
-                        }}
-                        onStartConnect={handleStartConnect}
-                        onEndConnect={handleEndConnect}
-                        isConnecting={!!connectingNodeId}
-                        isValidTarget={connectingNodeId ? isConnectionValid(connectingNodeId, node.id) : false}
-                        layoutDirection={layoutDirection}
-                        onShowAnalytics={setShowAnalytics}
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('.node-card')) return;
+        setIsDragging(true);
+        setStartPan({ x: e.clientX, y: e.clientY });
+        if (containerRef.current) {
+            setScrollStart({ left: containerRef.current.scrollLeft, top: containerRef.current.scrollTop });
+        }
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDragging || !containerRef.current) return;
+        e.preventDefault();
+        const x = e.clientX - startPan.x;
+        const y = e.clientY - startPan.y;
+        containerRef.current.scrollLeft = scrollStart.left - x;
+        containerRef.current.scrollTop = scrollStart.top - y;
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = () => setConnectingNodeId(null);
+        if (connectingNodeId) {
+            window.addEventListener('click', handleClickOutside);
+        }
+        return () => window.removeEventListener('click', handleClickOutside);
+    }, [connectingNodeId]);
+
+    const handleAddNode = (type: string) => {
+        // Find the last node based on current direction to place the new one
+        let lastNode;
+        if (layoutDirection === 'HORIZONTAL') {
+            // Right-most
+            const sortedNodes = [...nodes].sort((a, b) => b.x - a.x);
+            lastNode = sortedNodes[0];
+        } else {
+            // Bottom-most
+            const sortedNodes = [...nodes].sort((a, b) => b.y - a.y);
+            lastNode = sortedNodes[0];
+        }
+
+        if (!lastNode) return;
+
+        const lastNodeW = lastNode.type === 'START' ? START_NODE_WIDTH : (lastNode.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_WIDTH);
+        const lastNodeH = lastNode.type === 'START' ? START_NODE_HEIGHT : (lastNode.type === 'CRITERIA' ? BUBBLE_SIZE : CARD_HEIGHT);
+
+        const criteriaId = `c_${Date.now()}`;
+        const newNodeId = `n_${Date.now()}`;
+
+        // Default temporary positions
+        let criteriaX = lastNode.x, criteriaY = lastNode.y, nodeX = lastNode.x, nodeY = lastNode.y;
+
+        if (layoutDirection === 'HORIZONTAL') {
+            criteriaX = lastNode.x + lastNodeW + 50;
+            criteriaY = lastNode.y + (lastNodeH / 2) - (BUBBLE_SIZE / 2); // Center Y
+            nodeX = criteriaX + BUBBLE_SIZE + 50;
+            nodeY = lastNode.y;
+        } else {
+            criteriaX = lastNode.x + (lastNodeW / 2) - (BUBBLE_SIZE / 2); // Center X
+            criteriaY = lastNode.y + lastNodeH + 50;
+            nodeX = lastNode.x;
+            nodeY = criteriaY + BUBBLE_SIZE + 50;
+        }
+
+        const newCriteria: EngageNode = {
+            id: criteriaId, type: 'CRITERIA', title: 'Logic', x: criteriaX, y: criteriaY,
+            data: { desc: 'Logic', config: { enabled: false } }
+        };
+
+        const newNode: EngageNode = {
+            id: newNodeId, type, title: `New ${NODE_TYPES[type]?.label || 'Step'}`, x: nodeX, y: nodeY,
+            data: { desc: 'Configure this step' }
+        };
+
+        const nextNodes = [...nodes, newCriteria, newNode];
+        const nextEdges = [...edgesList, { from: lastNode.id, to: criteriaId }, { from: criteriaId, to: newNodeId }];
+
+        // Auto Align immediately
+        const alignedNodes = calculateAutoLayout(nextNodes, nextEdges, layoutDirection);
+
+        setNodes(alignedNodes);
+        setEdgesList(nextEdges);
+        recordHistory(alignedNodes, nextEdges);
+    };
+
+    const handleToggleLayout = () => {
+        const newDir = layoutDirection === 'HORIZONTAL' ? 'VERTICAL' : 'HORIZONTAL';
+        setLayoutDirection(newDir);
+        const aligned = calculateAutoLayout(nodes, edgesList, newDir);
+        setNodes(aligned);
+        recordHistory(aligned, edgesList);
+    };
+
+    return (
+        <div className="flex h-full bg-slate-50 dark:bg-slate-900 overflow-hidden relative transition-colors">
+            <SaveConfirmationModal isOpen={showSaveModal} onClose={() => setShowSaveModal(false)} onConfirm={confirmSave} />
+            <ValidationErrorsModal isOpen={validationErrors.length > 0} onClose={() => setValidationErrors([])} errors={validationErrors} />
+            <NetworkGraphModal isOpen={!!showAnalytics} onClose={() => setShowAnalytics(null)} initialRoundType={showAnalytics || 'Screening'} />
+
+            {/* Top Toolbar - Save Action */}
+            <div className="absolute top-4 right-6 z-20 flex gap-2">
+                <button
+                    onClick={() => setShowShareModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors"
+                >
+                    <Network size={16} /> Share
+                </button>
+                <button
+                    onClick={() => setShowJobFit(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors"
+                >
+                    <SlidersHorizontal size={16} /> Job Fit Score
+                </button>
+                <button
+                    onClick={handleSaveRequest}
+                    disabled={isSaved}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold shadow-sm transition-all ${isSaved
+                        ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-600'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-md'
+                        }`}
+                >
+                    <Save size={16} />
+                    {isSaved ? 'Saved' : 'Save Workflow'}
+                </button>
+            </div>
+
+            {loading && (
+                <div className="absolute inset-0 z-50 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+                        <p className="text-sm font-bold text-slate-600 dark:text-slate-300 animate-pulse">Initializing Workflow...</p>
+                    </div>
+                </div>
+            )}
+
+            {connectingNodeId && (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-30" style={{ overflow: 'visible' }}>
+                    <path
+                        d={`M ${nodes.find(n => n.id === connectingNodeId)?.x! + (layoutDirection === 'HORIZONTAL' ? CARD_WIDTH : CARD_WIDTH / 2)} ${nodes.find(n => n.id === connectingNodeId)?.y! + (layoutDirection === 'HORIZONTAL' ? CARD_HEIGHT / 2 : CARD_HEIGHT)} L ${startPan.x} ${startPan.y}`}
+                        fill="none"
+                        stroke="#3b82f6"
+                        strokeWidth="2"
+                        strokeDasharray="5,5"
+                        className="animate-pulse"
                     />
-                ))}
-          </div>
-      </div>
+                </svg>
+            )}
 
-      {/* BOTTOM TOOLBAR (Unified Bar) */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 animate-in slide-in-from-bottom-6 duration-300 max-w-[90vw] overflow-x-auto custom-scrollbar">
-          
-          {/* Node Palette Section */}
-          <div className="flex items-center gap-1 px-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase mr-2 tracking-wider whitespace-nowrap">Add Step</span>
-              {Object.keys(NODE_TYPES).map(type => {
-                  const conf = NODE_TYPES[type];
-                  const Icon = conf.icon;
-                  return (
-                      <button 
-                          key={type}
-                          onClick={() => handleAddNode(type)}
-                          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all group relative"
-                          title={`Add ${conf.label}`}
-                      >
-                          <Icon size={20} />
-                      </button>
-                  )
-              })}
-          </div>
+            <div
+                ref={containerRef}
+                className="flex-1 overflow-auto relative cursor-grab active:cursor-grabbing custom-scrollbar"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                style={{ backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '20px 20px' }}
+            >
+                <div
+                    className="absolute transform origin-top-left transition-transform duration-75"
+                    style={{
+                        width: contentSize.width,
+                        height: contentSize.height,
+                        transform: `scale(${zoom})`
+                    }}
+                >
+                    {/* Edges Layer */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{ overflow: 'visible' }}>
+                        {edges.map((edge, i) => (
+                            <BezierEdge key={i} {...edge} direction={layoutDirection} />
+                        ))}
+                    </svg>
 
-          {/* Divider */}
-          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-2 shrink-0"></div>
+                    {/* Nodes Layer */}
+                    {nodes.map(node => (
+                        <NodeCard
+                            key={node.id}
+                            node={node}
+                            isSelected={selectedNode?.id === node.id}
+                            onSelect={setSelectedNode}
+                            onEdit={handleEditNode}
+                            onDelete={(id: string) => {
+                                const newNodes = nodes.filter(n => n.id !== id);
+                                const newEdges = edgesList.filter(e => e.from !== id && e.to !== id);
+                                setNodes(newNodes);
+                                setEdgesList(newEdges);
+                                recordHistory(newNodes, newEdges);
+                            }}
+                            onStartConnect={handleStartConnect}
+                            onEndConnect={handleEndConnect}
+                            isConnecting={!!connectingNodeId}
+                            isValidTarget={connectingNodeId ? isConnectionValid(connectingNodeId, node.id) : false}
+                            layoutDirection={layoutDirection}
+                            onShowAnalytics={setShowAnalytics}
+                        />
+                    ))}
+                </div>
+            </div>
 
-          {/* View Controls Section */}
-          <div className="flex items-center gap-1 px-2 shrink-0">
-              <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.5))} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 transition-colors"><ZoomOut size={18}/></button>
-              <button onClick={() => setZoom(1)} className="px-2 text-xs font-bold text-slate-500 dark:text-slate-400 min-w-[3rem] text-center">{Math.round(zoom * 100)}%</button>
-              <button onClick={() => setZoom(z => Math.min(z + 0.1, 2))} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 transition-colors"><ZoomIn size={18}/></button>
-          </div>
+            {/* BOTTOM TOOLBAR (Unified Bar) */}
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-2 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-2 animate-in slide-in-from-bottom-6 duration-300 max-w-[90vw] overflow-x-auto custom-scrollbar">
 
-          {/* Divider */}
-          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-2 shrink-0"></div>
+                {/* Node Palette Section */}
+                <div className="flex items-center gap-1 px-2">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase mr-2 tracking-wider whitespace-nowrap">Add Step</span>
+                    {Object.keys(NODE_TYPES).map(type => {
+                        const conf = NODE_TYPES[type];
+                        const Icon = conf.icon;
+                        return (
+                            <button
+                                key={type}
+                                onClick={() => handleAddNode(type)}
+                                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all group relative"
+                                title={`Add ${conf.label}`}
+                            >
+                                <Icon size={20} />
+                            </button>
+                        )
+                    })}
+                </div>
 
-          {/* History & Layout Section */}
-          <div className="flex items-center gap-1 px-2 shrink-0">
-              <button onClick={handleUndo} disabled={historyStep === 0} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 disabled:opacity-30 transition-colors"><Undo2 size={18}/></button>
-              <button onClick={handleRedo} disabled={historyStep === history.length - 1} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 disabled:opacity-30 transition-colors"><Redo2 size={18}/></button>
-              <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-              <button onClick={handleToggleLayout} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 transition-colors" title="Toggle Orientation">
-                  <Retweet size={18} />
-              </button>
-          </div>
-      </div>
+                {/* Divider */}
+                <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-2 shrink-0"></div>
 
-      {/* Modals */}
-      {editingNode && (
-          <NodeConfigurationModal 
-              node={editingNode} 
-              onClose={() => setEditingNode(null)} 
-              onSave={handleSaveNode} 
-          />
-      )}
+                {/* View Controls Section */}
+                <div className="flex items-center gap-1 px-2 shrink-0">
+                    <button onClick={() => setZoom(z => Math.max(z - 0.1, 0.5))} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 transition-colors"><ZoomOut size={18} /></button>
+                    <button onClick={() => setZoom(1)} className="px-2 text-xs font-bold text-slate-500 dark:text-slate-400 min-w-[3rem] text-center">{Math.round(zoom * 100)}%</button>
+                    <button onClick={() => setZoom(z => Math.min(z + 0.1, 2))} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 transition-colors"><ZoomIn size={18} /></button>
+                </div>
 
-      {configCriteriaId && (
-          <AutomationPlaceholderModal 
-              isEnabled={nodes.find(n => n.id === configCriteriaId)?.data.config?.enabled || false} 
-              onToggle={(val) => handleToggleAutomation(configCriteriaId, val)}
-              onClose={() => setConfigCriteriaId(null)}
-          />
-      )}
-    </div>
-  );
+                {/* Divider */}
+                <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 mx-2 shrink-0"></div>
+
+                {/* History & Layout Section */}
+                <div className="flex items-center gap-1 px-2 shrink-0">
+                    <button onClick={handleUndo} disabled={historyStep === 0} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 disabled:opacity-30 transition-colors"><Undo2 size={18} /></button>
+                    <button onClick={handleRedo} disabled={historyStep === history.length - 1} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 disabled:opacity-30 transition-colors"><Redo2 size={18} /></button>
+                    <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                    <button onClick={handleToggleLayout} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl text-slate-500 dark:text-slate-400 transition-colors" title="Toggle Orientation">
+                        <Retweet size={18} />
+                    </button>
+                </div>
+            </div>
+
+            {/* Modals */}
+            {editingNode && (
+                <NodeConfigurationModal
+                    node={editingNode}
+                    onClose={() => setEditingNode(null)}
+                    onSave={handleSaveNode}
+                />
+            )}
+
+            {configCriteriaId && (
+                <AutomationPlaceholderModal
+                    isEnabled={nodes.find(n => n.id === configCriteriaId)?.data.config?.enabled || false}
+                    onToggle={(val) => handleToggleAutomation(configCriteriaId, val)}
+                    onClose={() => setConfigCriteriaId(null)}
+                />
+            )}
+
+            {showJobFit && (
+                <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="relative bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-2xl w-full p-1 animate-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => setShowJobFit(false)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 z-10"
+                        >
+                            <X size={20} />
+                        </button>
+                        <JobFitCalibration config={jobFitConfig} onChange={(newConfig) => { setJobFitConfig(newConfig); setIsSaved(false); }} />
+                    </div>
+                </div>
+            )}
+
+            <WorkflowShareModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                sharedWith={sharedWith as any}
+                onSave={(newShared) => { setSharedWith(newShared); setIsSaved(false); }}
+            />
+        </div>
+    );
 };

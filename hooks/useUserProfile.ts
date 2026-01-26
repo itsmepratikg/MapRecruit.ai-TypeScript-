@@ -22,18 +22,24 @@ export const useUserProfile = () => {
                     email: authUser.email || profile.email,
                     firstName: authUser.firstName || profile.firstName,
                     lastName: authUser.lastName || profile.lastName,
+                    phone: authUser.phone || authUser.mobile || profile.phone,
                     role: authUser.role || profile.role,
                     roleID: authUser.roleID || profile.roleID,
-                    activeClient: authUser.activeClient || profile.activeClient, // Ensure this exists in auth response
+                    activeClient: authUser.activeClient || profile.activeClient,
                     companyID: authUser.companyID || profile.companyID,
                     activeClientID: authUser.activeClientID || profile.activeClientID,
                     clientID: authUser.clientID || authUser.clients || profile.clientID,
                     clients: authUser.clients || authUser.clientID || profile.clients,
+                    teams: Array.isArray(authUser.clients) ? authUser.clients.map((c: any) => typeof c === 'object' ? (c.clientName || c.name) : c) : (profile.teams || []),
                     currentCompanyID: authUser.currentCompanyID || profile.currentCompanyID,
                     lastLoginAt: authUser.lastLoginAt,
                     loginCount: authUser.loginCount,
                     lastActiveAt: authUser.lastActiveAt,
-                    timeZone: authUser.timeZone || profile.timeZone
+                    timeZone: authUser.timeZone || profile.timeZone,
+                    jobTitle: authUser.jobTitle || profile.jobTitle,
+                    location: authUser.location || profile.location,
+                    color: authUser.color || profile.color,
+                    avatar: authUser.avatar || profile.avatar
                 };
             }
             return profile;
@@ -58,6 +64,7 @@ export const useUserProfile = () => {
                     email: authUser.email || profile.email,
                     firstName: authUser.firstName || profile.firstName,
                     lastName: authUser.lastName || profile.lastName,
+                    phone: authUser.phone || authUser.mobile || profile.phone,
                     role: authUser.role || profile.role,
                     roleID: authUser.roleID || profile.roleID,
                     activeClient: authUser.activeClient || profile.activeClient,
@@ -65,11 +72,16 @@ export const useUserProfile = () => {
                     activeClientID: authUser.activeClientID || profile.activeClientID,
                     clientID: authUser.clientID || authUser.clients || profile.clientID,
                     clients: authUser.clients || authUser.clientID || profile.clients,
+                    teams: Array.isArray(authUser.clients) ? authUser.clients.map((c: any) => typeof c === 'object' ? (c.clientName || c.name) : c) : (profile.teams || []),
                     currentCompanyID: authUser.currentCompanyID || profile.currentCompanyID,
                     lastLoginAt: authUser.lastLoginAt,
                     loginCount: authUser.loginCount,
                     lastActiveAt: authUser.lastActiveAt,
-                    timeZone: authUser.timeZone || profile.timeZone
+                    timeZone: authUser.timeZone || profile.timeZone,
+                    jobTitle: authUser.jobTitle || profile.jobTitle,
+                    location: authUser.location || profile.location,
+                    color: authUser.color || profile.color,
+                    avatar: authUser.avatar || profile.avatar
                 };
             }
             setUserProfile(profile);
@@ -132,15 +144,15 @@ export const useUserProfile = () => {
                         }
                     }
                 } catch (error) {
-                    console.error("Live poll failed", error);
+                    // console.error("Live poll failed", error);
                 }
             };
 
             // Initial fetch
             fetchUser();
 
-            // Poll every 10 seconds (aggressive for user requirements)
-            const interval = setInterval(fetchUser, 10000);
+            // Poll every 5 minutes
+            const interval = setInterval(fetchUser, 300000);
             return () => clearInterval(interval);
         });
     }, []);
@@ -197,17 +209,18 @@ export const useUserProfile = () => {
 
     const [availableClients, setAvailableClients] = useState<any[]>([]);
 
+    // Fetch clients on mount
+    // Fetch clients on mount
     useEffect(() => {
-        // Fetch clients on mount
-        // Fetch clients on mount
+        let isMounted = true;
         import('../services/api').then(({ clientService }) => {
             clientService.getAll().then(data => {
-                setAvailableClients(data);
+                if (isMounted) setAvailableClients(data);
             }).catch(err => {
-                console.error("Failed to fetch clients for profile", err);
-                setAvailableClients([]);
+                if (isMounted) setAvailableClients([]);
             });
         });
+        return () => { isMounted = false; };
     }, []);
 
     return {

@@ -126,10 +126,18 @@ export const profileService = {
         const response = await api.get('/profiles');
         return response.data;
     },
+    getById: async (id) => {
+        const response = await api.get(`/profiles/${id}`);
+        return response.data;
+    },
     create: async (profileData) => {
         const response = await api.post('/profiles', profileData);
         return response.data;
     },
+    update: async (id, profileData) => {
+        const response = await api.put(`/profiles/${id}`, profileData);
+        return response.data;
+    }
 };
 
 export const passkeyService = {
@@ -161,6 +169,28 @@ export const companyService = {
     },
     update: async (companyData) => {
         const response = await api.put('/company', companyData);
+        return response.data;
+    }
+};
+
+export const workflowService = {
+    getByCampaign: async (campaignId) => {
+        const response = await api.get(`/workflows/${campaignId}`);
+        return response.data;
+    },
+    save: async (data) => {
+        const response = await api.post('/workflows', data);
+        return response.data;
+    }
+};
+
+export const activityService = {
+    getAll: async (params) => {
+        const response = await api.get('/activities', { params });
+        return response.data;
+    },
+    log: async (data) => {
+        const response = await api.post('/activities', data);
         return response.data;
     }
 };

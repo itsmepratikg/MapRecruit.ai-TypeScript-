@@ -112,17 +112,53 @@ interface CampaignsProps {
   initialTab?: string;
 }
 
+import { useCampaigns } from '../hooks/useCampaigns';
+
+// Map Backend Campaign to UI Structure
+const mapCampaignToUI = (camp: any): Campaign => {
+  const mainSchema = camp.schemaConfig?.mainSchema || {};
+  const meta = camp.migrationMeta || {};
+
+  return {
+    id: camp._id?.$oid || camp._id || 0,
+    name: mainSchema.title || camp.title || 'Untitled Campaign',
+    jobID: meta.jobID || '---',
+    status: mainSchema.status || (camp.status === true || camp.status === 'Active' ? 'Active' : 'Closed'),
+    isNew: camp.isNew || false,
+    isFavorite: camp.isFavorite || false,
+    owner: camp.owner || { initials: "U", color: "bg-slate-500", name: "User" },
+    members: camp.members || [],
+    updatedDate: new Date(camp.updatedAt || camp.createdAt || Date.now()).toLocaleDateString(),
+    profilesCount: meta.profilesCount || 0,
+    daysLeft: camp.daysLeft || 0
+  };
+};
+
+interface CampaignsProps {
+  onNavigateToCampaign: (campaign: Campaign, tab?: string) => void;
+  initialTab?: string;
+}
+
 export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, initialTab }) => {
   const { addToast } = useToast();
+  const { campaigns: liveCampaigns, stats, loading, error } = useCampaigns();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeTab, setActiveTab] = useState('Active');
 
   // Mobile Long Press State
-  const [activeMobileMenu, setActiveMobileMenu] = useState<number | null>(null);
+  const [activeMobileMenu, setActiveMobileMenu] = useState<any | null>(null);
   const longPressTimer = useRef<any>(null);
 
-  const [campaigns, setCampaigns] = useState<Campaign[]>(GLOBAL_CAMPAIGNS);
+  // local shadow state for interactions like favorites
+  const [localCampaigns, setLocalCampaigns] = useState<Campaign[]>([]);
+
+  useEffect(() => {
+    if (liveCampaigns) {
+      setLocalCampaigns(liveCampaigns.map(mapCampaignToUI));
+    }
+  }, [liveCampaigns]);
 
   // Sync tab if passed from parent (e.g. Sidebar)
   useEffect(() => {
@@ -131,26 +167,26 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
     }
   }, [initialTab]);
 
-  const filteredCampaigns = campaigns.filter(c => {
+  const filteredCampaigns = localCampaigns.filter(c => {
     // 1. Filter by Tab (Active/Closed/Archived)
     if (c.status !== activeTab) return false;
 
     // 2. Filter by Search
-    const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.jobID.includes(searchQuery);
+    const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.jobID.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
 
     // 3. Filter by Dropdown
     let matchesDropdown = true;
-    if (activeFilter === 'Created by Me') matchesDropdown = true; // Mock logic
-    if (activeFilter === 'Shared with Me') matchesDropdown = false;
+    if (activeFilter === 'Created by Me') matchesDropdown = true; // Placeholder
+    if (activeFilter === 'Shared with Me') matchesDropdown = true; // Placeholder
     if (activeFilter === 'Favorites') matchesDropdown = c.isFavorite || false;
     if (activeFilter === 'New') matchesDropdown = c.isNew || false;
 
     return matchesDropdown;
   });
 
-  const handleMenuAction = (campaignId: number, action: string) => {
-    const campaign = campaigns.find(c => c.id === campaignId);
+  const handleMenuAction = (campaignId: any, action: string) => {
+    const campaign = localCampaigns.find(c => c.id === campaignId);
     if (!campaign) return;
 
     // Navigate to specific tabs in the Campaign Dashboard
@@ -172,8 +208,8 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
     }
   };
 
-  const toggleFavorite = (id: number) => {
-    setCampaigns(prev => prev.map(c => {
+  const toggleFavorite = (id: any) => {
+    setLocalCampaigns(prev => prev.map(c => {
       if (c.id === id) {
         const newVal = !c.isFavorite;
         addToast(newVal ? "Campaign added to favorites" : "Campaign removed from favorites", "success");
@@ -183,14 +219,8 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
     }));
   };
 
-  const counts = {
-    active: campaigns.filter(c => c.status === 'Active').length,
-    closed: campaigns.filter(c => c.status === 'Closed').length,
-    archived: campaigns.filter(c => c.status === 'Archived').length,
-  };
-
   // --- Long Press Handlers ---
-  const handleTouchStart = (id: number) => {
+  const handleTouchStart = (id: any) => {
     longPressTimer.current = setTimeout(() => {
       setActiveMobileMenu(id);
     }, 500); // 500ms long press
@@ -203,7 +233,7 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
   };
 
   // Close menu on click outside
-  React.useEffect(() => {
+  useEffect(() => {
     const closeMenu = () => setActiveMobileMenu(null);
     if (activeMobileMenu) window.addEventListener('click', closeMenu);
     return () => window.removeEventListener('click', closeMenu);
@@ -212,7 +242,14 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
   return (
     <div className="h-full overflow-y-auto bg-slate-50/50 dark:bg-slate-900 transition-colors custom-scrollbar">
       <div className="p-4 lg:p-8 max-w-[1600px] mx-auto min-h-screen">
-        <CampaignStats activeTab={activeTab} onTabChange={setActiveTab} counts={counts} />
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm flex justify-between items-center">
+            <span>{error}</span>
+            <button onClick={() => window.location.reload()} className="px-3 py-1 bg-red-100 dark:bg-red-800 rounded-md font-bold hover:bg-red-200 transition-colors">Retry</button>
+          </div>
+        )}
+
+        <CampaignStats activeTab={activeTab} onTabChange={setActiveTab} counts={stats} />
 
         {/* Toolbar */}
         <div className="bg-white dark:bg-slate-800 p-4 rounded-t-xl border border-gray-200 dark:border-slate-700 border-b-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -339,7 +376,16 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
                     </td>
                   </tr>
                 ))}
-                {filteredCampaigns.length === 0 && (
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="text-center py-20">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Loading Campaigns...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredCampaigns.length === 0 && (
                   <tr>
                     <td colSpan={8} className="text-center py-10 text-gray-400">
                       No campaigns found matching your criteria.
@@ -350,7 +396,7 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
             </table>
           </div>
           <div className="px-6 py-4 border-t border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center text-xs text-gray-500 dark:text-slate-400 mt-auto bg-white dark:bg-slate-800 gap-4">
-            <span>Total Rows: {filteredCampaigns.length}</span>
+            <span>Total Rows: {loading ? '...' : filteredCampaigns.length}</span>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span>10 / page</span>

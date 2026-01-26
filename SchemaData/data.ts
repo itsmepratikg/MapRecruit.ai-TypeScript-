@@ -399,7 +399,15 @@ export const CANDIDATE: Candidate = {
   ]
 };
 
-export const MOCK_PROFILES: any[] = []; // Deprecated - Using Live DB
+export const MOCK_PROFILES = [
+  { id: 1, name: "Deanthony Quarterman", title: "Warehouse Supervisor", location: "Atlanta, GA", skills: ["Forklift Certified", "Inventory Management", "OSHA Safety", "Team Leadership"], experience: "7.3 Years", status: "Active", matchScore: 98, availability: "Immediate", avatar: "DQ" },
+  { id: 2, name: "Shantrice Little", title: "Logistics Coordinator", location: "Atlanta, GA", skills: ["Shipping & Receiving", "Data Entry", "SAP", "Customer Service"], experience: "5.1 Years", status: "Active", matchScore: 92, availability: "2 Weeks", avatar: "SL" },
+  { id: 3, name: "Marcus Johnson", title: "Forklift Operator", location: "Marietta, GA", skills: ["Forklift Certified", "Heavy Lifting", "Loading/Unloading"], experience: "3.5 Years", status: "Passive", matchScore: 88, availability: "Immediate", avatar: "MJ" },
+  { id: 4, name: "Sarah Connors", title: "Operations Manager", location: "Atlanta, GA", skills: ["Process Improvement", "Six Sigma", "Team Building", "Budgeting"], experience: "12.0 Years", status: "Active", matchScore: 85, availability: "1 Month", avatar: "SC" },
+  { id: 5, name: "David Chen", title: "Warehouse Associate", location: "Decatur, GA", skills: ["Packing", "Labeling", "Inventory count"], experience: "1.5 Years", status: "Active", matchScore: 78, availability: "Immediate", avatar: "DC" },
+  { id: 6, name: "Michael Ross", title: "Forklift Operator", location: "Smyrna, GA", skills: ["Forklift Certified", "OSHA Safety"], experience: "4 Years", status: "Active", matchScore: 82, availability: "Immediate", avatar: "MR" },
+  { id: 7, name: "Jennifer Wu", title: "Logistics Coordinator", location: "Alpharetta, GA", skills: ["SAP", "Data Entry", "Shipping & Receiving"], experience: "6 Years", status: "Pending Applicant", matchScore: 89, availability: "2 Weeks", avatar: "JW" }
+];
 
 export const RECENT_SEARCHES = [
   { id: 1, terms: ["warehouse", "warehouse helper"], date: "4 Days Ago" },
@@ -650,7 +658,25 @@ export const INTERVIEW_TEMPLATES = [
   { id: 3, title: "Technical Screening - L1", created: "01/15/2025", author: "System", access: "Public" }
 ];
 
-// QUICK_FILTERS and SIDEBAR_FILTERS moved to TalentSearchEngine.tsx
+export const QUICK_FILTERS = [
+  { label: "⚡ Immediate Start", value: "Immediate" },
+  { label: "📍 Atlanta Only", value: "Atlanta, GA" },
+  { label: "🏗️ Forklift Certified", value: "Forklift Certified" },
+  { label: "⭐ Top Rated", value: "High Match (>90%)" },
+  { label: "👔 Supervisors", value: "Warehouse Supervisor" }
+];
+
+export const SIDEBAR_FILTERS = [
+  { id: 'branch', label: 'Branch', options: ['TRC Talent Solutions', 'Amazon Warehouse Operations', 'Google Staffing Services', 'Microsoft HR Tech'] },
+  { id: 'client', label: 'Client', options: ['018 - ALCON', '031 - WIKA ONSITE', '037 - CONVERGENT - AUG'] },
+  { id: 'vendor', label: 'Vendor', options: ['Adecco Employment', 'Apple'] },
+  { id: 'location', label: 'Locations', options: ['Atlanta, GA', 'Marietta, GA', 'Decatur, GA', 'Alpharetta, GA', 'Smyrna, GA'] },
+  { id: 'title', label: 'Job Title', options: ['Warehouse Supervisor', 'Forklift Operator', 'Logistics Coordinator', 'Operations Manager', 'Warehouse Associate'] },
+  { id: 'skills', label: 'Skills & Certs', options: ["Forklift Certified", "SAP", "Inventory Management", "Team Leadership", "OSHA Safety", "Data Entry"] },
+  { id: 'status', label: 'Status', options: ['Active', 'Passive', 'Pending Applicant', 'Do Not Contact'] },
+  { id: 'availability', label: 'Availability', options: ['Immediate', '2 Weeks', '1 Month'] },
+  { id: 'match', label: 'Match Quality', options: ['High Match (>90%)'] }
+];
 
 export const FOLDERS_LIST = [
   {

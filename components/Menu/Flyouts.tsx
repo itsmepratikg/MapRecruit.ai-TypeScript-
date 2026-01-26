@@ -10,7 +10,8 @@ import { SIDEBAR_CAMPAIGN_DATA, GLOBAL_CAMPAIGNS } from '../../data';
 import { PROFILES_CATEGORIES, SETTINGS_CATEGORIES, TALENT_CHAT_MENU } from './constants';
 import { COLORS } from '../../data/profile';
 import { Campaign } from '../../types';
-import { campaignService } from '../../services/api';
+import { campaignService, authService } from '../../services/api';
+import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { HoverMenu } from '../Campaign/HoverMenu';
 
@@ -116,18 +117,21 @@ export const ClientMenuContent = ({ activeClient, clients, onSwitchClient, onClo
 };
 
 // --- Company Switcher (Product Admin) ---
-export const CompanySwitcherContent = ({ onClose }: { onClose: () => void }) => {
+export const CompanySwitcherContent = ({ onClose, isVisible = true }: { onClose: () => void, isVisible?: boolean }) => {
     const { t } = useTranslation();
     const [companies, setCompanies] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(isVisible); // Load immediately if visible
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
+        if (!isVisible) return;
+
         const fetchCompanies = async () => {
             try {
-                const { default: api } = await import('../../services/api');
+                setLoading(true);
                 const response = await api.get('/company/all');
-                setCompanies(response.data);
+                // console.log("[DEBUG] CompanySwitcher - Fetched:", response.data);
+                setCompanies(Array.isArray(response.data) ? response.data : []);
             } catch (error) {
                 console.error("Failed to fetch companies", error);
             } finally {
@@ -135,15 +139,15 @@ export const CompanySwitcherContent = ({ onClose }: { onClose: () => void }) => 
             }
         };
         fetchCompanies();
-    }, []);
+    }, [isVisible]);
 
-    const filtered = companies.filter(c =>
-        c.companyProfile?.companyName?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filtered = companies.filter(c => {
+        const name = c.companyProfile?.companyName || c.name || c.title || "";
+        return name.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     const handleSwitch = async (companyId: string) => {
         try {
-            const { authService } = await import('../../services/api');
             await authService.switchCompany(companyId);
 
             // Notify user and reload to refresh all context/themes
@@ -155,8 +159,9 @@ export const CompanySwitcherContent = ({ onClose }: { onClose: () => void }) => 
 
     return (
         <div className="flex flex-col h-full max-h-[400px]">
-            <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-t">
+            <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-t flex justify-between items-center">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t("Switch Company Environment")}</span>
+                <span className="text-[10px] text-slate-400">({companies.length})</span>
             </div>
             <div className="p-3 border-b border-slate-100 dark:border-slate-700">
                 <div className="relative">
@@ -185,7 +190,7 @@ export const CompanySwitcherContent = ({ onClose }: { onClose: () => void }) => 
                                 <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-700">
                                     <Building2 size={16} className="text-slate-400" />
                                 </div>
-                                <span className="font-medium text-slate-700 dark:text-slate-200">{company.companyProfile?.companyName}</span>
+                                <span className="font-medium text-slate-700 dark:text-slate-200">{company.companyProfile?.companyName || company.name || "Unnamed Company"}</span>
                             </div>
                             <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 text-slate-400" />
                         </button>
@@ -424,7 +429,10 @@ export const CampaignMenuContent = ({
     const groupedCampaigns = useMemo(() => {
         // 1. Group by CLIENT
         const byClient = campaigns.reduce((acc: any[], camp: any) => {
-            const clientName = camp.migrationMeta?.clientName || "General";
+            const clientDoc = camp.clientID;
+            const clientName = clientDoc?.clientName || clientDoc?.name || camp.migrationMeta?.clientName || "General";
+            const clientType = clientDoc?.clientType || clientsMap[clientName] || 'Client';
+
             const existing = acc.find(c => c.name === clientName);
             const campData = {
                 id: camp._id?.$oid || camp._id || camp.id,
@@ -437,7 +445,7 @@ export const CampaignMenuContent = ({
             } else {
                 acc.push({
                     name: clientName,
-                    type: clientsMap[clientName] || 'Client', // Use fetched type or default
+                    type: clientType,
                     campaigns: [campData]
                 });
             }
@@ -488,7 +496,7 @@ export const CampaignMenuContent = ({
 
 
     return (
-        <div className="w-80 bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
+        <div className="w-80 bg-white dark:bg-slate-800 rounded-lg shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col animate-in fade-in zoom-in-95 duration-200">
             {/* Search Header */}
             <div className="p-3 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
                 <div className="relative">
@@ -619,7 +627,7 @@ export const SettingsMenuContent = ({
     const [openCategory, setOpenCategory] = useState<string>(initialCategory);
 
     return (
-        <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh] overflow-hidden">
+        <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh]">
             <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 shrink-0 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                 <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("Administration")}</span>
                 <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors lg:hidden"><X size={14} /></button>
@@ -697,7 +705,7 @@ export const ProfilesMenuContent = ({ onNavigate, onClose, activeView }: { onNav
     const [openCategory, setOpenCategory] = useState<string>(initialCategory);
 
     return (
-        <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh] overflow-hidden">
+        <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh]">
             <div className="py-1">
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 mb-1 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                     <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("Profiles Module")}</span>
@@ -765,7 +773,7 @@ export const TalentChatMenuContent = ({
     };
 
     return (
-        <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh] overflow-hidden">
+        <div className="w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 flex flex-col max-h-[80vh]">
             <div className="py-1">
                 <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700 mb-1 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                     <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">{t("Talent Chat")}</span>

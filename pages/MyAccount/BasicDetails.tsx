@@ -105,7 +105,10 @@ const ClientMultiSelect = ({ selected = [], options = [], onSelect }: { selected
    const [search, setSearch] = useState('');
    const dropdownRef = useRef<HTMLDivElement>(null);
 
-   const filteredOptions = options.filter(opt => opt.toLowerCase().includes(search.toLowerCase()));
+   const filteredOptions = options.filter(opt => {
+      const label = typeof opt === 'string' ? opt : (opt.clientName || opt.name || '');
+      return label.toLowerCase().includes(search.toLowerCase());
+   });
 
    useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -170,7 +173,7 @@ const ClientMultiSelect = ({ selected = [], options = [], onSelect }: { selected
                            onClick={() => toggleOption(opt)}
                            className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between border-b border-slate-50 dark:border-slate-700/50 last:border-0 ${isSelected ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-bold' : 'text-slate-600 dark:text-slate-300'}`}
                         >
-                           <span>{opt}</span>
+                           <span>{typeof opt === 'string' ? opt : (opt.clientName || opt.name)}</span>
                            {isSelected && (
                               <div className="flex items-center justify-center w-4 h-4 rounded bg-emerald-500 text-white">
                                  <Check size={12} strokeWidth={3} />
@@ -396,7 +399,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                                           )}
                                        </div>
                                     ) : (
-                                       <p className="text-sm font-medium text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-1 capitalize">
+                                       <p className={`text-sm font-medium text-slate-800 dark:text-slate-200 border-b border-slate-100 dark:border-slate-800 pb-1 ${field.key !== 'email' ? 'capitalize' : ''}`}>
                                           {displayValue}
                                        </p>
                                     )}

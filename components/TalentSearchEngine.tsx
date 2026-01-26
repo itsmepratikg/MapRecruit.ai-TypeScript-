@@ -5,10 +5,33 @@ import {
   SlidersHorizontal, ArrowRight, XCircle, Send, Star, MapPin, Briefcase, CheckCircle, Clock, Sparkles, ThumbsUp, Trash2, Edit2, History, Bookmark, ArrowUpDown, User,
   Eye, Share2, ChevronUp, ChevronDown, MessageSquare
 } from 'lucide-react';
-import { MOCK_PROFILES, QUICK_FILTERS, SIDEBAR_FILTERS } from '../data';
+// Redundant imports removed
 import { SearchState } from '../types';
 import { EmptyView, ChatBubble } from './Common';
 import { AdvancedSearchModal } from './AdvancedSearchModal';
+
+import { useNavigate } from 'react-router-dom';
+import { useCandidates } from '../hooks/useCandidates';
+
+export const QUICK_FILTERS = [
+  { label: "⚡ Immediate Start", value: "Immediate" },
+  { label: "📍 Atlanta Only", value: "Atlanta, GA" },
+  { label: "🏗️ Forklift Certified", value: "Forklift Certified" },
+  { label: "⭐ Top Rated", value: "High Match (>90%)" },
+  { label: "👔 Supervisors", value: "Warehouse Supervisor" }
+];
+
+export const SIDEBAR_FILTERS = [
+  { id: 'branch', label: 'Branch', options: ['TRC Talent Solutions', 'Amazon Warehouse Operations', 'Google Staffing Services', 'Microsoft HR Tech'] },
+  { id: 'client', label: 'Client', options: ['018 - ALCON', '031 - WIKA ONSITE', '037 - CONVERGENT - AUG'] },
+  { id: 'vendor', label: 'Vendor', options: ['Adecco Employment', 'Apple'] },
+  { id: 'location', label: 'Locations', options: ['Atlanta, GA', 'Marietta, GA', 'Decatur, GA', 'Alpharetta, GA', 'Smyrna, GA'] },
+  { id: 'title', label: 'Job Title', options: ['Warehouse Supervisor', 'Forklift Operator', 'Logistics Coordinator', 'Operations Manager', 'Warehouse Associate'] },
+  { id: 'skills', label: 'Skills & Certs', options: ["Forklift Certified", "SAP", "Inventory Management", "Team Leadership", "OSHA Safety", "Data Entry"] },
+  { id: 'status', label: 'Status', options: ['Active', 'Passive', 'Pending Applicant', 'Do Not Contact'] },
+  { id: 'availability', label: 'Availability', options: ['Immediate', '2 Weeks', '1 Month'] },
+  { id: 'match', label: 'Match Quality', options: ['High Match (>90%)'] }
+];
 
 // --- UTILITIES ---
 export const getCategoryForFilter = (filterValue: string) => {
@@ -19,8 +42,28 @@ export const getCategoryForFilter = (filterValue: string) => {
   return 'unknown';
 };
 
+// Map MongoDB Document to UI Profile Card Structure
+const mapCandidateToCard = (candidate: any) => {
+  const profile = candidate.profile || {};
+  const summary = candidate.professionalSummary || {};
+  const qualification = candidate.professionalQualification || {};
+
+  return {
+    id: candidate._id || candidate.metaData?.mrProfileID,
+    name: profile.fullName || "Unnamed Candidate",
+    title: summary.currentRole?.jobTitle || "No Job Title",
+    location: profile.locations?.[0]?.text || "Remote / Not Specified",
+    experience: summary.yearsOfExperience?.finalYears ? `${summary.yearsOfExperience.finalYears} yrs` : "N/A",
+    status: candidate.personnelStatus || "Pending",
+    availability: candidate.availability || "Not Specified",
+    skills: qualification.skills?.slice(0, 4).map((s: any) => s.text) || [],
+    avatar: (profile.fullName || "U").charAt(0),
+    matchScore: candidate.matchScore || 0 // Match score might come from AI later
+  };
+};
+
 export const filterProfilesEngine = (profiles: any[], activeFilters: string[], advancedParams: any = {}, searchKeywords: string[] = []) => {
-  let filtered = profiles;
+  let filtered = profiles.map(mapCandidateToCard);
 
   if (Object.keys(advancedParams).length > 0) {
     filtered = filtered.filter(p => {
@@ -69,7 +112,7 @@ export const filterProfilesEngine = (profiles: any[], activeFilters: string[], a
 
 // --- SUB-COMPONENTS FOR SEARCH ---
 
-export const ProfileCard: React.FC<{ profile: any, onNavigate: () => void }> = ({ profile, onNavigate }) => (
+export const ProfileCard: React.FC<{ profile: any, onNavigate: (id: string) => void }> = ({ profile, onNavigate }) => (
   <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 hover:shadow-md transition-all duration-200 flex flex-col md:flex-row gap-4 group relative">
     <div className="absolute top-4 right-4 flex items-center gap-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs font-medium">
       <Sparkles size={12} />
@@ -85,7 +128,7 @@ export const ProfileCard: React.FC<{ profile: any, onNavigate: () => void }> = (
     <div className="flex-grow">
       <div className="flex items-start justify-between">
         <div>
-          <h3 onClick={onNavigate} className="text-lg font-bold text-gray-900 dark:text-slate-100 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors cursor-pointer">
+          <h3 onClick={() => onNavigate(profile.id)} className="text-lg font-bold text-gray-900 dark:text-slate-100 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors cursor-pointer">
             {profile.name}
           </h3>
           <p className="text-gray-600 dark:text-slate-400 font-medium">{profile.title}</p>
@@ -125,7 +168,7 @@ export const ProfileCard: React.FC<{ profile: any, onNavigate: () => void }> = (
         <ThumbsUp size={18} />
       </button>
       <button
-        onClick={onNavigate}
+        onClick={() => onNavigate(profile.id)}
         className="text-sm bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors w-full md:w-auto shadow-sm shadow-green-200 dark:shadow-none"
       >
         View
@@ -222,9 +265,11 @@ export const FilterPopup: React.FC<{ isOpen: boolean, onClose: () => void, activ
 export const TalentSearchEngine: React.FC<{
   searchState: SearchState,
   setSearchState: (s: any) => void,
-  onNavigateToProfile: () => void,
+  onNavigateToProfile: (id?: string) => void,
   landingComponent?: React.ReactNode // New prop for injecting the dashboard
 }> = ({ searchState, setSearchState, onNavigateToProfile, landingComponent }) => {
+  const navigate = useNavigate();
+  const { candidates, loading, error } = useCandidates();
 
   const [placeholder, setPlaceholder] = useState("Describe your ideal candidate...");
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -234,8 +279,8 @@ export const TalentSearchEngine: React.FC<{
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const filteredProfiles = useMemo(() => {
-    return filterProfilesEngine(MOCK_PROFILES, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords);
-  }, [searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords]);
+    return filterProfilesEngine(candidates, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords);
+  }, [candidates, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });

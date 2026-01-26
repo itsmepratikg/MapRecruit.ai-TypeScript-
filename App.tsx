@@ -224,12 +224,16 @@ export const App = () => {
   };
   const handleBackToCampaigns = () => setSelectedCampaign(null);
 
-  const handleNavigateToCampaignList = (tab: string) => {
+  const handleNavigateToCampaignList = React.useCallback((tab: string) => {
     setTargetCampaignTab(tab);
     setActiveView('CAMPAIGNS');
     setSelectedCampaign(null); // Ensure we are on list view
     if (!isDesktop) setIsSidebarOpen(false);
-  };
+  }, [isDesktop]);
+
+  const handleCampaignClick = React.useCallback((c: any) => {
+    navigate(`/campaigns/${c.id || c._id?.$oid || c._id}`);
+  }, [navigate]);
 
   const handleSwitchClient = async (newClientId: string) => {
     try {
@@ -373,7 +377,7 @@ export const App = () => {
                   )}
                 </div>
 
-                <div className={`flex-1 ${!location.pathname.startsWith('/profiles') && !location.pathname.startsWith('/settings') ? 'overflow-visible' : 'overflow-y-auto custom-scrollbar'} py-4 ${isCollapsed ? 'px-2' : 'px-3'} space-y-1`}>
+                <div className="flex-1 overflow-y-auto custom-scrollbar py-4 px-3 space-y-1">
                   <Routes>
                     <Route path="/campaigns/:id/*" element={
                       <CampaignsMenu
@@ -496,8 +500,8 @@ export const App = () => {
                         activeTalentChatTab={activeTalentChatTab}
                         setActiveTalentChatTab={setActiveTalentChatTab}
                         userProfile={userProfile}
-                        onNavigateToCampaign={(c) => navigate(`/campaigns/${c.id}`)}
-                        handleNavigateToCampaignList={(tab) => navigate(`/campaigns?tab=${tab}`)}
+                        onNavigateToCampaign={handleCampaignClick}
+                        handleNavigateToCampaignList={handleNavigateToCampaignList}
                       />
                     } />
                   </Routes>

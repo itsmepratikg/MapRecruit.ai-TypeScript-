@@ -41,6 +41,8 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/clients', require('./routes/clientRoutes'));
 app.use('/api/campaigns', require('./routes/campaignRoutes'));
 app.use('/api/profiles', require('./routes/profileRoutes'));
+app.use('/api/workflows', require('./routes/workflowRoutes'));
+app.use('/api/activities', require('./routes/activityRoutes'));
 app.use('/api/company', require('./routes/companyRoutes'));
 app.get('/api/debug', (req, res) => res.json({
     message: 'Backend is alive',
@@ -52,6 +54,7 @@ app.get('/api/debug', (req, res) => res.json({
 app.get('/', (req, res) => {
     res.send('MapRecruit Schema API is running...');
 });
+
 
 // 404 Handler for /api
 app.use('/api', (req, res) => {
