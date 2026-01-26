@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Mail, Phone } from 'lucide-react';
 import {
   FileEdit, FileText, CheckCircle, Download, Share2, MoreHorizontal,
   Shield, Lock, Star, ChevronRight
@@ -50,29 +51,75 @@ export const ActionIcons = () => {
 export const SecureContactCard: React.FC<{ contact: any }> = ({ contact }) => {
   const { t } = useTranslation();
   const [revealed, setRevealed] = useState(false);
+
+  // Helper to ensure array
+  const emails = Array.isArray(contact.emails) ? contact.emails : (contact.email ? [{ text: contact.email, type: 'Primary' }] : []);
+  const phones = Array.isArray(contact.phones) ? contact.phones : (contact.phone ? [{ text: contact.phone, type: 'Primary' }] : []);
+
+  // Use raw props if arrays not found (backward compatibility)
+  const displayEmails = emails.length > 0 ? emails : [{ text: contact.email || 'N/A', type: 'Primary' }];
+  const displayPhones = phones.length > 0 ? phones : [{ text: contact.phone || 'N/A', type: 'Primary' }];
+
   return (
     <div
       className="bg-slate-900 dark:bg-slate-950 rounded-lg overflow-hidden border border-slate-700 shadow-md relative group transition-all hover:shadow-lg hover:border-emerald-500/30"
-      onMouseDown={() => setRevealed(true)}
-      onMouseUp={() => setRevealed(false)}
-      onMouseLeave={() => setRevealed(false)}
-      onTouchStart={() => setRevealed(true)}
-      onTouchEnd={() => setRevealed(false)}
     >
       <div className="bg-slate-800 dark:bg-slate-900 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
         <h3 className="font-semibold text-white flex items-center gap-2 text-sm"><Shield size={14} className="text-emerald-400" /> {t("Secure Contact")}</h3>
         <span className="text-[10px] uppercase font-bold text-slate-400 border border-slate-600 px-1.5 rounded">{t("Confidential")}</span>
       </div>
-      <div className="p-4 relative select-none h-24 flex flex-col justify-center">
+
+      <div
+        className="p-4 relative select-none min-h-[100px] flex flex-col justify-center gap-3"
+        onMouseDown={() => setRevealed(true)}
+        onMouseUp={() => setRevealed(false)}
+        onMouseLeave={() => setRevealed(false)}
+        onTouchStart={() => setRevealed(true)}
+        onTouchEnd={() => setRevealed(false)}
+      >
         {!revealed && (
           <div className="absolute inset-0 z-10 backdrop-blur-md bg-slate-900/60 dark:bg-slate-950/60 flex flex-col items-center justify-center cursor-pointer group-hover:bg-slate-900/50 dark:group-hover:bg-slate-950/50 transition-colors">
             <Lock className="text-slate-400 mb-1 group-hover:text-emerald-400 transition-colors" size={20} />
             <p className="text-slate-300 text-xs font-medium">{t("Click & Hold to Reveal")}</p>
           </div>
         )}
-        <div className={`space-y-2 transition-all duration-300 ${revealed ? 'opacity-100 blur-none' : 'opacity-40 blur-sm'}`}>
-          <div className="text-xs text-slate-500">{t("Email")}: <span className="text-emerald-400 font-mono text-sm ml-2">{contact.email}</span></div>
-          <div className="text-xs text-slate-500 mt-2">{t("Phone")}: <span className="text-emerald-400 font-mono text-sm ml-2">{contact.phone}</span></div>
+
+        <div className={`space-y-3 transition-all duration-300 ${revealed ? 'opacity-100 blur-none' : 'opacity-40 blur-sm'}`}>
+          {/* EMAILS */}
+          {displayEmails.map((e: any, i: number) => (
+            <div key={i} className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 last:border-0 pb-1 last:pb-0">
+              <div>
+                <span className="block text-[10px] text-slate-500 uppercase">{e.type || 'Email'}</span>
+                <span className="text-emerald-400 font-mono text-sm">{e.text}</span>
+              </div>
+              <a
+                href={`mailto:${e.text}`}
+                onClick={(ev) => ev.stopPropagation()}
+                className={`p-1.5 rounded bg-slate-800 hover:bg-emerald-600 text-emerald-500 hover:text-white transition-colors ${!revealed && 'pointer-events-none'}`}
+                title="Send Email"
+              >
+                <Mail size={14} />
+              </a>
+            </div>
+          ))}
+
+          {/* PHONES */}
+          {displayPhones.map((p: any, i: number) => (
+            <div key={i} className="flex items-center justify-between text-xs text-slate-400 border-b border-slate-800 last:border-0 pb-1 last:pb-0">
+              <div>
+                <span className="block text-[10px] text-slate-500 uppercase">{p.type || 'Phone'}</span>
+                <span className="text-emerald-400 font-mono text-sm">{p.text}</span>
+              </div>
+              <a
+                href={`tel:${p.text}`}
+                onClick={(ev) => ev.stopPropagation()}
+                className={`p-1.5 rounded bg-slate-800 hover:bg-emerald-600 text-emerald-500 hover:text-white transition-colors ${!revealed && 'pointer-events-none'}`}
+                title="Call"
+              >
+                <Phone size={14} />
+              </a>
+            </div>
+          ))}
         </div>
       </div>
     </div>

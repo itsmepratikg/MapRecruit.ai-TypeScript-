@@ -11,30 +11,21 @@ import { InterviewFormContent } from '../components/InterviewComponents';
 import { CampaignsView, CampaignDetailView } from '../components/ProfileCampaigns';
 import { InterviewsView } from '../components/ProfileInterviews';
 import { ProfileDetails, ActivitiesView, TalentChatView, RecommendedView, SimilarProfilesView } from '../components/ProfileViews';
+import { EditProfileModal } from '../components/EditProfileModal'; // Import Modal
+import { ExportProfileModal } from '../components/ExportProfileModal'; // Import Export Modal
+import { HeroWidgets } from '../components/HeroWidgets'; // Import Widgets
+import { profileService } from '../services/api';
+import { useToast } from '../components/Toast';
 
-// Re-implement MatchAnalysisModal locally if not exported from Profiles.tsx to avoid circular dependency or import issues.
-const LocalMatchAnalysisModal = ({ onClose }: { onClose: () => void }) => {
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-4xl h-[90vh] rounded-xl shadow-2xl overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800">
-          <div className="flex items-center gap-3">
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">Close</button>
-            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">Match Analysis</h3>
-          </div>
-        </div>
-        <div className="p-8 text-center text-slate-500 dark:text-slate-400">Analysis Content Placeholder</div>
-      </div>
-    </div>
-  );
-};
+import { LocalMatchAnalysisModal } from '../components/LocalMatchAnalysisModal';
 
 import { useParams } from 'react-router-dom';
 import { useCandidateProfile } from '../hooks/useCandidateProfile';
 
 export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
   const { id } = useParams<{ id: string }>();
-  const { profile: liveData, loading, error } = useCandidateProfile(id || null);
+  const { profile: liveData, loading, error, refreshProfile } = useCandidateProfile(id || null); // Ensure hook exports refresh
+  const { addToast } = useToast();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -44,6 +35,10 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
   const [maximizedTemplate, setMaximizedTemplate] = useState<any>(null);
   const [selectedInterview, setSelectedInterview] = useState<any>(null);
   const [showMatchScore, setShowMatchScore] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Edit State
+  const [editModalTab, setEditModalTab] = useState('BASIC');
+  const [shortlistStatus, setShortlistStatus] = useState<'shortlisted' | 'rejected' | 'none'>('none');
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Extract Profile Data from liveData (MongoDB Schema)
   const resumeDetails = liveData || {};
@@ -62,10 +57,76 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
   const tags = resumeDetails.tagID || [];
   const displayTags = tags.map((t: any) => t.name || t.text).filter(Boolean);
 
-  // Widget Logic (from ChunkProfileWidgets.js)
+  // Widget Data & Meta
   const metaData = resumeDetails.metaData || {};
-  const showDuplicateWidget = !!metaData.originalID;
-  const showAttentionWidget = metaData.missingMandatoryFields?.length > 0;
+
+  // FORCE ENABLE ALL WIDGETS (User Request)
+  const profileWidgets = {
+    ...(resumeDetails.profileWidgets || {}),
+    duplicateWidget: true,
+    attentionWidget: true,
+    editProfileWidget: true,
+    favouriteWidget: true,
+    resumeWidget: true,
+    shortListWidget: true,
+    unSubscribeWidget: true,
+    referralWidget: true,
+    profileSummaryWidget: true,
+    profileViewedWidget: true,
+    downloadProfileWidget: true,
+    linkCampaignWidget: true,
+    massEmailWidget: true,
+    massSMSWidget: true,
+    profileShareWidget: true,
+    linkFolderWidget: true,
+    tagsAttachWidget: true,
+    skipAutomationWidget: true,
+    exportProfileWidget: true,
+    directVideoWidget: true,
+    uploadResumesWidget: true
+  };
+
+  const mockPermissions = { canEdit: true };
+
+  const handleEditSection = (section: string) => {
+    setEditModalTab(section);
+    setIsEditModalOpen(true);
+  };
+
+  // Widget Handler
+  const handleWidgetAction = async (action: string) => {
+    console.log("Widget Action:", action);
+    switch (action) {
+      case 'edit_global':
+        setEditModalTab('BASIC');
+        setIsEditModalOpen(true);
+        break;
+      case 'shortlist':
+        // Cycle Logic: None -> Shortlisted -> Rejected -> None
+        const nextStatus = shortlistStatus === 'none' ? 'shortlisted' :
+          shortlistStatus === 'shortlisted' ? 'rejected' : 'none';
+        setShortlistStatus(nextStatus);
+        // Mock API Call
+        try {
+          // await profileService.updateShortlist(id, nextStatus);
+          addToast(`Status updated to ${nextStatus}`, "success");
+        } catch (e) {
+          addToast("Failed to update status", "error");
+        }
+        break;
+      case 'export':
+        addToast("Opening Export Dialog... (Placeholder)", "info");
+        break;
+      case 'duplicate':
+        addToast("Duplicate check clicked", "info");
+        break;
+      case 'view_resume':
+        // Trigger Resume Preview Logic
+        break;
+      default:
+        addToast(`${action} widget clicked`, "default");
+    }
+  };
 
   useEffect(() => {
     setPreviewCampaign(null);
@@ -81,6 +142,21 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
     if (container) container.addEventListener('scroll', handleScroll);
     return () => { if (container) container.removeEventListener('scroll', handleScroll); };
   }, []);
+
+  const handleSaveProfile = async (updatedData: any) => {
+    try {
+      if (!id) return;
+      // Optimistic update or wait for server
+      await profileService.update(id, updatedData);
+      addToast("Profile updated successfully", "success");
+      if (refreshProfile) refreshProfile();
+      // If hooks/useCandidateProfile doesn't export refresh, we might need to reload or mutate local state. 
+      // Assuming integration works for now.
+    } catch (err) {
+      console.error("Update failed", err);
+      addToast("Failed to update profile", "error");
+    }
+  };
 
   if (loading && !liveData) {
     return (
@@ -106,7 +182,7 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'profile': return <ProfileDetails data={resumeDetails} />;
+      case 'profile': return <ProfileDetails data={resumeDetails} onEditSection={handleEditSection} />;
       case 'resume': return <div className="h-[800px] bg-slate-200 dark:bg-slate-700 rounded flex items-center justify-center text-slate-400 dark:text-slate-500 font-medium">PDF Viewer Placeholder</div>;
       case 'activity': return <ActivitiesView />;
       case 'chat': return <TalentChatView />;
@@ -124,6 +200,18 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
     <div className="flex flex-col h-full overflow-hidden relative bg-slate-50 dark:bg-slate-900 w-full animate-in fade-in duration-300">
       {/* MODALS */}
       {showMatchScore && <LocalMatchAnalysisModal onClose={() => setShowMatchScore(false)} />}
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        data={liveData}
+        onSave={handleSaveProfile}
+        initialTab={editModalTab}
+      />
+      <ExportProfileModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        candidateName={candidateName}
+      />
 
       {maximizedTemplate && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
@@ -176,21 +264,10 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
                   {candidateName.charAt(0)}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
                     <h1 className="text-2xl font-bold text-green-600 dark:text-green-400">{candidateName}</h1>
-                    <button className="text-slate-400 hover:text-green-600 dark:hover:text-green-400"><FileEdit size={14} /></button>
 
-                    {/* DYNAMIC WIDGETS */}
-                    {showDuplicateWidget && (
-                      <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase animate-pulse flex items-center gap-1">
-                        <Copy size={10} /> Duplicate Alert
-                      </span>
-                    )}
-                    {showAttentionWidget && (
-                      <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1">
-                        <HelpCircle size={10} /> Attention Required
-                      </span>
-                    )}
+
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-1">{candidateRole}</p>
                   <div className="flex flex-col gap-1 text-sm text-slate-500 dark:text-slate-400">
@@ -206,7 +283,16 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-4 md:gap-6 w-full md:w-auto">
-                <div className="self-end"><ActionIcons /></div>
+                <div className="flex justify-end w-full">
+                  {/* NEW WIDGET SYSTEM */}
+                  <HeroWidgets
+                    widgets={profileWidgets}
+                    metaData={metaData}
+                    permissions={mockPermissions}
+                    onAction={handleWidgetAction}
+                    shortlistStatus={shortlistStatus}
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-right text-sm w-full md:w-auto">
                   <div><span className="text-slate-800 dark:text-slate-200 font-bold block">Personnel Status</span><span className="text-slate-500 dark:text-slate-400">{candidateStatus}</span></div>
                   <div><span className="text-slate-800 dark:text-slate-200 font-bold block">Availability</span><span className="text-slate-500 dark:text-slate-400">{candidateAvailability}</span></div>

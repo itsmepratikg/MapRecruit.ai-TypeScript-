@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import {
-   Briefcase, MapPin, CheckCircle, Clock,
+   Briefcase, MapPin, CheckCircle, Clock, FileEdit,
    MessageCircle, Paperclip, Send, AlertCircle, ExternalLink, ThumbsUp,
    User, Phone, Mail, Globe, Award, Calendar, Shield, Lock, Star, X
 } from 'lucide-react';
@@ -11,7 +11,7 @@ import { useActivities } from '../hooks/useActivities';
 import { useParams } from 'react-router-dom';
 
 // Updated Profile Details Component to handle dynamic JSON schema with the OLD UI Layout
-export const ProfileDetails = ({ data }: { data?: any }) => {
+export const ProfileDetails = ({ data, onEditSection }: { data?: any, onEditSection?: (tab: string) => void }) => {
    const [showAllSkills, setShowAllSkills] = useState(false);
 
    // Safe extraction of nested data from MongoDB Document root
@@ -35,6 +35,22 @@ export const ProfileDetails = ({ data }: { data?: any }) => {
       return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
    };
 
+   // Helper for Section Header with Edit Button
+   const SectionHeader = ({ title, tab }: { title: string, tab: string }) => (
+      <div className="flex justify-between items-center mb-4">
+         <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{title}</h3>
+         {onEditSection && (
+            <button
+               onClick={() => onEditSection(tab)}
+               className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-emerald-600 transition-colors"
+               title={`Edit ${title}`}
+            >
+               <FileEdit size={14} />
+            </button>
+         )}
+      </div>
+   );
+
    return (
       <>
          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -43,7 +59,7 @@ export const ProfileDetails = ({ data }: { data?: any }) => {
 
                {/* Professional Summary */}
                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-colors">
-                  <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Professional Summary</h3>
+                  <SectionHeader title="Professional Summary" tab="SUMMARY" />
                   <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
                      {summary.summary || "No summary provided."}
                   </p>
@@ -51,7 +67,7 @@ export const ProfileDetails = ({ data }: { data?: any }) => {
 
                {/* Work Experience - Timeline UI */}
                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-colors">
-                  <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">Work Experience</h3>
+                  <SectionHeader title="Work Experience" tab="EXPERIENCE" />
 
                   <div className="relative border-l-2 border-slate-100 dark:border-slate-700 ml-3 space-y-8 pb-2">
                      {experience.map((exp: any, idx: number) => (
@@ -98,7 +114,7 @@ export const ProfileDetails = ({ data }: { data?: any }) => {
 
                {/* Education */}
                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-colors">
-                  <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-6">Education</h3>
+                  <SectionHeader title="Education" tab="EDUCATION" />
                   <div className="space-y-4">
                      {education.map((edu: any, idx: number) => (
                         <div key={idx} className="flex items-start gap-4 p-4 rounded-lg border border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
@@ -122,14 +138,15 @@ export const ProfileDetails = ({ data }: { data?: any }) => {
             <div className="space-y-6">
 
                {/* Secure Contact */}
+               {/* Secure Contact */}
                <SecureContactCard contact={{
-                  email: profile.emails?.[0]?.text || 'N/A',
-                  phone: profile.phones?.[0]?.text || 'N/A'
+                  emails: profile.emails || [],
+                  phones: profile.phones || []
                }} />
 
                {/* Skills & Competencies */}
                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-5 transition-colors">
-                  <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Skills & Competencies</h3>
+                  <SectionHeader title="Skills & Competencies" tab="SKILLS" />
                   <div className="flex flex-wrap gap-2">
                      {skills.slice(0, 15).map((skill: any, idx: number) => (
                         <span key={idx} className="px-2.5 py-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-200 hover:border-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors cursor-default">
@@ -190,7 +207,7 @@ export const ProfileDetails = ({ data }: { data?: any }) => {
                         <AlertCircle size={14} /> AI Profile Summary
                      </h3>
                      <p className="text-xs leading-relaxed text-indigo-900/80 dark:text-indigo-200/80">
-                        {data.resumeDetails.genAISummary.profileSummary || "AI is analyzing this profile to provide insights on fit and potential."}
+                        {data.resumeDetails?.genAISummary?.profileSummary || "AI is analyzing this profile to provide insights on fit and potential."}
                      </p>
                   </div>
                )}
