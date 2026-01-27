@@ -9,6 +9,8 @@ const companySchema = mongoose.Schema({
         type: mongoose.Schema.Types.Mixed
     },
     productSettings: {
+        franchise: { type: Boolean, default: false },
+        // other settings as mixed
         type: mongoose.Schema.Types.Mixed
     },
     accessabilitySettings: {

@@ -6,17 +6,39 @@ import {
   Key, BarChart2
 } from '../Icons';
 
-export const PROFILE_TABS = [
-  { id: 'profile', label: 'Profile', icon: User },
-  { id: 'resume', label: 'Resume', icon: FileText },
-  { id: 'activity', label: 'Activity', icon: Activity },
-  { id: 'chat', label: 'Chat', icon: MessageCircle },
-  { id: 'campaigns', label: 'Campaigns', icon: Briefcase },
-  { id: 'folders', label: 'Folders', icon: FolderOpen },
-  { id: 'interviews', label: 'Interviews', icon: Video },
-  { id: 'recommended', label: 'Recommended', icon: ThumbsUp },
-  { id: 'similar', label: 'Similar', icon: Copy },
+// Categorized Profile Tabs
+export const PROFILE_CATEGORIES = [
+  {
+    id: 'GENERAL',
+    label: 'General',
+    items: [
+      { id: 'profile', label: 'Profile', icon: User },
+      { id: 'resume', label: 'Resume', icon: FileText },
+      { id: 'activity', label: 'Activity', icon: Activity },
+    ]
+  },
+  {
+    id: 'MATCHING',
+    label: 'Matching',
+    items: [
+      { id: 'recommended', label: 'Recommended', icon: ThumbsUp },
+      { id: 'similar', label: 'Similar', icon: Copy },
+    ]
+  },
+  {
+    id: 'SYSTEM',
+    label: 'System & Tools',
+    items: [
+      { id: 'chat', label: 'Chat', icon: MessageCircle },
+      { id: 'campaigns', label: 'Campaigns', icon: Briefcase },
+      { id: 'folders', label: 'Folders', icon: FolderOpen },
+      { id: 'interviews', label: 'Interviews', icon: Video },
+    ]
+  }
 ];
+
+// Flat list for routes/compatibility if needed
+export const PROFILE_TABS = PROFILE_CATEGORIES.flatMap(cat => cat.items);
 
 export const USER_MANAGEMENT_MENU = [
   { id: 'BASIC_DETAILS', label: 'Basic Details', icon: User },

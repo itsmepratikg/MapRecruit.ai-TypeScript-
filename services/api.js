@@ -167,6 +167,10 @@ export const companyService = {
         const response = await api.get('/company');
         return response.data;
     },
+    getById: async (id) => {
+        const response = await api.get(`/company/${id}`);
+        return response.data;
+    },
     update: async (companyData) => {
         const response = await api.put('/company', companyData);
         return response.data;

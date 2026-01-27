@@ -1,0 +1,5 @@
+Connecting to MongoDB...
+Connected.
+Available Collections: usersDB, workflowsDB, clientsdb, franchises, owningentities, resumesDB, companiesDB, roles, campaignsDB, InterviewsDB, activitiesDB
+Finding Resume with ID: 6965e3b8f40a2ed220a0dc16
+Resume NOT FOUND in common collections!

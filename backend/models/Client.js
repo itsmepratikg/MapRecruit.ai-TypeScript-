@@ -1,9 +1,14 @@
 const mongoose = require('mongoose');
 
 const clientSchema = mongoose.Schema({
-    name: {
+    clientName: {
         type: String,
         required: true
+    },
+    companyID: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company',
+        index: true
     },
     franchiseID: {
         type: mongoose.Schema.Types.ObjectId,
@@ -11,6 +16,10 @@ const clientSchema = mongoose.Schema({
         index: true
     },
     // Flexible schema for other fields
+    // settings: {
+    //     profileSearchAccessLevel: 'Client' | 'Company' | 'OwningEntity',
+    //     // ... other settings
+    // }
 }, {
     timestamps: true,
     strict: false, // Allow other fields

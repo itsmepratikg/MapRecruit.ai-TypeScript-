@@ -1,0 +1,47 @@
+﻿[dotenv@17.2.3] injecting env (7) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+≡ƒöì Starting Database Key and Type Verification...
+
+Checking collection: usersDB...
+Checking collection: companiesDB...
+Checking collection: clientsdb...
+Checking collection: roles...
+Checking collection: franchises...
+Checking collection: resumesDB...
+Checking collection: campaignsDB...
+
+--- VERIFICATION REPORT ---
+
+Collection: usersDB (2 docs)
+  Γ¥î Missing Keys:
+     - roleID: Missing in 1 documents
+     - activeClientID: Missing in 1 documents
+     - currentCompanyID: Missing in 1 documents
+  Γ£à All key types match the schema
+
+Collection: companiesDB (2 docs)
+  Γ£à All standardized keys present in all documents
+  Γ£à All key types match the schema
+
+Collection: clientsdb (2 docs)
+  Γ£à All standardized keys present in all documents
+  Γ£à All key types match the schema
+
+Collection: roles (1 docs)
+  Γ£à All standardized keys present in all documents
+  Γ£à All key types match the schema
+
+Collection: franchises (2 docs)
+  Γ£à All standardized keys present in all documents
+  Γ£à All key types match the schema
+
+Collection: resumesDB (3 docs)
+  Γ¥î Missing Keys:
+     - franchiseID: Missing in 3 documents
+  Γ¥î Type Mismatches:
+     - clientID (array != objectid): Found in 3 documents
+
+Collection: campaignsDB (1 docs)
+  Γ£à All standardized keys present in all documents
+  Γ£à All key types match the schema
+

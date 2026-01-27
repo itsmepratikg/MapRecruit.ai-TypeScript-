@@ -137,12 +137,7 @@ export const ProfileDetails = ({ data, onEditSection }: { data?: any, onEditSect
             {/* RIGHT COLUMN - SIDEBAR */}
             <div className="space-y-6">
 
-               {/* Secure Contact */}
-               {/* Secure Contact */}
-               <SecureContactCard contact={{
-                  emails: profile.emails || [],
-                  phones: profile.phones || []
-               }} />
+
 
                {/* Skills & Competencies */}
                <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm p-5 transition-colors">

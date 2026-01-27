@@ -44,6 +44,7 @@ app.use('/api/profiles', require('./routes/profileRoutes'));
 app.use('/api/workflows', require('./routes/workflowRoutes'));
 app.use('/api/activities', require('./routes/activityRoutes'));
 app.use('/api/company', require('./routes/companyRoutes'));
+app.use('/api/owning-entities', require('./routes/owningEntityRoutes'));
 app.get('/api/debug', (req, res) => res.json({
     message: 'Backend is alive',
     time: new Date().toISOString(),

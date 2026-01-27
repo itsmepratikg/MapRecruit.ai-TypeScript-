@@ -5,11 +5,10 @@ const roleSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    companyID: {
+    companyID: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Company',
-        required: true
-    },
+        ref: 'Company'
+    }],
     accessibilitySettings: {
         type: mongoose.Schema.Types.Mixed,
         required: true

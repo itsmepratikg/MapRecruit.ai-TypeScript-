@@ -64,9 +64,14 @@ const userSchema = mongoose.Schema({
         }
     },
     // Other top-level keys from the example schema if necessary
-    clients: {
-        type: mongoose.Schema.Types.Mixed
-    },
+    AccessibleCompanyID: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Company'
+    }],
+    clientID: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Client'
+    }],
     dashboard: {
         type: mongoose.Schema.Types.Mixed
     },

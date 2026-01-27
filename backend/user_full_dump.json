@@ -1,0 +1,429 @@
+{
+  "_id": "696a1d32e8ceec1d15098204",
+  "companyID": "6112806bc9147f673d28c6eb",
+  "activeClientID": "6112806bc9147f673d28c6ec",
+  "email": "pratik.gaurav@maprecruit.ai",
+  "password": "$2b$10$LmkLjumkZdln6nOLn/MgQOw7IWW0kiN/Pg.6/3PSTfIUQ0X240Anq",
+  "role": "Product Admin",
+  "status": true,
+  "firstName": "Pratik",
+  "lastName": "Gaurav",
+  "accessibilitySettings": {
+    "theme": "light",
+    "language": "English (United Kingdom)",
+    "dashboardConfig": {
+      "rowHeight": 30,
+      "margin": 15,
+      "layouts": {
+        "desktop": [
+          {
+            "id": "welcome",
+            "x": 0,
+            "y": 0,
+            "w": 4,
+            "h": 10,
+            "visible": true
+          },
+          {
+            "id": "active_campaigns",
+            "x": 4,
+            "y": 0,
+            "w": 2,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "closed_campaigns",
+            "x": 6,
+            "y": 0,
+            "w": 2,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "active_profiles",
+            "x": 8,
+            "y": 0,
+            "w": 2,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "shortlisted",
+            "x": 10,
+            "y": 0,
+            "w": 2,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "alerts",
+            "x": 4,
+            "y": 5,
+            "w": 8,
+            "h": 5,
+            "visible": true
+          },
+          {
+            "id": "trend_graph",
+            "x": 0,
+            "y": 11,
+            "w": 6,
+            "h": 12,
+            "visible": true
+          },
+          {
+            "id": "source_distribution",
+            "x": 6,
+            "y": 11,
+            "w": 6,
+            "h": 12,
+            "visible": true
+          },
+          {
+            "id": "upcoming_interviews",
+            "x": 0,
+            "y": 24,
+            "w": 6,
+            "h": 10,
+            "visible": true
+          },
+          {
+            "id": "email_delivery",
+            "x": 6,
+            "y": 24,
+            "w": 6,
+            "h": 10,
+            "visible": true
+          },
+          {
+            "id": "pre_screening",
+            "x": 0,
+            "y": 35,
+            "w": 6,
+            "h": 10,
+            "visible": true
+          },
+          {
+            "id": "portal_reports",
+            "x": 6,
+            "y": 35,
+            "w": 6,
+            "h": 10,
+            "visible": true
+          }
+        ],
+        "tablet": [
+          {
+            "id": "welcome",
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 6,
+            "visible": true
+          },
+          {
+            "id": "active_campaigns",
+            "x": 0,
+            "y": 6,
+            "w": 6,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "closed_campaigns",
+            "x": 6,
+            "y": 6,
+            "w": 6,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "active_profiles",
+            "x": 0,
+            "y": 10,
+            "w": 6,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "shortlisted",
+            "x": 6,
+            "y": 10,
+            "w": 6,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "alerts",
+            "x": 0,
+            "y": 14,
+            "w": 12,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "trend_graph",
+            "x": 0,
+            "y": 18,
+            "w": 12,
+            "h": 12,
+            "visible": true
+          },
+          {
+            "id": "source_distribution",
+            "x": 0,
+            "y": 30,
+            "w": 12,
+            "h": 12,
+            "visible": true
+          },
+          {
+            "id": "upcoming_interviews",
+            "x": 0,
+            "y": 42,
+            "w": 6,
+            "h": 8,
+            "visible": true
+          },
+          {
+            "id": "email_delivery",
+            "x": 6,
+            "y": 42,
+            "w": 6,
+            "h": 8,
+            "visible": true
+          },
+          {
+            "id": "portal_reports",
+            "x": 0,
+            "y": 50,
+            "w": 6,
+            "h": 8,
+            "visible": true
+          },
+          {
+            "id": "pre_screening",
+            "x": 0,
+            "y": 58,
+            "w": 12,
+            "h": 8,
+            "visible": true
+          }
+        ],
+        "mobile": [
+          {
+            "id": "welcome",
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 8,
+            "visible": true
+          },
+          {
+            "id": "active_campaigns",
+            "x": 0,
+            "y": 8,
+            "w": 12,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "closed_campaigns",
+            "x": 0,
+            "y": 12,
+            "w": 12,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "active_profiles",
+            "x": 0,
+            "y": 16,
+            "w": 12,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "shortlisted",
+            "x": 0,
+            "y": 20,
+            "w": 12,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "alerts",
+            "x": 0,
+            "y": 24,
+            "w": 12,
+            "h": 4,
+            "visible": true
+          },
+          {
+            "id": "trend_graph",
+            "x": 0,
+            "y": 28,
+            "w": 12,
+            "h": 12,
+            "visible": true
+          },
+          {
+            "id": "source_distribution",
+            "x": 0,
+            "y": 40,
+            "w": 12,
+            "h": 12,
+            "visible": true
+          },
+          {
+            "id": "upcoming_interviews",
+            "x": 0,
+            "y": 52,
+            "w": 12,
+            "h": 8,
+            "visible": true
+          },
+          {
+            "id": "email_delivery",
+            "x": 0,
+            "y": 60,
+            "w": 12,
+            "h": 8,
+            "visible": true
+          },
+          {
+            "id": "portal_reports",
+            "x": 0,
+            "y": 68,
+            "w": 12,
+            "h": 8,
+            "visible": true
+          },
+          {
+            "id": "pre_screening",
+            "x": 0,
+            "y": 76,
+            "w": 12,
+            "h": 8,
+            "visible": true
+          }
+        ]
+      }
+    },
+    "languageCode": "en-GB",
+    "dateFormat": "DD/MM/YYYY"
+  },
+  "createdAt": "2026-01-16T11:12:50.445Z",
+  "updatedAt": "2026-01-27T14:07:42.720Z",
+  "__v": 1,
+  "loginCount": 47,
+  "timeZone": "Asia/Kolkata",
+  "lastActiveAt": "2026-01-27T14:07:42.692Z",
+  "lastLoginAt": "2026-01-27T14:07:42.691Z",
+  "calendarSettings": {
+    "timeZone": "-05:00",
+    "timeZoneName": "Eastern Time (US & Canada)",
+    "timeZoneFullName": "(GMT-05:00) Eastern Time (US & Canada)",
+    "weeklyHours": [
+      {
+        "day": "Sunday",
+        "timings": []
+      },
+      {
+        "day": "Monday",
+        "timings": [
+          {
+            "startTime": "09:00",
+            "endTime": "17:00"
+          }
+        ]
+      },
+      {
+        "day": "Tuesday",
+        "timings": [
+          {
+            "startTime": "09:00",
+            "endTime": "17:00"
+          }
+        ]
+      },
+      {
+        "day": "Wednesday",
+        "timings": [
+          {
+            "startTime": "09:00",
+            "endTime": "17:00"
+          }
+        ]
+      },
+      {
+        "day": "Thursday",
+        "timings": [
+          {
+            "startTime": "09:00",
+            "endTime": "17:00"
+          }
+        ]
+      },
+      {
+        "day": "Friday",
+        "timings": [
+          {
+            "startTime": "09:00",
+            "endTime": "17:00"
+          }
+        ]
+      },
+      {
+        "day": "Saturday",
+        "timings": []
+      }
+    ],
+    "businessHours": {
+      "startTime": "",
+      "endTime": "",
+      "format": "12 hours",
+      "durationInHours": "",
+      "includeWeekends": false,
+      "includeHolidays": false,
+      "includeAllDayEvents": true
+    },
+    "breakHours": [
+      {
+        "startTime": "12:00",
+        "endTime": "13:00"
+      }
+    ],
+    "holidays": [
+      {
+        "id": "h1",
+        "name": "New Year",
+        "date": "2025-01-01",
+        "type": "Holiday"
+      }
+    ],
+    "weekends": [
+      "Saturday",
+      "Sunday"
+    ]
+  },
+  "passkeys": {
+    "desktop": {
+      "credentialID": "n_tlDKECPJ7Cz3DbYrplFIlZnqY7u2fSMpFdNd7f0pg",
+      "publicKey": "pQECAyYgASFYINRwzmaSe9aXxzUfUL6cmOVnWRv+RBHgvwwTKdLIDMEOIlgg+VNmU3DGne2Gj5IL8PAyT8zmY80Fe4/WuNvyVNfIp9w=",
+      "counter": 5,
+      "transports": [
+        "internal"
+      ]
+    }
+  },
+  "currentCompanyID": "6112806bc9147f673d28c6eb",
+  "roleID": "697231f6fc7ba4d85eadd350",
+  "AccessibleCompanyID": [
+    "6112806bc9147f673d28c6eb"
+  ],
+  "clientID": [
+    "6112806bc9147f673d28c6ec"
+  ]
+}
