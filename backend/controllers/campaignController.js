@@ -1,12 +1,38 @@
 const Campaign = require('../models/Campaign');
+const User = require('../models/User');
+const Client = require('../models/Client');
 
-// @desc    Get all campaigns for the tenant
+// Helper to get allowed client IDs for user in current company
+const getAllowedClientIds = async (userId, companyId) => {
+    const user = await User.findById(userId).select('clientID');
+    if (!user || !user.clientID || user.clientID.length === 0) return [];
+
+    // Filter those client IDs that actually belong to the current company
+    const validClients = await Client.find({
+        _id: { $in: user.clientID },
+        companyID: companyId
+    }).select('_id');
+
+    return validClients.map(c => c._id);
+};
+
+// @desc    Get all campaigns for the tenant (filtered by user access)
 // @route   GET /api/campaigns
 // @access  Private
 const getCampaigns = async (req, res) => {
     try {
-        const campaigns = await Campaign.find({ companyID: req.user.companyID })
-            .populate('clientID', 'name clientName clientType');
+        const companyID = req.user.currentCompanyID || req.user.companyID;
+        const allowedClients = await getAllowedClientIds(req.user.id, companyID);
+
+        if (allowedClients.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        const campaigns = await Campaign.find({
+            companyID: companyID,
+            clientID: { $in: allowedClients }
+        }).populate('clientID', '_id clientName name clientType clientLogo');
+
         res.status(200).json(campaigns);
     } catch (error) {
         console.error('getCampaigns Error:', error);
@@ -19,11 +45,31 @@ const getCampaigns = async (req, res) => {
 // @access  Private
 const getCampaignStats = async (req, res) => {
     try {
-        const companyID = req.user.companyID;
+        const companyID = req.user.currentCompanyID || req.user.companyID;
+        const allowedClients = await getAllowedClientIds(req.user.id, companyID);
+
+        if (allowedClients.length === 0) {
+            return res.status(200).json({ active: 0, closed: 0, archived: 0 });
+        }
+
+        const query = {
+            companyID: companyID,
+            clientID: { $in: allowedClients }
+        };
+
+        // Filter by specific active client if provided
+        if (req.query.clientID) {
+            // Validate it's in the allowed list
+            const requestedClient = req.query.clientID.toString();
+            const isAllowed = allowedClients.some(c => c.toString() === requestedClient);
+            if (isAllowed) {
+                query.clientID = requestedClient; // Override $in with specific ID
+            }
+        }
 
         // Count Active
         const active = await Campaign.countDocuments({
-            companyID,
+            ...query,
             $or: [
                 { "schemaConfig.mainSchema.status": "Active" },
                 { status: "Active" },
@@ -33,7 +79,7 @@ const getCampaignStats = async (req, res) => {
 
         // Count Closed
         const closed = await Campaign.countDocuments({
-            companyID,
+            ...query,
             $or: [
                 { "schemaConfig.mainSchema.status": "Closed" },
                 { status: "Closed" },
@@ -43,7 +89,7 @@ const getCampaignStats = async (req, res) => {
 
         // Count Archived
         const archived = await Campaign.countDocuments({
-            companyID,
+            ...query,
             $or: [
                 { "schemaConfig.mainSchema.status": "Archived" },
                 { status: "Archived" }
@@ -62,10 +108,17 @@ const getCampaignStats = async (req, res) => {
 // @access  Private
 const getRecentCampaigns = async (req, res) => {
     try {
-        const companyID = req.user.companyID;
+        const companyID = req.user.currentCompanyID || req.user.companyID;
+        const allowedClients = await getAllowedClientIds(req.user.id, companyID);
+
+        if (allowedClients.length === 0) {
+            return res.status(200).json([]);
+        }
+
         // Fetch 5 most recent active campaigns
         const campaigns = await Campaign.find({
-            companyID,
+            companyID: companyID,
+            clientID: { $in: allowedClients },
             $or: [
                 { "schemaConfig.mainSchema.status": "Active" },
                 { status: "Active" },
@@ -87,9 +140,10 @@ const getRecentCampaigns = async (req, res) => {
 // @access  Private
 const getCampaign = async (req, res) => {
     try {
+        const companyID = req.user.currentCompanyID || req.user.companyID;
         const campaign = await Campaign.findOne({
             _id: req.params.id,
-            companyID: req.user.companyID
+            companyID: companyID
         });
 
         if (!campaign) {
@@ -103,16 +157,30 @@ const getCampaign = async (req, res) => {
     }
 };
 
+const Activity = require('../models/Activity');
+
 // @desc    Create new campaign
 // @route   POST /api/campaigns
 // @access  Private
 const createCampaign = async (req, res) => {
     try {
+        const companyID = req.user.currentCompanyID || req.user.companyID;
         // req.body contains flexible schema structure
         const campaign = await Campaign.create({
             ...req.body,
-            companyID: req.user.companyID, // Force company context
+            companyID: companyID, // Force company context
+            userID: req.user.id
             // Ensure schema default structure if needed
+        });
+
+        // Log Activity
+        await Activity.create({
+            companyID: companyID,
+            userID: req.user.id,
+            campaignID: campaign._id,
+            type: 'CAMPAIGN_CREATED',
+            title: 'Campaign Created',
+            description: `Created campaign: ${campaign.title || 'Untitled'}`
         });
 
         res.status(201).json(campaign);
@@ -127,9 +195,10 @@ const createCampaign = async (req, res) => {
 // @access  Private
 const updateCampaign = async (req, res) => {
     try {
+        const companyID = req.user.currentCompanyID || req.user.companyID;
         const campaign = await Campaign.findOne({
             _id: req.params.id,
-            companyID: req.user.companyID
+            companyID: companyID
         });
 
         if (!campaign) {
@@ -154,20 +223,66 @@ const updateCampaign = async (req, res) => {
 // @access  Private
 const deleteCampaign = async (req, res) => {
     try {
+        const companyID = req.user.currentCompanyID || req.user.companyID;
         const campaign = await Campaign.findOne({
             _id: req.params.id,
-            companyID: req.user.companyID
+            companyID: companyID
         });
 
         if (!campaign) {
             return res.status(404).json({ message: 'Campaign not found' });
         }
 
-        await campaign.remove();
+        await campaign.deleteOne();
 
         res.status(200).json({ id: req.params.id });
     } catch (error) {
         console.error(error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
+// @desc    Bulk Update Campaign Status
+// @route   POST /api/campaigns/bulk-status
+// @access  Private
+const bulkUpdateStatus = async (req, res) => {
+    try {
+        const { ids, status } = req.body;
+        const companyID = req.user.currentCompanyID || req.user.companyID;
+
+        if (!ids || !Array.isArray(ids) || !status) {
+            return res.status(400).json({ message: 'Invalid request data' });
+        }
+
+        // Update main status and schemaConfig status
+        const updateResult = await Campaign.updateMany(
+            {
+                _id: { $in: ids },
+                companyID: companyID
+            },
+            {
+                $set: {
+                    status: status,
+                    "schemaConfig.mainSchema.status": status
+                }
+            }
+        );
+
+        // Log Bulk Activity
+        await Activity.create({
+            companyID: companyID,
+            userID: req.user.id,
+            type: 'BULK_UPDATE',
+            title: 'Bulk Status Update',
+            description: `Updated ${updateResult.modifiedCount} campaigns to ${status}`
+        });
+
+        res.status(200).json({
+            message: 'Campaigns updated successfully',
+            count: updateResult.modifiedCount
+        });
+    } catch (error) {
+        console.error('bulkUpdateStatus Error:', error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
@@ -180,4 +295,5 @@ module.exports = {
     createCampaign,
     updateCampaign,
     deleteCampaign,
+    bulkUpdateStatus
 };

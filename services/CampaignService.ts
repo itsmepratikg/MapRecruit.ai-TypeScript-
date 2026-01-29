@@ -1,80 +1,15 @@
 
 import { GenerateJDFormState } from '../components/Campaign/Generator/GenerateJDForm';
-
-// --- Interfaces mirroring MongoDB Schema ---
-
-interface MongoLocation {
-    text: string;
-    city?: string;
-    state?: string;
-    country?: string;
-    postalCode?: string;
-    pin: { lat: number; lon: number };
-    eligibilityCheck: string;
-    circle: { radius: string; metricUnit: string };
-    vacancies: number;
-}
-
-interface MongoSkill {
-    text: string;
-    canonical: string[];
-    eligibilityCheck: string; // "Required" | "Preferred"
-    importance: string; // "High"
-    yearsOfExperienceMin: number;
-    yearsOfExperienceMax: number;
-}
-
-interface MongoSkillGroup {
-    bool: string; // "OR"
-    skills: MongoSkill[];
-}
-
-interface MongoJobDetails {
-    jobTitle: {
-        text: string;
-        jobType: string;
-    };
-    locations: MongoLocation[];
-    offeredSalary: {
-        minvalue: number;
-        maxvalue: number;
-        currency: string;
-        period: string;
-        eligibilityCheck: string;
-        text: string;
-    };
-    workingHours: {
-        minHours: number;
-        maxHours: number;
-        period: string; // "Per Day"
-        daysPeriod: string; // "Per Week"
-        minDays: number;
-        maxDays: number;
-        eligibilityCheck: string;
-    };
-    jobDescription: {
-        text: string; // HTML
-    };
-}
-
-interface MongoJobRequirements {
-    yearsOfExperience: {
-        text: string;
-        minYears: number;
-        maxYears: number;
-        eligibilityCheck: string;
-    };
-    skills: MongoSkillGroup[];
-    // Education can be added here if needed
-}
+import { Campaign, JobDetails, JobRequirements, SkillRequirement } from '../types/Campaign';
 
 export interface CampaignSettings {
     openJob: boolean;
-    visibility: 'All' | 'Few' | 'None';
+    visibility: 'All' | 'Few' | 'None' | "Only Me";
     campaignModules: {
         sourceAI: boolean;
         matchAI: boolean;
         engageAI: boolean;
+        qualifyAI: boolean;
     };
     teams: {
         ownerID: string[];
@@ -87,50 +22,6 @@ export interface CampaignSettings {
         endDate: string;
         jobBoards: string[]; // "LinkedIn", "AppCast", "Indeed"
     }
-}
-
-export interface MongoCampaign {
-    _id?: string;
-    companyID: string;
-    clientID: string;
-    userID: string;
-    title: string;
-    displayName: string;
-    status: string; // "Active"
-    jobStatus: string; // "Active"
-    openJob: boolean;
-    visibility: string;
-    createdAt: string;
-    updatedAt: string;
-    job: {
-        details: MongoJobDetails;
-        requirements: MongoJobRequirements;
-    };
-    teams: {
-        ownerID: string[];
-        managerID: string[];
-        recruiterID: string[];
-    };
-    jobPosting: {
-        enabled: boolean;
-        startDate: string;
-        endDate: string;
-        jobBoards: string[];
-    };
-    campaignModules: {
-        sourceAI: boolean;
-        matchAI: boolean;
-        engageAI: boolean;
-    };
-    // Default Initializations
-    screeningRounds: any[];
-    qualifyingRounds: any[];
-    jobCategory: any[];
-    tags: any[];
-    tagID: any[];
-    packageOpted: string; // "Basic"
-    scheduleFlag: string; // "N"
-    notifications: boolean; // true
 }
 
 // --- Helper Functions ---
@@ -165,53 +56,61 @@ export const CampaignService = {
         descriptionHtml: string,
         settings: CampaignSettings,
         user: any // Current User Session
-    ): MongoCampaign => {
+    ): Partial<Campaign> => {
 
         // 1. Map Skills
-        const mapSkillGroup = (skills: any[], checkType: 'Required' | 'Preferred'): MongoSkillGroup[] => {
-            // UI provides SkillGroup[], where each group is AND logic? OR logic?
-            // Based on logic: UI SkillGroup[] maps to outer [ { bool: "OR", skills: [...] } ]
-            // Assuming UI structure: groups[{ skills: [...] }]
+        const mapSkills = (skills: any[], checkType: 'Required' | 'Preferred'): SkillRequirement[] => {
+            // UI provides grouped skills, we flatten them for the new schema or keep them logic-based?
+            // "Campaign.ts" defines flat SkillRequirement[], but JSONs showed nested structures sometimes.
+            // Requirement was to map "Required" -> "Required", "Important" -> "High".
 
-            return skills.map(group => ({
-                bool: "OR",
-                skills: group.skills.map((skill: any) => ({
-                    text: skill.name,
-                    canonical: [skill.name],
-                    eligibilityCheck: checkType,
-                    importance: "High",
-                    yearsOfExperienceMin: 0,
-                    yearsOfExperienceMax: 50
-                }))
-            }));
+            const flatSkills: SkillRequirement[] = [];
+
+            skills.forEach(group => {
+                if (group.skills) {
+                    group.skills.forEach((skill: any) => {
+                        flatSkills.push({
+                            text: skill.name,
+                            canonical_name: skill.name,
+                            eligibilityCheck: checkType,
+                            importance: "High", // Defaulting to High, could comes from UI
+                            yearsOfExperienceMin: 0,
+                            yearsOfExperienceMax: 50
+                        });
+                    });
+                }
+            });
+            return flatSkills;
         };
 
         const combinedSkills = [
-            ...mapSkillGroup(formData.reqSkills, "Required"),
-            ...mapSkillGroup(formData.prefSkills, "Preferred")
+            ...mapSkills(formData.reqSkills, "Required"),
+            ...mapSkills(formData.prefSkills, "Preferred")
         ];
 
         // 2. Map Locations
-        const mappedLocations: MongoLocation[] = formData.locations.map(loc => ({
-            text: loc.value,
-            // Parsing logic would go here, defaulting for now
-            pin: { lat: 0, lon: 0 },
-            eligibilityCheck: "Required",
-            circle: { radius: "30", metricUnit: "mi" },
-            vacancies: 1
+        const mappedLocations = formData.locations.map(loc => ({
+            city: "", // extracting from text? or leaving empty if not parsed
+            state: "",
+            country: "",
+            location: loc.value
         }));
 
         // 3. Construct Payload
-        const payload: MongoCampaign = {
+        const payload: Partial<Campaign> = {
             companyID: user?.companyId || "", // From Session
             clientID: user?.clientId || "",   // From Session
             userID: user?.id || "",             // Current User
+
             title: campaignTitle,
             displayName: formData.jobTitle || campaignTitle,
+
             status: "Active",
             jobStatus: "Active",
             openJob: settings.openJob,
-            visibility: settings.visibility,
+            visibility: settings.visibility === 'None' ? 'Only Me' : settings.visibility,
+            packageOpted: "Basic",
+
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
 
@@ -220,6 +119,7 @@ export const CampaignService = {
                 managerID: settings.teams.managerID,
                 recruiterID: settings.teams.recruiterID
             },
+            sharedUserID: [], // Initialize empty
 
             jobPosting: {
                 enabled: settings.jobPosting.jobBoards.length > 0,
@@ -228,56 +128,65 @@ export const CampaignService = {
                 jobBoards: settings.jobPosting.jobBoards
             },
 
-            campaignModules: settings.campaignModules,
+            campaignModules: {
+                enabled: true,
+                ...settings.campaignModules
+            },
 
             job: {
                 details: {
                     jobTitle: {
-                        text: formData.jobTitle,
-                        jobType: formData.jobType
+                        text: formData.jobTitle
                     },
                     locations: mappedLocations,
                     offeredSalary: {
-                        minvalue: Number(formData.salary.min) || 0,
-                        maxvalue: Number(formData.salary.max) || 0,
+                        min: Number(formData.salary.min) || 0,
+                        max: Number(formData.salary.max) || 0,
                         currency: formData.salary.currency,
-                        period: formData.salary.period,
-                        eligibilityCheck: "Not Required",
-                        text: `${formData.salary.min}-${formData.salary.max}`
+                        period: formData.salary.period
                     },
                     workingHours: {
-                        minHours: Number(formData.hours.min) || 0,
-                        maxHours: Number(formData.hours.max) || 0,
-                        period: "Per Day",
-                        daysPeriod: "Per Week",
-                        minDays: 5,
-                        maxDays: 6,
-                        eligibilityCheck: "Not Required"
+                        min: Number(formData.hours.min) || 0,
+                        max: Number(formData.hours.max) || 0,
+                        type: "Per Day" // Defaulting
                     },
+                    jobType: formData.jobType,
                     jobDescription: {
                         text: descriptionHtml
                     }
                 },
                 requirements: {
-                    yearsOfExperience: {
-                        text: `${formData.expMin}-${formData.expMax} Years`,
-                        minYears: Number(formData.expMin) || 0,
-                        maxYears: Number(formData.expMax) || 0,
-                        eligibilityCheck: "Required"
-                    },
-                    skills: combinedSkills
+                    skills: combinedSkills,
+                    // Additional legacy buckets
+                    contextualSkills: [],
+                    removedSkills: [],
+                    importantLines: [],
+                    suggestedSkills: []
                 }
             },
 
-            // Defaults
+            // Initializing AI Config
+            MRIPreferences: {
+                experience: { enable: true, weightage: 0.5, matchRelatedEntities: true },
+                skills: { enable: true, weightage: 0.5, matchRelatedEntities: true },
+                education: { enable: true, weightage: 0.5, matchRelatedEntities: true },
+                jobTitle: { enable: true, weightage: 0.5, matchRelatedEntities: true },
+                industry: { enable: true, weightage: 0.5, matchRelatedEntities: true },
+                location: { enable: true, weightage: 0.5, matchRelatedEntities: true },
+                YOE: { minYOE: 0, maxYOE: 50 }
+            },
+
+            // Arrays
             screeningRounds: [],
             qualifyingRounds: [],
-            jobCategory: [],
             tags: [],
-            tagID: [],
-            packageOpted: "Basic",
-            scheduleFlag: "N",
-            notifications: true
+
+            // Stats
+            stats: {
+                netPromoterScore: 0,
+                profilesCount: 0,
+                openings: 1
+            }
         };
 
         return payload;
@@ -286,7 +195,7 @@ export const CampaignService = {
     /**
      * Checks if there are deep changes between original and current campaign data
      */
-    hasChanges: (original: MongoCampaign | null, current: MongoCampaign): boolean => {
+    hasChanges: (original: Campaign | null, current: Partial<Campaign>): boolean => {
         if (!original) return true; // New campaign
         return !deepEqual(original, current);
     },
@@ -294,7 +203,7 @@ export const CampaignService = {
     /**
      * Mock API Call to Save Campaign
      */
-    saveCampaign: async (campaign: MongoCampaign): Promise<{ success: boolean; data?: MongoCampaign, message?: string }> => {
+    saveCampaign: async (campaign: Partial<Campaign>): Promise<{ success: boolean; data?: Campaign, message?: string }> => {
         console.log("Saving Campaign Payload:", JSON.stringify(campaign, null, 2));
 
         // Simulate Network Delay
@@ -303,6 +212,7 @@ export const CampaignService = {
         // Simulate 304 Not Modified logic (if applicable in real API)
         // For creation, it's always new. for edit, we can check updatedAt.
 
-        return { success: true, data: { ...campaign, _id: "new_mock_id_" + Date.now() } };
+        // Cast to full Campaign for return
+        return { success: true, data: { ...campaign, _id: "new_mock_id_" + Date.now() } as Campaign };
     }
 };

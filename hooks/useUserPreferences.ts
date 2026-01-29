@@ -1,9 +1,34 @@
 import { useState, useEffect } from 'react';
-import { DEFAULT_USER_ACCOUNT } from '../data';
 import { userService } from '../services/api';
 import { useToast } from '../components/Toast';
 import { useTranslation } from 'react-i18next';
 import { SUPPORTED_LOCALES } from '../src/i18n';
+
+const DEFAULT_PREFERENCES = {
+  theme: "system",
+  language: "English (US)",
+  languageCode: "en-US",
+  dateFormat: "MM/DD/YYYY",
+  dashboardConfig: {
+    rowHeight: 30,
+    margin: 15,
+    layouts: {
+      desktop: [
+        { "id": "welcome", "x": 0, "y": 0, "w": 4, "h": 10, "visible": true },
+        { "id": "active_campaigns", "x": 4, "y": 0, "w": 2, "h": 4, "visible": true },
+        { "id": "closed_campaigns", "x": 6, "y": 0, "w": 2, "h": 4, "visible": true },
+        { "id": "active_profiles", "x": 8, "y": 0, "w": 2, "h": 4, "visible": true },
+        { "id": "shortlisted", "x": 10, "y": 0, "w": 2, "h": 4, "visible": true },
+        { "id": "alerts", "x": 4, "y": 5, "w": 8, "h": 5, "visible": true },
+        { "id": "trend_graph", "x": 0, "y": 11, "w": 6, "h": 12, "visible": true },
+        { "id": "source_distribution", "x": 6, "y": 11, "w": 6, "h": 12, "visible": true },
+        { "id": "upcoming_interviews", "x": 0, "y": 24, "w": 6, "h": 10, "visible": true },
+        { "id": "email_delivery", "x": 6, "y": 24, "w": 6, "h": 10, "visible": true },
+        { "id": "portal_reports", "x": 0, "y": 34, "w": 12, "h": 8, "visible": true }
+      ]
+    }
+  }
+};
 
 export const useUserPreferences = () => {
 
@@ -12,7 +37,7 @@ export const useUserPreferences = () => {
 
   // --- Helper: Get State from Auth User or Fallback ---
   const getInitialState = () => {
-    if (typeof window === 'undefined') return DEFAULT_USER_ACCOUNT.preferences;
+    if (typeof window === 'undefined') return DEFAULT_PREFERENCES;
 
     // 1. Try Authenticated User (Source of Truth)
     const authUserStr = localStorage.getItem('user');
@@ -26,12 +51,12 @@ export const useUserPreferences = () => {
             // Use languageCode if available, else fallback
             languageCode: user.accessibilitySettings.languageCode || 'en-US',
             dateFormat: user.accessibilitySettings.dateFormat || 'MM/DD/YYYY',
-            language: user.accessibilitySettings.language || DEFAULT_USER_ACCOUNT.preferences.language, // Legacy
+            language: user.accessibilitySettings.language || DEFAULT_PREFERENCES.language, // Legacy
             dashboardConfig: {
-              ...DEFAULT_USER_ACCOUNT.preferences.dashboardConfig,
+              ...DEFAULT_PREFERENCES.dashboardConfig,
               ...(user.accessibilitySettings.dashboardConfig || {}),
               layouts: {
-                ...DEFAULT_USER_ACCOUNT.preferences.dashboardConfig.layouts,
+                ...DEFAULT_PREFERENCES.dashboardConfig.layouts,
                 ...(user.accessibilitySettings.dashboardConfig?.layouts || {})
               }
             }
@@ -49,7 +74,7 @@ export const useUserPreferences = () => {
       }
     } catch (e) { }
 
-    return { ...DEFAULT_USER_ACCOUNT.preferences, languageCode: 'en-US', dateFormat: 'MM/DD/YYYY' };
+    return { ...DEFAULT_PREFERENCES };
   };
 
   const [preferences, setPreferences] = useState(getInitialState);
@@ -85,7 +110,8 @@ export const useUserPreferences = () => {
     } else {
       // Guest Fallback
       localStorage.setItem('userAccount', JSON.stringify({
-        ...DEFAULT_USER_ACCOUNT,
+        id: 'guest',
+        name: 'Guest User',
         preferences: prefsToSave
       }));
     }
@@ -141,7 +167,7 @@ export const useUserPreferences = () => {
 
   const resetDashboard = () => {
     updateLocalState({
-      dashboardConfig: DEFAULT_USER_ACCOUNT.preferences.dashboardConfig
+      dashboardConfig: DEFAULT_PREFERENCES.dashboardConfig
     });
   }
 

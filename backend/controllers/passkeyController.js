@@ -185,9 +185,18 @@ const getAuthenticationOptions = async (req, res) => {
         // Scenario 1: Email provided (Specific User)
         if (email) {
             const user = await User.findOne({ email });
-            const rawPasskeys = user ? saferResolveValues(user.passkeys) : [];
 
-            if (!user || rawPasskeys.length === 0) return res.status(404).json({ message: 'User or passkeys not found' });
+            if (!user) {
+                return res.status(404).json({ message: 'Account not found. Please contact support.' });
+            }
+
+            if (user.status === false) {
+                return res.status(403).json({ message: 'User account is inactive' });
+            }
+
+            const rawPasskeys = saferResolveValues(user.passkeys);
+
+            if (rawPasskeys.length === 0) return res.status(404).json({ message: 'No passkeys found for this account' });
 
             const userPasskeys = [];
             rawPasskeys.forEach(key => {
@@ -280,7 +289,13 @@ const verifyLogin = async (req, res) => {
             });
         }
 
-        if (!user) return res.status(400).json({ message: 'User not found for this passkey' });
+        if (!user) {
+            return res.status(404).json({ message: 'User not found for this passkey' });
+        }
+
+        if (user.status === false) {
+            return res.status(403).json({ message: 'User account is inactive' });
+        }
 
         // Handling the Challenge:
         // If we did Userless flow, we didn't save challenge to User.

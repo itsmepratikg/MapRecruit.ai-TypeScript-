@@ -6,10 +6,19 @@ const {
     createProfile,
     updateProfile,
     deleteProfile,
+    getProfileStats,
+    getFolderMetrics,
+    getArticles,
+    getTags
 } = require('../controllers/profileController');
 const { protect } = require('../middleware/authMiddleware');
 
 const { tenantGuard } = require('../middleware/guardMiddleware');
+
+router.get('/stats', protect, getProfileStats);
+router.get('/folder-metrics', protect, getFolderMetrics);
+router.get('/articles', protect, getArticles);
+router.get('/tags', protect, getTags);
 
 router.route('/')
     .get(protect, getProfiles)

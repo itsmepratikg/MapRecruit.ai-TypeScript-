@@ -7,6 +7,7 @@ import { useUserPreferences } from '../hooks/useUserPreferences';
 import { useScreenSize } from '../hooks/useScreenSize';
 import { useTranslation } from 'react-i18next';
 import { campaignService } from '../services/api';
+import api from '../services/api';
 
 interface HomeProps {
     onNavigate: (tab: string) => void;
@@ -17,13 +18,28 @@ export const Home = ({ onNavigate }: HomeProps) => {
     const gridRef = useRef<GridStack | null>(null);
     const { dashboardLayouts } = useUserPreferences();
     const { isMobile, isTablet } = useScreenSize();
-    const [counts, setCounts] = useState({ active: 0, closed: 0, archived: 0 });
+    const [counts, setCounts] = useState({ active: 0, closed: 0, archived: 0, profiles: 0, shortlisted: 0 });
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const data = await campaignService.getStats();
-                setCounts(data);
+                // Fetch Campaign Stats
+                const campStats = await campaignService.getStats();
+
+                // Fetch Profile Stats
+                let profileCount = 0;
+                try {
+                    const profileStats = await api.get('/profiles/stats');
+                    profileCount = profileStats.data.totalProfiles || 0;
+                } catch (e) {
+                    console.warn("Failed to fetch profiles for stats", e);
+                }
+
+                setCounts({
+                    ...campStats,
+                    profiles: profileCount,
+                    shortlisted: 0 // Placeholder
+                });
             } catch (err) {
                 console.error("Failed to fetch dashboard stats:", err);
             }

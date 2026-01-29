@@ -1,5 +1,5 @@
 const express = require('express');
-const router = express.Namespace ? express.Namespace() : express.Router();
+const router = express.Router();
 const { getActivities, logActivity } = require('../controllers/activityController');
 const { protect } = require('../middleware/authMiddleware');
 

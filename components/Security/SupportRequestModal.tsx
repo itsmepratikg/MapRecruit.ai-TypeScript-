@@ -183,9 +183,9 @@ export const SupportRequestModal: React.FC<SupportRequestModalProps> = ({
                                             'bold italic forecolor | alignleft aligncenter ' +
                                             'alignright alignjustify | bullist numlist outdent indent | ' +
                                             'removeformat | help',
-                                        content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; background-color: transparent; }',
-                                        skin: 'oxide-dark',
-                                        content_css: 'dark',
+                                        content_style: 'body { font-family:Inter,Helvetica,Arial,sans-serif; font-size:14px; color: #000000 !important; background-color: #ffffff !important; }',
+                                        skin: 'oxide',
+                                        content_css: 'default',
                                         branding: false,
                                         statusbar: false
                                     }}

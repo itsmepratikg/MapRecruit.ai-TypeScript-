@@ -12,6 +12,7 @@ import { AdvancedSearchModal } from './AdvancedSearchModal';
 
 import { useNavigate } from 'react-router-dom';
 import { useCandidates } from '../hooks/useCandidates';
+import { userService } from '../services/api';
 
 export const QUICK_FILTERS = [
   { label: "⚡ Immediate Start", value: "Immediate" },
@@ -320,6 +321,7 @@ export const TalentSearchEngine: React.FC<{
     let newKeywords = [...searchState.searchKeywords];
     if (term && !newKeywords.includes(term)) {
       newKeywords.push(term);
+      userService.logRecentSearch(newKeywords).catch(console.error);
     }
 
     const newState = {
@@ -336,7 +338,7 @@ export const TalentSearchEngine: React.FC<{
       if (isAiEnabled && term) {
         newMessages.push({
           id: Date.now(),
-          text: `I've added "${term}" to your filters. Found ${MOCK_PROFILES.length} profiles initially. Refine further below:`,
+          text: `I've added "${term}" to your filters. Found ${candidates.length} profiles initially. Refine further below:`,
           suggestions: [
             { label: "Require Forklift Cert", action: () => toggleFilter("Forklift Certified") },
             { label: "Show Supervisors", action: () => toggleFilter("Warehouse Supervisor") },
@@ -603,6 +605,22 @@ export const TalentSearchEngine: React.FC<{
                         <span className="absolute top-[-4px] right-[-4px] w-3 h-3 bg-green-600 rounded-full border-2 border-white dark:border-slate-800"></span>
                       )}
                     </button>
+                    {(searchState.activeFilters.length > 0 || searchState.searchKeywords.length > 0) && (
+                      <button
+                        onClick={() => {
+                          const name = prompt("Enter a name for this search:");
+                          if (name) {
+                            userService.saveSearch(name, {
+                              filters: searchState.activeFilters,
+                              keywords: searchState.searchKeywords
+                            }).then(() => alert("Search saved!")).catch(console.error);
+                          }
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors bg-white dark:bg-slate-800 shadow-sm text-xs font-medium"
+                      >
+                        <Bookmark size={14} /> Save Search
+                      </button>
+                    )}
                   </div>
 
                   <p className="text-gray-500 dark:text-slate-400 text-sm">

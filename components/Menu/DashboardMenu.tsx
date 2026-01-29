@@ -4,6 +4,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Briefcase, Users, BarChart2, Settings, ChevronRight, MessageSquare, User } from '../Icons';
 import { NavItem } from './NavItem';
 import { CampaignMenuContent, ProfilesMenuContent, SettingsMenuContent, TalentChatMenuContent } from './Flyouts';
+import { getProfileViewPath } from './constants';
 import { useScreenSize } from '../../hooks/useScreenSize';
 import { Portal } from './Portal';
 
@@ -165,9 +166,10 @@ export const DashboardMenu = ({
                         >
                             <ProfilesMenuContent
                                 onNavigate={(id) => {
-                                    // onNavigate('PROFILES'); // No longer needed if linking
-                                    setActiveProfileSubView(id); // Still needed for sub-view state if not fully routed (profiles sub-view might be query param or sub-route)
-                                    // Ideally we navigate to /profiles?view=SEARCH
+                                    // id is like "SEARCH" or "NEW_LOCAL"
+                                    const path = getProfileViewPath(id);
+                                    navigate(`/profiles/view/${path}`);
+                                    setActiveProfileSubView(id);
                                 }}
                                 onClose={closePopover}
                                 activeView={isActiveProfile ? activeProfileSubView : ''}
@@ -240,8 +242,17 @@ export const DashboardMenu = ({
                             onMouseLeave={handlePopoverLeave}
                         >
                             <TalentChatMenuContent
-                                onNavigate={(tabId) => {
-                                    setActiveTalentChatTab(tabId);
+                                onNavigate={(id) => {
+                                    // id is like "CONVERSATIONS"
+                                    const map: Record<string, string> = {
+                                        'CONVERSATIONS': 'Conversations',
+                                        'KEYWORDS': 'Keywords',
+                                        'SCHEDULES': 'Schedules',
+                                        'ANALYTICS': 'Analytics',
+                                    };
+                                    const path = map[id] || id;
+                                    navigate(`/talent-chat/${path}`);
+                                    setActiveTalentChatTab(id);
                                 }}
                                 onClose={closePopover}
                                 activeTab={isActiveTalentChat ? activeTalentChatTab : ''}

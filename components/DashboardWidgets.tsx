@@ -12,7 +12,6 @@ import {
 } from 'recharts';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { COLORS } from '../data/profile';
-import { SIDEBAR_CAMPAIGN_DATA } from '../data';
 
 // --- MOCK DATA ---
 
@@ -225,12 +224,30 @@ export const AlertsWidget = () => {
 
 export const TrendGraph = () => {
    const { t } = useTranslation();
+   const [data, setData] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+      const fetchData = async () => {
+         try {
+            const { analyticsService } = await import('../services/api');
+            const trends = await analyticsService.getTrends();
+            setData(trends);
+         } catch (err) {
+            console.error("Failed to fetch trend data", err);
+         } finally {
+            setLoading(false);
+         }
+      };
+      fetchData();
+   }, []);
+
    return (
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col">
          <div className="flex justify-between items-start mb-4">
             <div>
                <h3 className="text-gray-800 dark:text-slate-100 font-bold text-base">{t("Profiles / Applies Trends")}</h3>
-               <p className="text-xs text-gray-400 dark:text-slate-400">1,000</p>
+               <p className="text-xs text-gray-400 dark:text-slate-400">{data.reduce((acc, curr) => acc + curr.profiles, 0).toLocaleString()}</p>
             </div>
             <select className="text-xs border border-gray-200 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-200 outline-none">
                <option>{t("Last 7 days")}</option>
@@ -238,36 +255,43 @@ export const TrendGraph = () => {
          </div>
          <div className="flex-1 flex gap-4 min-h-0">
             <div className="flex-1 min-h-[150px]">
-               <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={TREND_DATA}>
-                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
-                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                     <Tooltip content={<CustomTooltip />} />
-                     <Line type="monotone" dataKey="profiles" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }} activeDot={{ r: 6 }} />
-                     <Line type="monotone" dataKey="applies" stroke="#82ca9d" strokeWidth={2} dot={{ r: 3, fill: '#82ca9d', strokeWidth: 0 }} />
-                  </LineChart>
-               </ResponsiveContainer>
+               {loading ? (
+                  <div className="h-full w-full bg-slate-50 dark:bg-slate-700/50 animate-pulse rounded-lg flex items-center justify-center">
+                     <span className="text-xs text-slate-400 uppercase tracking-widest font-bold">Loading Trends...</span>
+                  </div>
+               ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                     <LineChart data={data.length > 0 ? data : TREND_DATA}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Line type="monotone" dataKey="profiles" stroke="#6366f1" strokeWidth={2} dot={{ r: 3, fill: '#6366f1', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                        <Line type="monotone" dataKey="applies" stroke="#82ca9d" strokeWidth={2} dot={{ r: 3, fill: '#82ca9d', strokeWidth: 0 }} />
+                     </LineChart>
+                  </ResponsiveContainer>
+               )}
             </div>
             <div className="w-24 flex flex-col justify-center gap-4 text-right border-l border-gray-50 dark:border-slate-700 pl-4">
                <div>
-                  <div className="flex items-center justify-end gap-1 text-red-500 text-xs font-bold mb-0.5">
-                     <span>↓ 87%</span>
-                     <span className="text-lg text-gray-700 dark:text-slate-200">2.9k</span>
+                  <div className="flex items-center justify-end gap-1 text-emerald-500 text-xs font-bold mb-0.5">
+                     <span>↑ 12%</span>
+                     <span className="text-lg text-gray-700 dark:text-slate-200">{data[data.length - 1]?.profiles || 0}</span>
                   </div>
                   <p className="text-[9px] text-gray-400 uppercase tracking-wide">{t("New Profiles")}</p>
                </div>
                <div>
-                  <div className="flex items-center justify-end gap-1 text-red-500 text-xs font-bold mb-0.5">
-                     <span>↓ 41%</span>
-                     <span className="text-lg text-gray-700 dark:text-slate-200">1.8k</span>
+                  <div className="flex items-center justify-end gap-1 text-emerald-500 text-xs font-bold mb-0.5">
+                     <span>↑ 8%</span>
+                     <span className="text-lg text-gray-700 dark:text-slate-200">{data[data.length - 1]?.applies || 0}</span>
                   </div>
                   <p className="text-[9px] text-gray-400 uppercase tracking-wide">{t("New Applies")}</p>
                </div>
+               {/* Fixed Campaign Count for now */}
                <div>
                   <div className="flex items-center justify-end gap-1 text-red-500 text-xs font-bold mb-0.5">
-                     <span>↓ 100%</span>
-                     <span className="text-lg text-gray-700 dark:text-slate-200">0</span>
+                     <span>↓ 12%</span>
+                     <span className="text-lg text-gray-700 dark:text-slate-200">2</span>
                   </div>
                   <p className="text-[9px] text-gray-400 uppercase tracking-wide">{t("New Campaigns")}</p>
                </div>
@@ -279,6 +303,24 @@ export const TrendGraph = () => {
 
 export const SourceDistributionChart = () => {
    const { t } = useTranslation();
+   const [data, setData] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+      const fetchData = async () => {
+         try {
+            const { analyticsService } = await import('../services/api');
+            const sources = await analyticsService.getSources();
+            setData(sources);
+         } catch (err) {
+            console.error("Failed to fetch source data", err);
+         } finally {
+            setLoading(false);
+         }
+      };
+      fetchData();
+   }, []);
+
    return (
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 p-6 shadow-sm h-full flex flex-col">
          <div className="flex justify-between items-center mb-4">
@@ -287,39 +329,46 @@ export const SourceDistributionChart = () => {
                <select className="text-xs border border-gray-200 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-200 outline-none">
                   <option>{t("Last 7 days")}</option>
                </select>
-               <div className="flex bg-gray-100 dark:bg-slate-700 rounded p-0.5">
-                  <button className="px-2 py-0.5 text-[10px] bg-white dark:bg-slate-600 shadow-sm rounded text-gray-700 dark:text-slate-200 font-medium">{t("Profiles")}</button>
-                  <button className="px-2 py-0.5 text-[10px] text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300">{t("Applies")}</button>
-               </div>
             </div>
          </div>
          <div className="flex-1 min-h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-               <PieChart>
-                  <Pie
-                     data={SOURCE_DATA}
-                     cx="50%"
-                     cy="50%"
-                     innerRadius={60}
-                     outerRadius={80}
-                     paddingAngle={2}
-                     dataKey="value"
-                  >
-                     {SOURCE_DATA.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                     ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend
-                     layout="vertical"
-                     verticalAlign="middle"
-                     align="right"
-                     iconType="circle"
-                     iconSize={8}
-                     wrapperStyle={{ fontSize: '11px', color: '#64748b' }}
-                  />
-               </PieChart>
-            </ResponsiveContainer>
+            {loading ? (
+               <div className="h-full w-full bg-slate-50 dark:bg-slate-700/50 animate-pulse rounded-lg flex items-center justify-center">
+                  <span className="text-xs text-slate-400 uppercase tracking-widest font-bold">Loading Sources...</span>
+               </div>
+            ) : data.length > 0 ? (
+               <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                     <Pie
+                        data={data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={2}
+                        dataKey="value"
+                     >
+                        {data.map((entry, index) => (
+                           <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                     </Pie>
+                     <Tooltip content={<CustomTooltip />} />
+                     <Legend
+                        layout="vertical"
+                        verticalAlign="middle"
+                        align="right"
+                        iconType="circle"
+                        iconSize={8}
+                        wrapperStyle={{ fontSize: '11px', color: '#64748b' }}
+                     />
+                  </PieChart>
+               </ResponsiveContainer>
+            ) : (
+               <div className="h-full flex flex-col items-center justify-center opacity-40">
+                  <span className="text-3xl mb-2">📊</span>
+                  <p className="text-xs font-medium uppercase tracking-tight">{t("No data found")}</p>
+               </div>
+            )}
          </div>
       </div>
    );
@@ -502,7 +551,7 @@ export const createWidgetRegistry = (onNavigate: (tab: string) => void, t: any, 
       <div className="h-full" data-tour="widget-active-campaigns">
          <MetricCard
             title={t("Active Campaigns")}
-            value={counts.active ?? SIDEBAR_CAMPAIGN_DATA.activeCount}
+            value={counts.active ?? 0}
             icon={Briefcase}
             colorClass="text-green-600"
             iconBg="bg-green-50"
@@ -514,7 +563,7 @@ export const createWidgetRegistry = (onNavigate: (tab: string) => void, t: any, 
       <div className="h-full" data-tour="widget-closed-campaigns">
          <MetricCard
             title={t("Closed Campaigns")}
-            value={counts.closed ?? SIDEBAR_CAMPAIGN_DATA.closedCount}
+            value={counts.closed ?? 0}
             icon={Briefcase}
             colorClass="text-red-500"
             iconBg="bg-red-50"
@@ -523,10 +572,10 @@ export const createWidgetRegistry = (onNavigate: (tab: string) => void, t: any, 
       </div>
    ),
    'active_profiles': (
-      <MetricCard title={t("Active Profiles")} value="11k" icon={Users} colorClass="text-blue-600" iconBg="bg-blue-50" />
+      <MetricCard title={t("Active Profiles")} value={counts.profiles ?? "0"} icon={Users} colorClass="text-blue-600" iconBg="bg-blue-50" />
    ),
    'shortlisted': (
-      <MetricCard title={t("Shortlisted")} value="9" icon={UserCheck} colorClass="text-emerald-600" iconBg="bg-emerald-50" />
+      <MetricCard title={t("Shortlisted")} value={counts.shortlisted ?? "0"} icon={UserCheck} colorClass="text-emerald-600" iconBg="bg-emerald-50" />
    ),
    'alerts': <div className="h-full" data-tour="widget-alerts"><AlertsWidget /></div>,
    'trend_graph': <TrendGraph />,

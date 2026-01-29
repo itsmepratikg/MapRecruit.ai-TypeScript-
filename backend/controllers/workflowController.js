@@ -36,7 +36,7 @@ const getWorkflow = async (req, res) => {
 // @access  Private
 const saveWorkflow = async (req, res) => {
     try {
-        const { campaignID, name, nodes, edges } = req.body;
+        const { campaignID, name, nodes, edges, jobFitPreferences, sharedWith } = req.body;
         const companyID = req.user.companyID;
 
         let workflow = await Workflow.findOne({ campaignID, companyID });
@@ -45,6 +45,8 @@ const saveWorkflow = async (req, res) => {
             workflow.nodes = nodes;
             workflow.edges = edges;
             workflow.name = name || workflow.name;
+            if (jobFitPreferences) workflow.jobFitPreferences = jobFitPreferences;
+            if (sharedWith) workflow.sharedWith = sharedWith;
             await workflow.save();
         } else {
             workflow = await Workflow.create({
@@ -52,7 +54,9 @@ const saveWorkflow = async (req, res) => {
                 campaignID,
                 name: name || 'Untitled Workflow',
                 nodes,
-                edges
+                edges,
+                jobFitPreferences,
+                sharedWith
             });
         }
 

@@ -7,7 +7,7 @@ import {
     Activity, History, Bell, HelpCircle, Globe, Building2, Check
 } from '../Icons';
 import { SIDEBAR_CAMPAIGN_DATA, GLOBAL_CAMPAIGNS } from '../../data';
-import { PROFILES_CATEGORIES, SETTINGS_CATEGORIES, TALENT_CHAT_MENU } from './constants';
+import { PROFILES_CATEGORIES, SETTINGS_CATEGORIES, TALENT_CHAT_MENU, getProfileViewPath } from './constants';
 import { COLORS } from '../../data/profile';
 import { Campaign } from '../../types';
 import { campaignService, authService } from '../../services/api';
@@ -16,7 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { HoverMenu } from '../Campaign/HoverMenu';
 
 // --- Client Menu ---
-export const ClientMenuContent = ({ activeClient, clients, onSwitchClient, onClose }: { activeClient: string, clients: any[], onSwitchClient: (client: string) => void, onClose: () => void }) => {
+export const ClientMenuContent = ({ activeClient, activeClientId, clients, onSwitchClient, onClose }: { activeClient: string, activeClientId?: string, clients: any[], onSwitchClient: (client: string) => void, onClose: () => void }) => {
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -99,11 +99,15 @@ export const ClientMenuContent = ({ activeClient, clients, onSwitchClient, onClo
                             </div>
                         )}
                         {groupedClients[group].map((client: any) => {
-                            const isActive = client.name === activeClient;
+                            // Robust isActive Check: matches ID first, then Name
+                            const isIdMatch = activeClientId && client.data?._id && client.data._id.toString() === activeClientId.toString();
+                            const isNameMatch = client.name === activeClient;
+                            const isActive = isIdMatch || (!activeClientId && isNameMatch);
+
                             return (
                                 <button
                                     key={client.name}
-                                    onClick={() => onSwitchClient(client.name)}
+                                    onClick={() => onSwitchClient(client.data?._id || client.data?.id || client.name)}
                                     className={`w-full text-left px-3 py-2.5 text-xs rounded-lg flex items-center justify-between font-bold transition-all duration-200 ${isActive ? 'text-indigo-700 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/20 ring-1 ring-indigo-200 dark:ring-indigo-800' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:text-indigo-600 dark:hover:text-indigo-400 border border-transparent'}`}
                                 >
                                     <div className="flex items-center gap-2">
@@ -451,7 +455,7 @@ export const CampaignMenuContent = ({
                 const { clientService } = await import('../../services/api');
 
                 // Fetch Stats
-                const statsData = await campaignService.getStats();
+                const statsData = await campaignService.getStats(activeClient);
                 setCounts(statsData);
 
                 // Fetch Clients to map Types
@@ -476,7 +480,7 @@ export const CampaignMenuContent = ({
             }
         };
         fetchSidebarData();
-    }, []);
+    }, [activeClient]);
 
     const groupedCampaigns = useMemo(() => {
         // 1. Group by CLIENT
@@ -489,7 +493,7 @@ export const CampaignMenuContent = ({
             const campData = {
                 id: camp._id?.$oid || camp._id || camp.id,
                 name: camp.schemaConfig?.mainSchema?.title || camp.title || t('Untitled'),
-                jobId: camp.migrationMeta?.jobID || '---'
+                jobId: camp.passcode || camp.migrationMeta?.jobID || '---'
             };
 
             if (existing) {
@@ -732,22 +736,7 @@ export const SettingsMenuContent = ({
 // --- Profiles Menu ---
 export const ProfilesMenuContent = ({ onNavigate, onClose, activeView }: { onNavigate: (view: string) => void, onClose: () => void, activeView: string }) => {
     const { t } = useTranslation();
-    const getPath = (id: string) => {
-        const map: Record<string, string> = {
-            'SEARCH': 'Search',
-            'FOLDERS': 'Folders',
-            'TAGS': 'Tags',
-            'SHARED': 'Shared',
-            'FAVORITES': 'Favorites',
-            'DUPLICATES': 'Duplicates',
-            'LOCAL': 'Local',
-            'NEW_APPLIES': 'NewApplies',
-            'OPEN_APPLIES': 'OpenApplies',
-            'NEW_LOCAL': 'NewLocal',
-            'INTERVIEW_STATUS': 'InterviewStatus',
-        };
-        return map[id] || id;
-    };
+    const getPath = getProfileViewPath;
 
     const initialCategory = useMemo(() => {
         const found = PROFILES_CATEGORIES.find(cat => cat.items.some(item => item.id === activeView));
@@ -784,7 +773,7 @@ export const ProfilesMenuContent = ({ onNavigate, onClose, activeView }: { onNav
                                             return (
                                                 <button
                                                     key={item.id}
-                                                    onClick={(e) => { e.stopPropagation(); onNavigate(`/profiles/view/${path}`); onClose(); }}
+                                                    onClick={(e) => { e.stopPropagation(); onNavigate(item.id); onClose(); }}
                                                     className={`w-full text-left pl-6 pr-3 py-2 text-xs flex items-center gap-2 transition-colors rounded-md ${activeView === item.id ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-medium' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
                                                 >
                                                     <item.icon size={14} className={activeView === item.id ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />
@@ -838,7 +827,7 @@ export const TalentChatMenuContent = ({
                         return (
                             <button
                                 key={item.id}
-                                onClick={(e) => { e.stopPropagation(); onNavigate(`/talent-chat/${path}`); onClose(); }}
+                                onClick={(e) => { e.stopPropagation(); onNavigate(item.id); onClose(); }}
                                 className={`w-full text-left px-4 py-2.5 text-xs flex items-center gap-2 transition-colors rounded-md ${activeTab === item.id ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-medium' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
                             >
                                 <item.icon size={14} className={activeTab === item.id ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"} />

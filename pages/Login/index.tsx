@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
     Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle,
     Fingerprint, Globe, Shield, Command, Building2
@@ -10,6 +11,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { useMsal } from '@azure/msal-react';
 import { authService, passkeyService } from '../../services/api';
 import { startAuthentication } from '@simplewebauthn/browser';
+import { SupportRequestModal } from '../../components/Security/SupportRequestModal';
 
 interface LoginProps {
     onLogin: () => void;
@@ -19,11 +21,13 @@ export const Login = ({ onLogin }: LoginProps) => {
     const { t } = useTranslation();
     const { addToast, addPromise } = useToast();
     const { instance } = useMsal();
+    const navigate = useNavigate();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isSupportOpen, setIsSupportOpen] = useState(false);
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,19 +38,23 @@ export const Login = ({ onLogin }: LoginProps) => {
 
         setIsLoading(true);
 
-        const loginAction = async () => {
-            await authService.login(email, password);
-        };
-
         try {
-            await addPromise(loginAction(), {
-                loading: t('Authenticating with Backend...'),
-                success: t('Successfully logged in!'),
-                error: t('Authentication failed. Please check credentials.')
-            });
+            await authService.login(email, password);
+            addToast(t('Successfully logged in!'), "success");
             onLogin();
-        } catch (error) {
-            console.error(error);
+        } catch (error: any) {
+            const status = error.response?.status;
+            const message = error.response?.data?.message || "";
+
+            if (status === 404) {
+                addToast(t("Account not found. Please check with the support team."), "error");
+                setIsSupportOpen(true); // Open modal for 404 as requested
+            } else if (status === 403 || status === 401) {
+                addToast(message || t("Authentication failed."), "error");
+                setIsSupportOpen(true);
+            } else {
+                addToast(t("An unexpected error occurred. Please try again later."), "error");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -62,8 +70,6 @@ export const Login = ({ onLogin }: LoginProps) => {
         setIsLoading(true);
         try {
             // 1. Get authentication options from server (email optional)
-            // If email is provided -> User Verification
-            // If email is NOT provided -> User Identification (Resident Key)
             const options = await passkeyService.getAuthenticationOptions(email || undefined);
 
             // 2. Start WebAuthn authentication
@@ -72,21 +78,23 @@ export const Login = ({ onLogin }: LoginProps) => {
             });
 
             // 3. Verify response with server
-            const loginAction = async () => {
-                await passkeyService.verifyLogin(email || undefined, credential);
-            };
-
-            await addPromise(loginAction(), {
-                loading: t('Verifying passkey...'),
-                success: t('Authenticated with Passkey!'),
-                error: t('Passkey verification failed.')
-            });
-
+            await passkeyService.verifyLogin(email || undefined, credential);
+            addToast(t('Authenticated with Passkey!'), "success");
             onLogin();
+
         } catch (err: any) {
             console.error("Passkey Auth Error:", err);
-            // Handle specific WebAuthn errors
-            if (err.name === 'NotAllowedError') {
+
+            const status = err.response?.status;
+            const message = err.response?.data?.message || "";
+
+            if (status === 404) {
+                addToast(t("Account not found. Please check with the support team."), "error");
+                setIsSupportOpen(true);
+            } else if (status === 403 || status === 401) {
+                addToast(message || t("Passkey authentication failed."), "error");
+                setIsSupportOpen(true);
+            } else if (err.name === 'NotAllowedError') {
                 addToast(t("Passkey authentication was cancelled."), "info");
             } else {
                 addToast(t("Passkey authentication failed. Please try again or use password."), "error");
@@ -95,6 +103,8 @@ export const Login = ({ onLogin }: LoginProps) => {
             setIsLoading(false);
         }
     };
+
+
 
     const loginWithGoogle = useGoogleLogin({
         onSuccess: (tokenResponse) => {
@@ -114,13 +124,19 @@ export const Login = ({ onLogin }: LoginProps) => {
                 error: t('Google login failed.')
             }).then(() => {
                 onLogin();
+            }).catch(() => {
+                setIsSupportOpen(true);
             }).finally(() => {
                 setIsLoading(false);
             });
         },
         onError: (errorResponse) => {
             console.error("Google Login Error:", errorResponse);
-            addToast(t("Google Sign-In failed. Please try again."), "error");
+            // Don't open support if user just closed the popup
+            if (errorResponse.error !== 'popup_closed_by_user') {
+                addToast(t("Google Sign-In failed. Please try again."), "error");
+                setIsSupportOpen(true);
+            }
             setIsLoading(false);
         }
     });
@@ -148,9 +164,14 @@ export const Login = ({ onLogin }: LoginProps) => {
             });
 
             onLogin();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Microsoft Login Error:", error);
-            addToast(t("Microsoft Sign-In failed. Please try again."), "error");
+            // Don't open support if user cancelled the login
+            const isCancelled = error.name === 'BrowserAuthError' && error.errorCode === 'user_cancelled';
+            if (!isCancelled) {
+                addToast(t("Microsoft Sign-In failed. Please try again."), "error");
+                setIsSupportOpen(true);
+            }
         } finally {
             setIsLoading(false);
         }
@@ -325,6 +346,14 @@ export const Login = ({ onLogin }: LoginProps) => {
                     </div>
                 </div>
             </div>
+            <SupportRequestModal
+                isOpen={isSupportOpen}
+                onClose={() => setIsSupportOpen(false)}
+                userId={email || 'Unknown'}
+                currentUrl={window.location.href}
+                activeClientID="Unknown"
+                activeCompanyID="Unknown"
+            />
         </div>
     );
 };

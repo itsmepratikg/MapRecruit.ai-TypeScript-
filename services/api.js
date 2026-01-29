@@ -88,6 +88,31 @@ export const userService = {
     resetPassword: async (id) => {
         const response = await api.post(`/users/${id}/reset-password`);
         return response.data;
+    },
+    // Activity Endpoints
+    getRecentSearches: async () => {
+        const response = await api.get('/users/recent-searches');
+        return response.data;
+    },
+    logRecentSearch: async (terms) => {
+        const response = await api.post('/users/recent-searches', { terms });
+        return response.data;
+    },
+    getSavedSearches: async () => {
+        const response = await api.get('/users/saved-searches');
+        return response.data;
+    },
+    saveSearch: async (name, filters) => {
+        const response = await api.post('/users/saved-searches', { name, filters });
+        return response.data;
+    },
+    getRecentVisits: async () => {
+        const response = await api.get('/users/recent-visits');
+        return response.data;
+    },
+    logVisit: async (type, referenceID, title) => {
+        const response = await api.post('/users/recent-visits', { type, referenceID, title });
+        return response.data;
     }
 };
 
@@ -96,8 +121,9 @@ export const campaignService = {
         const response = await api.get('/campaigns');
         return response.data;
     },
-    getStats: async () => {
-        const response = await api.get('/campaigns/stats');
+    getStats: async (clientID) => {
+        const params = clientID ? { clientID } : {};
+        const response = await api.get('/campaigns/stats', { params });
         return response.data;
     },
     getRecent: async () => {
@@ -106,6 +132,10 @@ export const campaignService = {
     },
     create: async (campaignData) => {
         const response = await api.post('/campaigns', campaignData);
+        return response.data;
+    },
+    bulkUpdateStatus: async (ids, status) => {
+        const response = await api.post('/campaigns/bulk-status', { ids, status });
         return response.data;
     },
 };
@@ -122,8 +152,8 @@ export const clientService = {
 };
 
 export const profileService = {
-    getAll: async () => {
-        const response = await api.get('/profiles');
+    getAll: async (params) => {
+        const response = await api.get('/profiles', { params });
         return response.data;
     },
     getById: async (id) => {
@@ -136,6 +166,22 @@ export const profileService = {
     },
     update: async (id, profileData) => {
         const response = await api.put(`/profiles/${id}`, profileData);
+        return response.data;
+    },
+    getArticles: async () => {
+        const response = await api.get('/profiles/articles');
+        return response.data;
+    },
+    getTags: async () => {
+        const response = await api.get('/profiles/tags');
+        return response.data;
+    },
+    getStats: async () => {
+        const response = await api.get('/profiles/stats');
+        return response.data;
+    },
+    getFolderMetrics: async () => {
+        const response = await api.get('/profiles/folder-metrics');
         return response.data;
     }
 };
@@ -195,6 +241,36 @@ export const activityService = {
     },
     log: async (data) => {
         const response = await api.post('/activities', data);
+        return response.data;
+    }
+};
+
+export const analyticsService = {
+    getTrends: async () => {
+        const response = await api.get('/analytics/trends');
+        return response.data;
+    },
+    getSources: async () => {
+        const response = await api.get('/analytics/sources');
+        return response.data;
+    }
+};
+
+export const libraryService = {
+    getAll: async (params) => {
+        const response = await api.get('/library', { params });
+        return response.data;
+    },
+    create: async (data) => {
+        const response = await api.post('/library', data);
+        return response.data;
+    },
+    update: async (id, data) => {
+        const response = await api.put(`/library/${id}`, data);
+        return response.data;
+    },
+    delete: async (id) => {
+        const response = await api.delete(`/library/${id}`);
         return response.data;
     }
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronLeft } from '../Icons';
 import { NavItem } from './NavItem';
-import { PROFILES_CATEGORIES } from './constants';
+import { PROFILES_CATEGORIES, getProfileViewPath } from './constants';
 import { useScreenSize } from '../../hooks/useScreenSize';
 import { useLocation } from 'react-router-dom';
 
@@ -22,22 +22,7 @@ export const ProfilesMenu = ({
     const { isDesktop } = useScreenSize();
     const location = useLocation();
 
-    const getPath = (id: string) => {
-        const map: Record<string, string> = {
-            'SEARCH': 'Search',
-            'FOLDERS': 'Folders',
-            'TAGS': 'Tags',
-            'SHARED': 'Shared',
-            'FAVORITES': 'Favorites',
-            'DUPLICATES': 'Duplicates',
-            'LOCAL': 'Local',
-            'NEW_APPLIES': 'NewApplies',
-            'OPEN_APPLIES': 'OpenApplies',
-            'NEW_LOCAL': 'NewLocal',
-            'INTERVIEW_STATUS': 'InterviewStatus',
-        };
-        return map[id] || id;
-    };
+    const getPath = getProfileViewPath;
 
     const currentPath = location.pathname.split('/profiles/view/')[1] || 'Search';
 

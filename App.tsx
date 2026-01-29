@@ -10,6 +10,7 @@ const Campaigns = React.lazy(() => import('./pages/Campaigns/index').then(module
 const Metrics = React.lazy(() => import('./pages/Metrics').then(module => ({ default: module.Metrics })));
 const CandidateProfile = React.lazy(() => import('./pages/CandidateProfile').then(module => ({ default: module.CandidateProfile })));
 const CampaignDashboard = React.lazy(() => import('./pages/Campaign/index').then(module => ({ default: module.CampaignDashboard })));
+const CampaignExternalRoutes = React.lazy(() => import('./pages/Campaign/CampaignExternalRoutes').then(module => ({ default: module.CampaignExternalRoutes })));
 const SettingsPage = React.lazy(() => import('./pages/Settings/index').then(module => ({ default: module.SettingsPage })));
 const MyAccount = React.lazy(() => import('./pages/MyAccount/index').then(module => ({ default: module.MyAccount })));
 const Login = React.lazy(() => import('./pages/Login/index').then(module => ({ default: module.Login })));
@@ -17,6 +18,7 @@ const Activities = React.lazy(() => import('./pages/Activities/index').then(modu
 const PreviousHistory = React.lazy(() => import('./pages/PreviousHistory/index').then(module => ({ default: module.PreviousHistory })));
 const Notifications = React.lazy(() => import('./pages/Notifications/index').then(module => ({ default: module.Notifications })));
 const TalentChat = React.lazy(() => import('./pages/TalentChat/index').then(module => ({ default: module.TalentChat })));
+const SupportPage = React.lazy(() => import('./pages/Support/index').then(module => ({ default: module.SupportPage })));
 import { Campaign } from './types';
 import { CreateProfileModal } from './components/CreateProfileModal';
 import { CreateFolderModal } from './pages/Profiles/FoldersMetrics/CreateFolderModal';
@@ -52,6 +54,13 @@ import { AccessGuard } from './components/Security/AccessGuard';
 import { SupportRequestModal } from './components/Security/SupportRequestModal';
 
 type ViewState = 'DASHBOARD' | 'PROFILES' | 'CAMPAIGNS' | 'METRICS' | 'SETTINGS' | 'MY_ACCOUNT' | 'ACTIVITIES' | 'HISTORY' | 'NOTIFICATIONS' | 'TALENT_CHAT';
+
+// Helper for Profile Redirection
+export const LegacyProfileRedirect = () => {
+  const { id, tab } = useParams();
+  // Swap from /profile/:id/:tab to /profile/:tab/:id
+  return <Navigate to={`/profile/${tab || 'profile'}/${id}`} replace />;
+};
 
 export const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -226,10 +235,15 @@ export const App = () => {
 
   const handleNavigateToCampaignList = React.useCallback((tab: string) => {
     setTargetCampaignTab(tab);
-    setActiveView('CAMPAIGNS');
-    setSelectedCampaign(null); // Ensure we are on list view
+    // Map tab names to actual routes if they differ, or use a consistent pattern
+    const routeMap: Record<string, string> = {
+      'Active': '/campaigns',
+      'Closed': '/closedcampaigns',
+      'Archived': '/archivedcampaigns'
+    };
+    navigate(routeMap[tab] || '/campaigns');
     if (!isDesktop) setIsSidebarOpen(false);
-  }, [isDesktop]);
+  }, [isDesktop, navigate]);
 
   const handleCampaignClick = React.useCallback((c: any) => {
     navigate(`/campaigns/${c.id || c._id?.$oid || c._id}`);
@@ -264,7 +278,7 @@ export const App = () => {
   const isCollapsed = !isDesktop && !isSidebarOpen;
 
   // Global Search Navigation Handler
-  const handleGlobalNavigate = (type: string, data?: any) => {
+  const handleGlobalNavigate = async (type: string, data?: any) => {
     setIsGlobalSearchOpen(false);
 
     // Reset specific states before navigation to ensure clean slate
@@ -273,25 +287,45 @@ export const App = () => {
     setSelectedAdminUser(null);
 
     if (type === 'NAV') {
-      setActiveView(data.view);
+      const routeMap: Record<string, string> = {
+        'DASHBOARD': '/dashboard',
+        'PROFILES': '/profiles/view/Search',
+        'CAMPAIGNS': '/campaigns',
+        'METRICS': '/metrics',
+        'SETTINGS': '/settings/companyinfo',
+        'MY_ACCOUNT': '/myaccount/basicdetails',
+        'ACTIVITIES': '/activities',
+        'HISTORY': '/history',
+        'NOTIFICATIONS': '/notifications',
+        'TALENT_CHAT': '/talent-chat'
+      };
+
+      let target = routeMap[data.view] || '/dashboard';
 
       // Handle Deep Links
-      if (data.subView) {
+      if (data.view === 'PROFILES' && data.subView) {
+        const { getProfileViewPath } = await import('./components/Menu/constants');
+        const subPath = getProfileViewPath(data.subView);
         setActiveProfileSubView(data.subView);
+        target = `/profiles/view/${subPath}`;
       }
-      if (data.settingsTab) {
+      if (data.view === 'SETTINGS' && data.settingsTab) {
         setActiveSettingsTab(data.settingsTab);
+        target = `/settings/${data.settingsTab}`;
       }
-      if (data.accountTab) {
+      if (data.view === 'MY_ACCOUNT' && data.accountTab) {
         setActiveAccountTab(data.accountTab);
+        target = `/myaccount/${data.accountTab.toLowerCase()}`;
       }
-      // Handle Talent Chat Deep Link if needed (though global search might not have it yet)
+
+      navigate(target);
     } else if (type === 'CAMPAIGN') {
       handleNavigateToCampaign(data);
     } else if (type === 'CANDIDATE') {
       setActiveView('PROFILES');
-      // For mock purposes, map to our single mock profile view or ID 1
-      handleNavigateToProfile();
+      // Default to /profile/profile/:id
+      const candId = data.id || '1';
+      navigate(`/profile/profile/${candId}`);
     }
 
     if (!isDesktop) setIsSidebarOpen(false);
@@ -299,8 +333,15 @@ export const App = () => {
 
 
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated && location.pathname !== '/login') {
+  // Redirect to login or support if not authenticated
+  if (!isAuthenticated) {
+    if (location.pathname === '/support') {
+      return (
+        <React.Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
+          <SupportPage />
+        </React.Suspense>
+      );
+    }
     return <Login onLogin={handleLogin} />;
   }
 
@@ -397,8 +438,8 @@ export const App = () => {
                         setActiveProfileSubView={setActiveProfileSubView}
                       />
                     } />
-                    {/* Candidate Profile Menu */}
-                    <Route path="/profiles/:id" element={
+                    {/* Candidate Profile Menu - Ensure route matches main content structure /profile/:tab/:id */}
+                    <Route path="/profile/:tab/:id" element={
                       <CandidateMenu
                         selectedCandidateId={selectedCandidateId}
                         activeProfileTab={activeProfileTab}
@@ -408,6 +449,9 @@ export const App = () => {
                         setIsSidebarOpen={setIsSidebarOpen}
                       />
                     } />
+                    {/* Handle legacy /profile/:id and /profile/:id/:tab */}
+                    <Route path="/profile/:id" element={<LegacyProfileRedirect />} />
+                    <Route path="/profile/:id/:tab" element={<LegacyProfileRedirect />} />
 
                     {/* Redirect legacy /profiles to view */}
                     <Route path="/profiles" element={<Navigate to="/profiles/view/Search" replace />} />
@@ -565,13 +609,16 @@ export const App = () => {
                     <Route path="/dashboard" element={<Home onNavigate={(tab) => navigate(`/campaigns?tab=${tab}`)} />} />
 
                     <Route path="/profiles/view/*" element={
-                      <Profiles onNavigateToProfile={(id) => navigate(`/profiles/${id || '1'}`)} />
+                      <Profiles onNavigateToProfile={(id) => navigate(`/profile/profile/${id}`)} />
                     } />
-                    <Route path="/profiles/:id" element={
+                    <Route path="/profile/:tab/:id" element={
                       <div className="h-full flex flex-col animate-in fade-in duration-300">
-                        <CandidateProfile activeTab={activeProfileTab} />
+                        <CandidateProfile />
                       </div>
                     } />
+                    {/* Handle legacy /profile/:id and /profile/:id/:tab */}
+                    <Route path="/profile/:id" element={<LegacyProfileRedirect />} />
+                    <Route path="/profile/:id/:tab" element={<LegacyProfileRedirect />} />
 
                     <Route path="/campaigns" element={
                       <Campaigns onNavigateToCampaign={(c: any) => {
@@ -599,6 +646,8 @@ export const App = () => {
                       <CampaignDashboardWrapper />
                     } />
 
+                    <Route path="/showcampaign/*" element={<CampaignExternalRoutes />} />
+
                     <Route path="/metrics" element={<Metrics />} />
 
                     <Route path="/settings/*" element={
@@ -611,6 +660,7 @@ export const App = () => {
                     <Route path="/history" element={<PreviousHistory onNavigate={(view, config) => handleGlobalNavigate('NAV', { view, ...config })} />} />
                     <Route path="/notifications" element={<Notifications onNavigate={(view, config) => handleGlobalNavigate('NAV', { view, ...config })} />} />
                     <Route path="/talent-chat/*" element={<TalentChat />} />
+                    <Route path="/support" element={<SupportPage />} />
                   </Routes>
                 </React.Suspense>
               </div>

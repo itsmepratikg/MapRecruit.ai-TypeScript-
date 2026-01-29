@@ -6,7 +6,8 @@ import SchemaTable from '../../../components/Schema/SchemaTable';
 import { useToast } from '../../../components/Toast';
 import {
     ChevronDown, Search, Plus, RefreshCw, MoreVertical,
-    ChevronRight, Heart, Network, ArrowUpDown, Briefcase
+    ChevronRight, Heart, Network, ArrowUpDown, Briefcase,
+    X, Archive
 } from '../../../components/Icons';
 import { StatusBadge } from '../../../components/Common';
 import { HoverMenu } from '../../../components/Campaign/HoverMenu';
@@ -68,6 +69,8 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedItems, setSelectedItems] = useState<string[]>([]);
+    const [isBulkUpdating, setIsBulkUpdating] = useState(false);
 
     // Sync state with URL params if they change externally (e.g. back button)
     useEffect(() => {
@@ -94,6 +97,7 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
             setLoading(true);
             const data = await campaignService.getAll();
             setCampaigns(data);
+            setSelectedItems([]); // Clear selection on reload
         } catch (error) {
             console.error(error);
             addToast(t("Failed to load campaigns"), "error");
@@ -101,6 +105,24 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
             setLoading(false);
         }
     };
+
+    const handleBulkStatusUpdate = async (newStatus: string) => {
+        if (selectedItems.length === 0) return;
+
+        setIsBulkUpdating(true);
+        try {
+            // We'll need to implement this in campaignService
+            await campaignService.bulkUpdateStatus(selectedItems, newStatus);
+            addToast(`${selectedItems.length} campaigns updated to ${newStatus}`, "success");
+            loadCampaigns(); // Refresh list
+        } catch (err) {
+            console.error("Bulk update failed", err);
+            addToast("Failed to update campaigns", "error");
+        } finally {
+            setIsBulkUpdating(false);
+        }
+    };
+
 
     // --- Campaign Action Handlers ---
 
@@ -184,11 +206,9 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
         const userClientId = userProfile?.activeClient; // or userProfile.clientID
 
         // 1. Multi-tenant Check (Strict)
-        // Assuming c.clientID is stored as ObjectId string or object
-        // If logged in client is not same then dont show (Skip if user is SuperAdmin maybe? adhering to strict rule for now)
-        if (c.clientID?.toString() !== userClientId?.toString() && c.clientID !== userClientId) {
-            // Fallback: If campaign has no clientID, maybe show? Or strictly hide.
-            // Request says: "if the logged in client is not same then dont show"
+        // Ensure accurate comparison whether ObjectId or String
+        const cClientId = c.clientID?._id || c.clientID;
+        if (cClientId?.toString() !== userClientId?.toString()) {
             return false;
         }
 
@@ -200,33 +220,27 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
 
         // 3. Search Query
         const name = c.schemaConfig?.mainSchema?.title || c.title || '';
-        const jobID = c.migrationMeta?.jobID || '';
+        const jobID = c.passcode || c.migrationMeta?.jobID || '';
         const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) || jobID.includes(searchQuery);
         if (!matchesSearch) return false;
 
         // 4. Advanced Filters (ENUMS)
-        if (activeFilter === 'All') {
-            // "if visibility key is Few or None then check for the userID"
-            // Assuming visibility logic exists. For now, defaulting to Show All for tenant.
-            return true;
-        }
+        if (activeFilter === 'All') return true;
 
         if (activeFilter === 'Created by Me') {
-            // Check OwnerID (Array or Single)
-            const owners = c.schemaConfig?.mainSchema?.ownerID || [];
-            // Owners might be ObjectIds or Strings
-            return owners.includes(userId);
+            const owners = c.ownerID || [];
+            // Handle both array of objects (populated) or array of strings
+            return owners.some((o: any) => (o._id || o).toString() === userId?.toString());
         }
 
         if (activeFilter === 'Shared with Me') {
-            // Owner OR Hiring Manager OR Recruiter OR Explicit Shared List
-            const owners = c.schemaConfig?.mainSchema?.ownerID || [];
-            // Check specific shared array if it exists (e.g. sharedUserID)
-            const sharedUsers = c.sharedUserID || [];
-            if (sharedUsers.includes(userId)) return true;
-            if (owners.includes(userId)) return true;
-            // Add logic for HiringManager/Recruiter fields if they exist in schema
-            return false;
+            const drivers = [
+                ...(c.ownerID || []),
+                ...(c.managerID || []),
+                ...(c.recruiterID || []),
+                ...(c.sharedUserID || [])
+            ];
+            return drivers.some((u: any) => (u._id || u).toString() === userId?.toString());
         }
 
         if (activeFilter === 'Favorites') {
@@ -235,15 +249,6 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
         }
 
         if (activeFilter === 'New') {
-            // "matchesDropdown = c.isNew || false;"
-            // Logic: "Logged in userID is present in 'campaignOpened' -> NOT NEW"
-            // Wait, request says: "if the logged in userID is present in here then show the New tag" 
-            // -> "keep the campaign under this dropdown... after opening... remove the user ID"
-            // Correction: The Request implies 'campaignOpened' stores people who HAVE opened it? 
-            // OR 'campaignOpened' stores targets?
-            // Re-reading: "if the logged in userID is present in here then show the New tag... after opening... remove"
-            // This implies 'campaignOpened' = 'UsersWhoConsiderThisNew'. 
-            // So if I am IN the array, it is NEW for me.
             const markedAsNewForUser = c.campaignOpened || [];
             return markedAsNewForUser.includes(userId);
         }
@@ -290,18 +295,46 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
         },
         {
             header: t('Job ID'),
-            accessor: (item: any) => <span className="text-slate-500 dark:text-slate-400 font-mono text-xs">{item.migrationMeta?.jobID || '---'}</span>
+            accessor: (item: any) => <span className="text-slate-500 dark:text-slate-400 font-mono text-xs">{item.passcode || item.migrationMeta?.jobID || '---'}</span>
         },
         {
             header: t('Owner'),
-            accessor: (item: any) => (
-                <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
-                        {/* Mock Initials based on OwnerID or Name if available */}
-                        {item.schemaConfig?.mainSchema?.ownerID?.[0]?.slice(-2).toUpperCase() || 'Me'}
+            accessor: (item: any) => {
+                let ownerParams = null;
+                const firstOwner = item.ownerID?.[0]; // Assuming populated?
+
+                // Logic: If firstOwner is string -> "Unavailable" (because not populated or missing in DB)
+                // If object -> check active status. 
+
+                if (!firstOwner) {
+                    return <span className="text-xs text-slate-400 italic">Unavailable</span>;
+                }
+
+                // Check if it's a full user object
+                if (typeof firstOwner === 'object' && firstOwner._id) {
+                    // Check Status
+                    // Assuming 'isActive' or 'status' field exists on User. 
+                    // Common practice: status 'Active' or boolean true
+                    const isActive = firstOwner.status === 'Active' || firstOwner.isActive === true || firstOwner.status === true;
+
+                    if (!isActive) {
+                        return <span className="text-xs text-red-400 italic">Inactive</span>;
+                    }
+
+                    ownerParams = firstOwner.firstName || firstOwner.name || 'User';
+                } else {
+                    // If it's just an ID string, it means it wasn't populated properly or user missing
+                    return <span className="text-xs text-slate-400 italic">Unavailable</span>;
+                }
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800" title={ownerParams}>
+                            {ownerParams.slice(0, 2).toUpperCase()}
+                        </div>
                     </div>
-                </div>
-            )
+                )
+            }
         },
         {
             header: t('Status'),
@@ -368,11 +401,64 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
                 </div>
             </div>
 
-            <div className="p-0 overflow-visible min-h-[400px]">
+            <div className="p-0 overflow-visible min-h-[400px] relative">
+                {/* Bulk Action Bar */}
+                {selectedItems.length > 0 && (
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 animate-in slide-in-from-top-4 duration-300">
+                        <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-6 border border-slate-700 backdrop-blur-md bg-opacity-95">
+                            <div className="flex items-center gap-2 border-r border-slate-700 pr-6">
+                                <span className="bg-emerald-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                                    {selectedItems.length}
+                                </span>
+                                <span className="text-sm font-bold tracking-tight">Selected</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {status === 'Active' && (
+                                    <>
+                                        <button
+                                            disabled={isBulkUpdating}
+                                            onClick={() => handleBulkStatusUpdate('Closed')}
+                                            className="text-xs font-bold hover:text-emerald-400 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                        >
+                                            <X size={14} /> Close
+                                        </button>
+                                        <button
+                                            disabled={isBulkUpdating}
+                                            onClick={() => handleBulkStatusUpdate('Archived')}
+                                            className="text-xs font-bold hover:text-emerald-400 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                        >
+                                            <Archive size={14} /> Archive
+                                        </button>
+                                    </>
+                                )}
+                                {status === 'Closed' && (
+                                    <button
+                                        disabled={isBulkUpdating}
+                                        onClick={() => handleBulkStatusUpdate('Active')}
+                                        className="text-xs font-bold hover:text-emerald-400 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                    >
+                                        <RefreshCw size={14} /> Re-open
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => setSelectedItems([])}
+                                    className="text-xs font-bold text-slate-400 hover:text-white transition-colors ml-2"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <SchemaTable
                     data={filteredCampaigns}
                     columns={columns}
                     title={`${status} ${t("Campaigns")}`}
+                    selectable={true}
+                    selectedItems={selectedItems}
+                    onSelect={setSelectedItems}
                 />
             </div>
 

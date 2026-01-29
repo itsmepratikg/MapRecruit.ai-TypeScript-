@@ -156,3 +156,23 @@ export const TALENT_CHAT_MENU = [
 
 // Helper Imports for Icons used above but not directly in arrays (to satisfy TS)
 import { Users, MapPin, Target, Share2, Heart } from '../Icons';
+
+export const PROFILE_VIEW_PATH_MAP: Record<string, string> = {
+  'SEARCH': 'Search',
+  'FOLDERS': 'Folders',
+  'TAGS': 'Tags',
+  'SHARED': 'Shared',
+  'FAVORITES': 'Favorites',
+  'DUPLICATES': 'Duplicates',
+  'LOCAL': 'Local',
+  'NEW_APPLIES': 'NewApplies',
+  'OPEN_APPLIES': 'OpenApplies',
+  'NEW_LOCAL': 'NewLocal',
+  'INTERVIEW_STATUS': 'InterviewStatus',
+};
+
+export const getProfileViewPath = (id: string) => PROFILE_VIEW_PATH_MAP[id] || id;
+
+export const getProfileViewIdFromPath = (path: string) => {
+  return Object.keys(PROFILE_VIEW_PATH_MAP).find(key => PROFILE_VIEW_PATH_MAP[key] === path) || path;
+};

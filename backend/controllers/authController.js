@@ -133,7 +133,15 @@ const loginUser = async (req, res) => {
         // Check for user email
         const user = await User.findOne({ email });
 
-        if (user && (await user.matchPassword(password))) {
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.status === false) {
+            return res.status(403).json({ message: 'User account is inactive' });
+        }
+
+        if (await user.matchPassword(password)) {
             // Populate Role to check tenant access
             const populatedUser = await User.findById(user._id).populate('roleID');
 

@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { 
-  Activity, Clock, FileText, CheckCircle, User, Settings, Filter, 
-  Calendar, ChevronDown, Search, X, CheckSquare, Square, RefreshCw 
+import {
+  Activity, Clock, FileText, CheckCircle, User, Settings, Filter,
+  Calendar, ChevronDown, Search, X, CheckSquare, Square, RefreshCw
 } from '../../components/Icons';
 
 // --- Constants ---
@@ -37,7 +37,7 @@ const getTimeAgo = (dateStr: string) => {
   const date = new Date(dateStr);
   const now = new Date();
   const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-  
+
   let interval = seconds / 31536000;
   if (interval > 1) return Math.floor(interval) + " years ago";
   interval = seconds / 2592000;
@@ -66,17 +66,68 @@ const ACTIVITIES_DATA = [
 ];
 
 export const Activities = () => {
+  // --- Data State ---
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   // --- Filter State ---
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
-  
+
   // --- UI State ---
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const [typeSearch, setTypeSearch] = useState('');
-  
+
   const typeDropdownRef = useRef<HTMLDivElement>(null);
   const dateDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch Activities
+  useEffect(() => {
+    const fetchActivities = async () => {
+      setLoading(true);
+      try {
+        const { activityService } = await import('../../services/api');
+        const params: any = {};
+        if (dateRange.start) params.startDate = dateRange.start;
+        if (dateRange.end) params.endDate = dateRange.end;
+
+        const data = await activityService.getAll(params);
+
+        // Map backend types to icons
+        const iconMap: Record<string, any> = {
+          'PROFILE_UPDATE': User,
+          'STATUS_CHANGE': RefreshCw,
+          'EMAIL_SENT': CheckCircle,
+          'NOTE_ADDED': FileText,
+          'CAMPAIGN_ATTACH': CheckSquare,
+          'INTERVIEW_SCHEDULED': Calendar,
+          'CAMPAIGN_CREATED': CheckCircle,
+          'JOB_CREATED': CheckCircle,
+          'SETTINGS_UPDATED': Settings,
+          'EXPORT_DOWNLOAD': Activity,
+          'OTHER': Activity
+        };
+
+        const mapped = data.map((item: any) => ({
+          id: item._id,
+          action: item.title,
+          detail: item.description,
+          date: item.date || item.createdAt,
+          type: item.type,
+          icon: iconMap[item.type] || Activity
+        }));
+
+        setActivities(mapped);
+      } catch (err) {
+        console.error("Failed to fetch activities", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, [dateRange]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -95,7 +146,7 @@ export const Activities = () => {
   // --- Handlers ---
 
   const toggleType = (type: string) => {
-    setSelectedTypes(prev => 
+    setSelectedTypes(prev =>
       prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
     );
   };
@@ -104,7 +155,7 @@ export const Activities = () => {
     const end = new Date();
     const start = new Date();
     start.setDate(start.getDate() - days);
-    
+
     setDateRange({
       start: start.toISOString().split('T')[0],
       end: end.toISOString().split('T')[0]
@@ -120,35 +171,21 @@ export const Activities = () => {
   // --- Filter Logic ---
 
   const filteredActivities = useMemo(() => {
-    return ACTIVITIES_DATA.filter(item => {
-      // 1. Type Filter
+    return activities.filter(item => {
+      // 1. Type Filter (In UI we show titles, but we might want to filter on type keys or action titles)
+      // For now, toggleType uses the title from ACTIVITY_FILTER_OPTIONS if we use that list.
+      // But let's check if selectedTypes matches item.action
       const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(item.action);
-      
-      // 2. Date Filter
-      let dateMatch = true;
-      if (dateRange.start) {
-        const itemDate = new Date(item.date);
-        const startDate = new Date(dateRange.start);
-        startDate.setHours(0, 0, 0, 0); // Start of day
-        if (itemDate < startDate) dateMatch = false;
-      }
-      if (dateRange.end && dateMatch) {
-        const itemDate = new Date(item.date);
-        const endDate = new Date(dateRange.end);
-        endDate.setHours(23, 59, 59, 999); // End of day
-        if (itemDate > endDate) dateMatch = false;
-      }
-
-      return typeMatch && dateMatch;
+      return typeMatch;
     });
-  }, [selectedTypes, dateRange]);
+  }, [selectedTypes, activities]);
 
   const displayedFilterTypes = ACTIVITY_FILTER_OPTIONS.filter(t => t.toLowerCase().includes(typeSearch.toLowerCase()));
 
   return (
     <div className="p-6 lg:p-12 h-full bg-slate-50 dark:bg-slate-900 overflow-y-auto custom-scrollbar">
       <div className="max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-        
+
         {/* Header & Controls */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-8 border-b border-slate-200 dark:border-slate-700 pb-6 gap-4">
           <div>
@@ -160,12 +197,12 @@ export const Activities = () => {
               Audit log of system events, updates, and interactions.
             </p>
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-            
+
             {/* 1. Activity Type Filter */}
             <div className="relative" ref={typeDropdownRef}>
-              <button 
+              <button
                 onClick={() => setIsTypeDropdownOpen(!isTypeDropdownOpen)}
                 className={`flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-colors ${selectedTypes.length > 0 ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
               >
@@ -179,9 +216,9 @@ export const Activities = () => {
                   <div className="p-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
                     <div className="relative">
                       <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
-                      <input 
-                        type="text" 
-                        placeholder="Search types..." 
+                      <input
+                        type="text"
+                        placeholder="Search types..."
                         value={typeSearch}
                         onChange={(e) => setTypeSearch(e.target.value)}
                         className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:text-slate-200"
@@ -195,9 +232,9 @@ export const Activities = () => {
                         <div className={`w-4 h-4 border rounded flex items-center justify-center transition-colors ${selectedTypes.includes(type) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-800'}`}>
                           {selectedTypes.includes(type) && <CheckCircle size={12} fill="currentColor" />}
                         </div>
-                        <input 
-                          type="checkbox" 
-                          className="hidden" 
+                        <input
+                          type="checkbox"
+                          className="hidden"
                           checked={selectedTypes.includes(type)}
                           onChange={() => toggleType(type)}
                         />
@@ -218,7 +255,7 @@ export const Activities = () => {
 
             {/* 2. Date Range Picker */}
             <div className="relative" ref={dateDropdownRef}>
-              <button 
+              <button
                 onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
                 className={`flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-colors ${dateRange.start || dateRange.end ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/10' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'}`}
               >
@@ -233,31 +270,31 @@ export const Activities = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block">Start Date</label>
-                        <input 
-                          type="date" 
+                        <input
+                          type="date"
                           value={dateRange.start}
-                          onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+                          onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
                           className="w-full px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded focus:ring-1 focus:ring-emerald-500 outline-none dark:text-slate-200 dark:[color-scheme:dark]"
                         />
                       </div>
                       <div>
                         <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1 block">End Date</label>
-                        <input 
-                          type="date" 
+                        <input
+                          type="date"
                           value={dateRange.end}
-                          onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                          onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
                           className="w-full px-2 py-1.5 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded focus:ring-1 focus:ring-emerald-500 outline-none dark:text-slate-200 dark:[color-scheme:dark]"
                         />
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-2">
-                        <button onClick={() => handleQuickDate(7)} className="flex-1 py-1.5 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-600 dark:text-slate-300 font-medium transition-colors">Last 7 Days</button>
-                        <button onClick={() => handleQuickDate(30)} className="flex-1 py-1.5 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-600 dark:text-slate-300 font-medium transition-colors">Last 30 Days</button>
+                      <button onClick={() => handleQuickDate(7)} className="flex-1 py-1.5 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-600 dark:text-slate-300 font-medium transition-colors">Last 7 Days</button>
+                      <button onClick={() => handleQuickDate(30)} className="flex-1 py-1.5 text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-600 dark:text-slate-300 font-medium transition-colors">Last 30 Days</button>
                     </div>
                   </div>
                   <div className="p-3 border-t border-slate-100 dark:border-slate-700 flex justify-between bg-slate-50 dark:bg-slate-900/50">
-                    <button onClick={() => { setDateRange({start:'', end:''}); }} className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium">Reset</button>
+                    <button onClick={() => { setDateRange({ start: '', end: '' }); }} className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium">Reset</button>
                     <button onClick={() => setIsDateDropdownOpen(false)} className="px-4 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded shadow-sm hover:bg-emerald-700">Apply</button>
                   </div>
                 </div>
@@ -275,31 +312,41 @@ export const Activities = () => {
 
         {/* Timeline Content */}
         <div className="space-y-6 relative border-l-2 border-slate-200 dark:border-slate-700 ml-3 pl-8 pb-8">
-          {filteredActivities.length > 0 ? filteredActivities.map((activity) => (
-            <div key={activity.id} className="relative group animate-in slide-in-from-bottom-2 duration-300">
-              {/* Timeline Node */}
-              <div className="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-400 z-10 group-hover:border-emerald-500 group-hover:text-emerald-500 transition-colors">
-                <activity.icon size={12} />
+          {loading ? (
+            // Loading Skeletons
+            [...Array(5)].map((_, i) => (
+              <div key={i} className="relative animate-pulse">
+                <div className="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 z-10" />
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm h-24 w-full" />
               </div>
+            ))
+          ) : filteredActivities.length > 0 ? (
+            filteredActivities.map((activity) => (
+              <div key={activity.id} className="relative group animate-in slide-in-from-bottom-2 duration-300">
+                {/* Timeline Node */}
+                <div className="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-400 z-10 group-hover:border-emerald-500 group-hover:text-emerald-500 transition-colors">
+                  <activity.icon size={12} />
+                </div>
 
-              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{activity.action}</h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{activity.detail}</p>
-                  </div>
-                  <div className="text-right">
-                    <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
-                      {getTimeAgo(activity.date)}
-                    </span>
-                    <span className="text-[10px] text-slate-400 mt-1 block">
-                      {new Date(activity.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </span>
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{activity.action}</h4>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{activity.detail}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                        {getTimeAgo(activity.date)}
+                      </span>
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        {new Date(activity.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )) : (
+            ))
+          ) : (
             <div className="py-12 text-center">
               <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
                 <Filter size={32} />
@@ -311,7 +358,7 @@ export const Activities = () => {
           )}
         </div>
 
-        {filteredActivities.length > 0 && (
+        {filteredActivities.length > 0 && !loading && (
           <div className="text-center pt-4">
             <button className="text-sm text-emerald-600 dark:text-emerald-400 font-medium hover:underline">Load more activity</button>
           </div>

@@ -21,12 +21,29 @@ import { useToast } from '../components/Toast';
 
 import { LocalMatchAnalysisModal } from '../components/LocalMatchAnalysisModal';
 
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useCandidateProfile } from '../hooks/useCandidateProfile';
+import { interviewService } from '../services/interviewService';
+import { mapInterviewToCampaign } from '../components/ProfileCampaigns';
 
-export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
-  const { id } = useParams<{ id: string }>();
-  const { profile: liveData, loading, error, refresh: refreshProfile } = useCandidateProfile(id || null); // Aliased refresh to refreshProfile
+// Import Sub-pages
+import { Overview } from './Profile/Overview';
+import { Resume } from './Profile/Resume';
+import { LinkedCampaigns } from './Profile/Campaigns';
+import { Interviews } from './Profile/Interviews';
+import { Activities } from './Profile/Activities';
+import { Folders } from './Profile/Folders';
+import { Duplicates } from './Profile/Duplicates';
+import { Similar } from './Profile/Similar';
+import { Recommended } from './Profile/Recommended';
+import { Chat } from './Profile/Chat';
+
+export const CandidateProfile = ({ activeTab: propsActiveTab }: { activeTab?: string }) => {
+  const { tab: urlTab, id } = useParams<{ tab?: string; id: string }>();
+  const activeTab = urlTab || propsActiveTab || 'profile';
+
+  const { profile: liveData, loading, error, refresh: refreshProfile } = useCandidateProfile(id || null);
+  const location = useLocation();
   const { addToast } = useToast();
 
   const [accessDenied, setAccessDenied] = useState(false);
@@ -148,6 +165,14 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
     validateAccess();
   }, [liveData, loading]);
 
+  // --- LOG VISIT ---
+  useEffect(() => {
+    if (liveData && id) {
+      userService.logVisit('Profile', id, liveData.profile?.fullName || 'Profile')
+        .catch(console.error);
+    }
+  }, [id, !!liveData]);
+
   if (accessDenied) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -266,6 +291,37 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
     setPreviewCampaign(null);
   }, [activeTab]);
 
+  // Deep Link Logic for Campaign Details (CID)
+  useEffect(() => {
+    const checkDeepLink = async () => {
+      const params = new URLSearchParams(location.search);
+      const linkedCID = params.get('CID');
+      const isValidTab = activeTab === 'campaigns' || urlTab === 'campaigns';
+
+      if (linkedCID && isValidTab && id) {
+        try {
+          if (!liveData) return;
+
+          const interviews = await interviewService.getAll({ resumeID: id });
+
+          const match = interviews.find((iv: any) =>
+            (iv.campaign?._id === linkedCID) ||
+            (iv.campaignID === linkedCID) ||
+            (iv._id === linkedCID)
+          );
+
+          if (match) {
+            const mapped = mapInterviewToCampaign(match);
+            setPreviewCampaign(mapped);
+          }
+        } catch (e) {
+          console.error("Deep link failed", e);
+        }
+      }
+    };
+    checkDeepLink();
+  }, [location.search, id, activeTab, liveData]);
+
   useEffect(() => {
     const handleScroll = () => {
       if (scrollContainerRef.current) {
@@ -280,15 +336,31 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
   const handleSaveProfile = async (updatedData: any) => {
     try {
       if (!id) return;
-      // Optimistic update or wait for server
       await profileService.update(id, updatedData);
       addToast("Profile updated successfully", "success");
       if (refreshProfile) refreshProfile();
-      // If hooks/useCandidateProfile doesn't export refresh, we might need to reload or mutate local state. 
-      // Assuming integration works for now.
     } catch (err) {
       console.error("Update failed", err);
       addToast("Failed to update profile", "error");
+    }
+  };
+
+  const handleSaveCampaignFeedback = async (interviewId: string, data: any) => {
+    try {
+      await interviewService.update(interviewId, data);
+      addToast("Evaluation saved successfully", "success");
+
+      if (previewCampaign && previewCampaign.id === interviewId) {
+        setPreviewCampaign({
+          ...previewCampaign,
+          rating: data.feedBack?.rating,
+          feedback: data.feedBack?.comment,
+          status: data.feedBack?.status
+        });
+      }
+    } catch (err) {
+      console.error("Failed to save evaluation", err);
+      addToast("Failed to save evaluation", "error");
     }
   };
 
@@ -316,17 +388,17 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'profile': return <ProfileDetails data={resumeDetails} onEditSection={handleEditSection} />;
-      case 'resume': return <div className="h-[800px] bg-slate-200 dark:bg-slate-700 rounded flex items-center justify-center text-slate-400 dark:text-slate-500 font-medium">PDF Viewer Placeholder</div>;
-      case 'activity': return <ActivitiesView />;
-      case 'chat': return <TalentChatView />;
-      case 'campaigns': return <CampaignsView onPreviewCampaign={setPreviewCampaign} onShowMatchScore={() => setShowMatchScore(true)} />;
-      case 'folders': return <EmptyView title="No Linked Folders" message="This candidate hasn't been added to any folders yet." icon={Folder} />;
-      case 'interviews': return <InterviewsView onSelectInterview={setSelectedInterview} />;
-      case 'recommended': return <RecommendedView />;
-      case 'duplicate': return <EmptyView title="No Duplicate Profiles" message="We didn't find any potential duplicates for this candidate in the system." icon={Copy} />;
-      case 'similar': return <SimilarProfilesView />;
-      default: return <ProfileDetails data={resumeDetails} />;
+      case 'profile': return <Overview data={resumeDetails} onEditSection={handleEditSection} />;
+      case 'resume': return <Resume />;
+      case 'activity': return <Activities />;
+      case 'chat': return <Chat />;
+      case 'campaigns': return <LinkedCampaigns onPreviewCampaign={setPreviewCampaign} onShowMatchScore={() => setShowMatchScore(true)} onSaveFeedback={handleSaveCampaignFeedback} />;
+      case 'folders': return <Folders />;
+      case 'interviews': return <Interviews onSelectInterview={setSelectedInterview} />;
+      case 'recommended': return <Recommended />;
+      case 'duplicate': return <Duplicates />;
+      case 'similar': return <Similar />;
+      default: return <Overview data={resumeDetails} onEditSection={handleEditSection} />;
     }
   };
 
@@ -390,7 +462,6 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
       )}
 
       <header className={`relative shrink-0 sticky top-0 z-30 transition-all duration-500 ${isScrolled ? 'h-16 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md shadow-md border-b border-slate-200 dark:border-slate-700' : 'h-auto py-4 md:py-6 bg-white dark:bg-slate-800'}`}>
-        {/* Premium Background Mesh (Only when not scrolled) */}
         {!isScrolled && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40 dark:opacity-20 transition-opacity duration-700">
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-green-400/20 blur-[100px] rounded-full"></div>
@@ -399,7 +470,6 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
         )}
         <div className="h-full relative px-4 md:px-8">
 
-          {/* --- MAIN HEADER (Full View) --- */}
           <div className={`transition-all duration-300 ease-in-out origin-top ${isScrolled ? 'opacity-0 scale-95 pointer-events-none absolute inset-0' : 'opacity-100 scale-100 relative'}`}>
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
               <div className="flex gap-4 w-full md:w-auto">
@@ -412,14 +482,13 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
 
                     {owningEntityName && (
                       <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 text-[10px] font-bold border border-indigo-100 dark:border-indigo-800 shadow-sm">
-                        <span className="opacity-60 uppercase tracking-tighter">{displayLabel}:</span>
+                        <span className="opacity-60 uppercase tracking-tighter">{ownerDisplay?.label || 'Entity'}:</span>
                         <span className="truncate max-w-[150px]">{owningEntityName}</span>
                       </div>
                     )}
                   </div>
                   <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-3">{candidateRole}</p>
 
-                  {/* Contact Details Trigger */}
                   <div className="mb-3">
                     <button
                       onClick={() => setIsContactModalOpen(true)}
@@ -436,7 +505,6 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
                       <CheckCircle size={16} className="text-green-500 dark:text-green-400" />
                     </div>
 
-                    {/* Smart Tags */}
                     <div className="flex items-center gap-2 flex-wrap">
                       <TagIcon size={16} className="text-slate-400" />
                       <div className="flex items-center gap-2">
@@ -462,7 +530,6 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
                   </div>
                 </div>
               </div>
-
 
               <div className="flex flex-col items-end gap-4 md:gap-6 w-full md:w-auto">
                 <div className="flex justify-end w-full">
@@ -490,7 +557,6 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
             </div>
           </div>
 
-          {/* --- COMPACT HEADER (Sticky View) --- */}
           <div className={`absolute inset-0 px-4 md:px-6 flex items-center justify-between transition-all duration-300 transform bg-white dark:bg-slate-800 z-50 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 font-bold text-lg uppercase shrink-0">
@@ -529,6 +595,7 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
                 onBack={() => setPreviewCampaign(null)}
                 onMaximizeTemplate={setMaximizedTemplate}
                 onShowMatchScore={() => setShowMatchScore(true)}
+                onSaveFeedback={handleSaveCampaignFeedback}
                 isScrolled={isScrolled}
               />
             </div>
@@ -538,7 +605,6 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
         </div>
       </div>
 
-      {/* Contact Modal */}
       <ContactPreviewModal
         isOpen={isContactModalOpen}
         onClose={() => setIsContactModalOpen(false)}
@@ -548,6 +614,6 @@ export const CandidateProfile = ({ activeTab }: { activeTab: string }) => {
           socials: profileBasic.socialLinks || []
         }}
       />
-    </div >
+    </div>
   );
 };

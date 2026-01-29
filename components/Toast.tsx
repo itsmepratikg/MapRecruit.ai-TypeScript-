@@ -17,16 +17,16 @@ export const useToast = () => {
   if (!context) {
     // If context is missing, provide a fallback that wraps direct toast calls
     return {
-        addToast: (message: string, type: ToastType = 'info') => {
-            const options: ToastOptions = { duration: 4000 };
-            if (type === 'success') toast.success(message, options);
-            else if (type === 'error') toast.error(message, options);
-            else toast(message, { ...options, icon: <Info className="text-blue-500" size={20} /> });
-        },
-        // Use <T,> to prevent TSX parsing ambiguity
-        addPromise: <T,>(promise: Promise<T>, msgs: { loading: string; success: string; error: string }) => {
-             return toast.promise(promise, msgs);
-        }
+      addToast: (message: string, type: ToastType = 'info') => {
+        const options: ToastOptions = { duration: 4000 };
+        if (type === 'success') toast.success(message, options);
+        else if (type === 'error') toast.error(message, options);
+        else toast(message, { ...options, icon: <Info className="text-blue-500" size={20} /> });
+      },
+      // Use <T,> to prevent TSX parsing ambiguity
+      addPromise: <T,>(promise: Promise<T>, msgs: { loading: string; success: string; error: string }) => {
+        return toast.promise(promise, msgs);
+      }
     };
   }
   return context;
@@ -36,7 +36,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addToast = useCallback((message: string, type: ToastType = 'info') => {
     const options: ToastOptions = {
-        duration: 4000,
+      duration: 4000,
     };
 
     switch (type) {
@@ -49,8 +49,8 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       case 'info':
       default:
         toast(message, {
-            ...options,
-            icon: <Info className="text-blue-500" size={20} />,
+          ...options,
+          icon: <Info className="text-blue-500" size={20} />,
         });
         break;
     }
@@ -60,59 +60,60 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     promise: Promise<T>,
     msgs: { loading: string; success: string; error: string }
   ) => {
-      return toast.promise(promise, {
-          loading: msgs.loading,
-          success: msgs.success,
-          error: msgs.error,
-      }, {
-        style: {
-            background: 'var(--toast-bg)',
-            color: 'var(--toast-text)',
-            border: '1px solid var(--toast-border)',
-            padding: '12px 16px',
-            borderRadius: '0.75rem',
+    return toast.promise(promise, {
+      loading: msgs.loading,
+      success: msgs.success,
+      error: msgs.error,
+    }, {
+      style: {
+        background: 'var(--toast-bg)',
+        color: 'var(--toast-text)',
+        border: '1px solid var(--toast-border)',
+        padding: '12px 16px',
+        borderRadius: '0.75rem',
+      },
+      success: {
+        iconTheme: {
+          primary: '#10b981',
+          secondary: 'white',
         },
-        success: {
-            iconTheme: {
-                primary: '#10b981',
-                secondary: 'white',
-            },
+      },
+      error: {
+        iconTheme: {
+          primary: '#ef4444',
+          secondary: 'white',
         },
-        error: {
-            iconTheme: {
-                primary: '#ef4444',
-                secondary: 'white',
-            },
-        },
-      });
+      },
+    });
   }, []);
 
   return (
     <ToastContext.Provider value={{ addToast, addPromise }}>
       {children}
-      <Toaster 
+      <Toaster
         position="top-right"
+        containerStyle={{ zIndex: 9999 }}
         toastOptions={{
-            className: 'text-sm font-medium shadow-xl',
-            style: {
-                background: 'var(--toast-bg)',
-                color: 'var(--toast-text)',
-                border: '1px solid var(--toast-border)',
-                padding: '12px 16px',
-                borderRadius: '0.75rem',
+          className: 'text-sm font-medium shadow-xl',
+          style: {
+            background: 'var(--toast-bg)',
+            color: 'var(--toast-text)',
+            border: '1px solid var(--toast-border)',
+            padding: '12px 16px',
+            borderRadius: '0.75rem',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: 'white',
             },
-            success: {
-                iconTheme: {
-                    primary: '#10b981',
-                    secondary: 'white',
-                },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: 'white',
             },
-            error: {
-                iconTheme: {
-                    primary: '#ef4444',
-                    secondary: 'white',
-                },
-            },
+          },
         }}
       />
     </ToastContext.Provider>

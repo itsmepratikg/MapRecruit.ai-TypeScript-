@@ -24,7 +24,9 @@ const activitySchema = mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ['PROFILE_UPDATE', 'STATUS_CHANGE', 'EMAIL_SENT', 'NOTE_ADDED', 'CAMPAIGN_ATTACH', 'INTERVIEW_SCHEDULED', 'OTHER']
+        // Common types: PROFILE_UPDATE, STATUS_CHANGE, EMAIL_SENT, NOTE_ADDED, 
+        // CAMPAIGN_ATTACH, INTERVIEW_SCHEDULED, CAMPAIGN_CREATED, JOB_CREATED, 
+        // SETTINGS_UPDATED, EXPORT_DOWNLOAD, OTHER
     },
     title: {
         type: String,

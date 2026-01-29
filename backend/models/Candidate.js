@@ -7,7 +7,8 @@ const candidateSchema = mongoose.Schema({
         index: true
     },
     clientID: {
-        type: [String], // Can be an array as seen in resumesDB
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Client',
         index: true
     },
     // Core Profile Data

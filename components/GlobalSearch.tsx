@@ -6,7 +6,8 @@ import {
   LayoutDashboard, FileText, CornerDownLeft, Tag, Folder,
   Users, Shield, Globe, Layout, Building2
 } from './Icons';
-import { GLOBAL_CAMPAIGNS, MOCK_PROFILES } from '../data';
+import { MOCK_PROFILES } from '../data';
+import { campaignService } from '../services/api';
 
 interface GlobalSearchProps {
   isOpen: boolean;
@@ -29,6 +30,21 @@ export const GlobalSearch = ({ isOpen, onClose, onNavigate }: GlobalSearchProps)
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const [liveCampaigns, setLiveCampaigns] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const data = await campaignService.getAll();
+        setLiveCampaigns(data);
+      } catch (err) {
+        console.error("Failed to fetch campaigns for search", err);
+      }
+    };
+    if (isOpen) {
+      fetchCampaigns();
+    }
+  }, [isOpen]);
 
   const STATIC_ACTIONS: SearchResult[] = useMemo(() => [
     { id: 'home', title: t('Dashboard'), subtitle: t('Go to Home'), type: 'NAV', payload: { view: 'DASHBOARD' }, icon: LayoutDashboard },
@@ -68,13 +84,17 @@ export const GlobalSearch = ({ isOpen, onClose, onNavigate }: GlobalSearchProps)
     });
 
     // 2. Campaigns
-    GLOBAL_CAMPAIGNS.forEach(c => {
-      if (c.name.toLowerCase().includes(lowerQuery) || c.jobID.includes(query)) {
+    liveCampaigns.forEach(c => {
+      const name = c.schemaConfig?.mainSchema?.title || c.title || "";
+      const jobId = c.migrationMeta?.jobID || c.jobID || "";
+      const status = c.schemaConfig?.mainSchema?.status || (c.status === true || c.status === 'Active' ? 'Active' : 'Closed');
+
+      if (name.toLowerCase().includes(lowerQuery) || jobId.toLowerCase().includes(lowerQuery)) {
         searchResults.push({
-          id: `camp-${c.id}`,
+          id: `camp-${c._id}`,
           type: 'CAMPAIGN',
-          title: c.name,
-          subtitle: `${t('Campaign')} • ${c.jobID} • ${c.status}`,
+          title: name,
+          subtitle: `${t('Campaign')} • ${jobId} • ${status}`,
           icon: Briefcase,
           payload: c
         });
@@ -96,7 +116,7 @@ export const GlobalSearch = ({ isOpen, onClose, onNavigate }: GlobalSearchProps)
     });
 
     return searchResults.slice(0, 15); // Limit to 15 results for performance
-  }, [query, STATIC_ACTIONS, t]);
+  }, [query, STATIC_ACTIONS, t, liveCampaigns]);
 
   // Keyboard Navigation
   useEffect(() => {

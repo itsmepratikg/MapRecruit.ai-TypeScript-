@@ -8,6 +8,7 @@ const {
     createCampaign,
     updateCampaign,
     deleteCampaign,
+    bulkUpdateStatus
 } = require('../controllers/campaignController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -19,6 +20,7 @@ router.route('/')
 
 router.get('/stats', protect, getCampaignStats);
 router.get('/recent', protect, getRecentCampaigns);
+router.post('/bulk-status', protect, bulkUpdateStatus);
 
 router.route('/:id')
     .get(protect, tenantGuard('Campaign'), getCampaign)

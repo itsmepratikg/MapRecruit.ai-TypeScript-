@@ -15,7 +15,8 @@ import { Recommendations } from './Recommendations';
 import { CampaignSettings } from './Settings';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
-const CampaignHeader = ({ campaign, isScrolled, onBack }: { campaign: Campaign, isScrolled: boolean, onBack?: () => void }) => {
+export const CampaignHeader = ({ campaign, isScrolled, onBack }: { campaign: Campaign, isScrolled: boolean, onBack?: () => void }) => {
+
    return (
       <div className={`bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm sticky top-0 z-30 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-0'}`}>
          <div className="flex flex-col lg:flex-row">

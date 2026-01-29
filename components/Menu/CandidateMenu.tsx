@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { ChevronLeft } from '../Icons';
 import { NavItem } from './NavItem';
 import { PROFILE_CATEGORIES } from './constants';
 import { useScreenSize } from '../../hooks/useScreenSize';
+import { useNavigate, useParams } from 'react-router-dom';
 
 interface CandidateMenuProps {
     onBack: () => void;
@@ -16,13 +16,24 @@ interface CandidateMenuProps {
 
 export const CandidateMenu = ({
     onBack,
-    activeProfileTab,
+    activeProfileTab: propsActiveTab,
     setActiveProfileTab,
-    selectedCandidateId,
+    selectedCandidateId: propsId,
     isCollapsed,
     setIsSidebarOpen
 }: CandidateMenuProps) => {
     const { isDesktop } = useScreenSize();
+    const navigate = useNavigate();
+    const { tab: currentTab, id } = useParams<{ tab: string; id: string }>();
+
+    const activeId = id || propsId;
+    const activeTab = currentTab || propsActiveTab || 'profile';
+
+    const handleTabClick = (tabId: string) => {
+        if (!activeId) return;
+        navigate(`/profile/${tabId}/${activeId}`);
+        if (!isDesktop) setIsSidebarOpen(false);
+    };
 
     return (
         <div className="animate-in slide-in-from-left duration-300 ease-out">
@@ -36,7 +47,7 @@ export const CandidateMenu = ({
 
             <div className={`px-3 mb-6 ${isCollapsed ? 'hidden' : 'block'}`}>
                 <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 leading-tight">Candidate Profile</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">ID: {selectedCandidateId}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">ID: {activeId}</p>
             </div>
 
             <div className="space-y-6 mt-4">
@@ -52,8 +63,8 @@ export const CandidateMenu = ({
                                 <NavItem
                                     icon={tab.icon}
                                     label={tab.label}
-                                    activeTab={activeProfileTab === tab.id}
-                                    onClick={() => { setActiveProfileTab(tab.id); if (!isDesktop) setIsSidebarOpen(false); }}
+                                    activeTab={activeTab === tab.id}
+                                    onClick={() => handleTabClick(tab.id)}
                                     isCollapsed={isCollapsed}
                                 />
                             </div>

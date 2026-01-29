@@ -41,8 +41,11 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/clients', require('./routes/clientRoutes'));
 app.use('/api/campaigns', require('./routes/campaignRoutes'));
 app.use('/api/profiles', require('./routes/profileRoutes'));
+app.use('/api/interviews', require('./routes/interviewRoutes'));
 app.use('/api/workflows', require('./routes/workflowRoutes'));
 app.use('/api/activities', require('./routes/activityRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/library', require('./routes/libraryRoutes'));
 app.use('/api/company', require('./routes/companyRoutes'));
 app.use('/api/owning-entities', require('./routes/owningEntityRoutes'));
 app.get('/api/debug', (req, res) => res.json({

@@ -234,7 +234,7 @@ export const SidebarFooter = ({
                                 onMouseEnter={(e) => handlePopoverEnter('client', e)}
                                 onMouseLeave={handlePopoverLeave}
                             >
-                                <ClientMenuContent activeClient={userProfile.activeClient} clients={clients} onSwitchClient={handleClientSelect} onClose={() => setActivePopover(null)} />
+                                <ClientMenuContent activeClient={userProfile.activeClient} activeClientId={userProfile.activeClientID} clients={clients} onSwitchClient={handleClientSelect} onClose={() => setActivePopover(null)} />
                             </div>
                         </Portal>
                     )}
@@ -332,7 +332,7 @@ export const SidebarFooter = ({
                                 closeMenu={() => setMobileMenuOpen(null)}
                             />
                         )}
-                        {mobileMenuOpen === 'client' && <ClientMenuContent activeClient={userProfile.activeClient} clients={clients} onSwitchClient={handleClientSelect} onClose={() => setMobileMenuOpen(null)} />}
+                        {mobileMenuOpen === 'client' && <ClientMenuContent activeClient={userProfile.activeClient} activeClientId={userProfile.activeClientID} clients={clients} onSwitchClient={handleClientSelect} onClose={() => setMobileMenuOpen(null)} />}
                         {mobileMenuOpen === 'account' && (
                             <AccountMenuContent
                                 setIsThemeSettingsOpen={setIsThemeSettingsOpen}
