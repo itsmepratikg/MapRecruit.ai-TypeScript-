@@ -33,9 +33,9 @@ const getInterviews = async (req, res) => {
 
         // Allow filtering by resumeID or campaignID from query
         const queryFilter = { ...accessFilter };
-        if (req.query.resumeID) queryFilter.resumeID = req.query.resumeID;
-        if (req.query.campaignID) queryFilter.campaignID = req.query.campaignID;
-        if (req.query.status) queryFilter.status = req.query.status;
+        if (req.query.resumeID && typeof req.query.resumeID === 'string') queryFilter.resumeID = req.query.resumeID;
+        if (req.query.campaignID && typeof req.query.campaignID === 'string') queryFilter.campaignID = req.query.campaignID;
+        if (req.query.status && typeof req.query.status === 'string') queryFilter.status = req.query.status;
 
         const interviews = await Interview.find(queryFilter).sort({ createdAt: -1 });
 
@@ -100,9 +100,17 @@ const updateInterview = async (req, res) => {
             return res.status(404).json({ message: 'Interview not found or access denied' });
         }
 
+        // Prevent NoSQL operator injection in update body
+        const updates = { ...req.body };
+        for (const key of Object.keys(updates)) {
+            if (key.startsWith('$')) {
+                delete updates[key];
+            }
+        }
+
         const updatedInterview = await Interview.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            updates,
             { new: true, runValidators: false }
         );
 

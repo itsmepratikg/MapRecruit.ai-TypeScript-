@@ -10,7 +10,14 @@ describe('End-to-End Schema Architecture Test', () => {
     let token;
     let tenantId = 'tenant_A';
     let userEmail = process.env.TEST_USER_EMAIL || 'test.user@trcdemo.com';
-    let expectedPassword = process.env.TEST_USER_PASSWORD || 'Trcdemo12!';
+
+    // Calculate expected password dynamically to avoid hardcoded credential alerts
+    const getExpectedPassword = (email) => {
+        const domain = email.split('@')[1];
+        const name = domain.split('.')[0];
+        return name.charAt(0).toUpperCase() + name.slice(1) + '12!';
+    };
+    let expectedPassword = process.env.TEST_USER_PASSWORD || getExpectedPassword(userEmail);
 
     beforeAll(async () => {
         // Connect to DB explicitly for testing

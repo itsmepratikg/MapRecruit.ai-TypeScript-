@@ -3,7 +3,7 @@ const User = require('./models/User'); // Adjust path
 const dotenv = require('dotenv');
 dotenv.config();
 
-const userId = "696a1d32e8ceec1d15098204"; // From token
+const userId = process.env.TEST_USER_ID; // From token
 
 const run = async () => {
     try {
@@ -16,7 +16,7 @@ const run = async () => {
             console.log(`User NOT Found: ${userId}`);
 
             // Search by email to see if ID changed
-            const emailUser = await User.findOne({ email: process.env.TEST_EMAIL || "pratik.gaurav@maprecruit.ai" });
+            const emailUser = await User.findOne({ email: process.env.TEST_EMAIL });
             if (emailUser) {
                 console.log(`User found by email, but ID is: ${emailUser._id}`);
             }

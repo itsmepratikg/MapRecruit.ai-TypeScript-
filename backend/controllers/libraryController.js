@@ -13,11 +13,11 @@ const getLibraryItems = async (req, res) => {
             companyID: new mongoose.Types.ObjectId(companyID)
         };
 
-        if (type) {
+        if (type && typeof type === 'string') {
             query.type = type;
         }
 
-        if (search) {
+        if (search && typeof search === 'string') {
             query.$or = [
                 { name: { $regex: search, $options: 'i' } },
                 { description: { $regex: search, $options: 'i' } },
@@ -67,9 +67,15 @@ const updateLibraryItem = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized' });
         }
 
+        // Prevent NoSQL operator injection
+        const updates = { ...req.body };
+        Object.keys(updates).forEach(key => {
+            if (key.startsWith('$')) delete updates[key];
+        });
+
         const updatedItem = await Library.findByIdAndUpdate(
             req.params.id,
-            { ...req.body },
+            updates,
             { new: true }
         );
 

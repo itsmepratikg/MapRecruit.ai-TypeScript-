@@ -184,6 +184,9 @@ const getAuthenticationOptions = async (req, res) => {
 
         // Scenario 1: Email provided (Specific User)
         if (email) {
+            if (typeof email !== 'string') {
+                return res.status(400).json({ message: 'Invalid email format' });
+            }
             const user = await User.findOne({ email });
 
             if (!user) {
@@ -276,10 +279,16 @@ const verifyLogin = async (req, res) => {
         let user;
 
         if (email) {
+            if (typeof email !== 'string') {
+                return res.status(400).json({ message: 'Invalid email format' });
+            }
             user = await User.findOne({ email });
         } else {
             // Discover User by Credential ID (Resident Key Flow)
             // We search the 'passkeys' object fields.
+            if (typeof bodyCredID !== 'string') {
+                return res.status(400).json({ message: 'Invalid credential ID format' });
+            }
             user = await User.findOne({
                 $or: [
                     { 'passkeys.desktop.credentialID': bodyCredID },

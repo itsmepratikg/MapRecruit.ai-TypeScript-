@@ -46,12 +46,12 @@ const getProfiles = async (req, res) => {
         let query = { ...accessFilter };
 
         // Support for Folder (Article) filtering
-        if (folderId) {
+        if (folderId && typeof folderId === 'string') {
             query.articleID = folderId;
         }
 
         // Support for Tag filtering
-        if (tagId) {
+        if (tagId && typeof tagId === 'string') {
             query.tagID = tagId;
         }
 
@@ -61,7 +61,7 @@ const getProfiles = async (req, res) => {
         }
 
         // Support for Status filtering
-        if (status) {
+        if (status && typeof status === 'string') {
             query.personnelStatus = status;
         }
 

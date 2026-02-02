@@ -90,6 +90,8 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'Please add all fields' });
         }
 
+        if (typeof email !== 'string') return res.status(400).json({ message: 'Invalid email format' });
+
         // Check for user exists - Secure against NoSQL Injection
         const userExists = await User.findOne({ email: { $eq: email } });
         if (userExists) {
@@ -129,6 +131,8 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        if (typeof email !== 'string') return res.status(400).json({ message: 'Invalid email format' });
 
         // Check for user email - Secure against NoSQL Injection
         const user = await User.findOne({ email: { $eq: email } });
@@ -238,6 +242,8 @@ const getMe = async (req, res) => {
 const impersonateUser = async (req, res) => {
     try {
         const { targetUserId, mode = 'read-only' } = req.body;
+
+        if (typeof targetUserId !== 'string') return res.status(400).json({ message: 'Invalid Target User ID' });
 
         // 1. Verify Requestor is Admin
         if (req.user.role !== 'Product Admin') {
