@@ -222,6 +222,11 @@ const updateCampaign = async (req, res) => {
         // Prevent NoSQL operator injection by deeply sanitizing the update payload
         const updates = sanitizeNoSQL(req.body);
 
+        // Additional safety check: ensure updates is a plain object
+        if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+            return res.status(400).json({ message: 'Invalid update data' });
+        }
+
         const updatedCampaign = await Campaign.findByIdAndUpdate(
             req.params.id,
             { $set: updates },

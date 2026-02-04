@@ -156,6 +156,11 @@ const updateProfile = async (req, res) => {
 
         const updates = sanitizeNoSQL(req.body);
 
+        // Additional safety check: ensure updates is a plain object
+        if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+            return res.status(400).json({ message: 'Invalid update data' });
+        }
+
         const updatedProfile = await Candidate.findByIdAndUpdate(
             req.params.id,
             { $set: updates },

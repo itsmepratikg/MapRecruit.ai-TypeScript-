@@ -1,6 +1,6 @@
 const RoleHierarchy = require('../models/RoleHierarchy');
 const Role = require('../models/Role');
-const { sanitizeNoSQL } = require('../utils/securityUtils');
+const { sanitizeNoSQL, isValidObjectId } = require('../utils/securityUtils');
 
 // @desc    Get Role Hierarchy for current Company
 // @route   GET /api/roles/hierarchy
@@ -8,6 +8,11 @@ const { sanitizeNoSQL } = require('../utils/securityUtils');
 const getHierarchy = async (req, res) => {
     try {
         const companyID = req.user.currentCompanyID || req.user.companyID;
+
+        // Validate companyID to ensure it's a valid ObjectId
+        if (!isValidObjectId(companyID)) {
+            return res.status(400).json({ message: 'Invalid company ID' });
+        }
 
         let hierarchyDoc = await RoleHierarchy.findOne({ companyID: { $eq: companyID } })
             .populate('hierarchy.roleID', 'roleName description');
