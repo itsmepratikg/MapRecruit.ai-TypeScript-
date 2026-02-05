@@ -8,7 +8,12 @@ const resolveTenant = async (req, res, next) => {
     try {
         let companyId = null;
         const host = req.get('host');
-        const isLocal = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('192.168.');
+        // Treat localhost and vercel.app deployments as "local/dev" environments
+        // This allows using ?company_id=... on Vercel preview/production URLs
+        const isLocal = host.includes('localhost') ||
+            host.includes('127.0.0.1') ||
+            host.includes('192.168.') ||
+            host.includes('.vercel.app');
 
         // 1. Local Dev Support: Check for ?company_id query param
         if (isLocal && req.query.company_id) {
