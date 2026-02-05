@@ -36,14 +36,35 @@ app.use((req, res, next) => {
 
 // Database Connection
 const connectDB = async () => {
+    // Check if we already have a connection
+    if (mongoose.connection.readyState >= 1) {
+        return;
+    }
+
     try {
         const conn = await mongoose.connect(process.env.MONGO_URI);
         console.log(`MongoDB Connected: ${conn.connection.host}`);
     } catch (error) {
         console.error(`Error: ${error.message}`);
-        process.exit(1);
+        // Only exit if running standalone, otherwise throw to be caught by middleware
+        if (require.main === module) {
+            process.exit(1);
+        } else {
+            throw error;
+        }
     }
 };
+
+// Middleware to ensure DB connection (Critical for Serverless/Vercel)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error("Database connection failed in middleware:", error);
+        res.status(500).json({ message: "Database connection failed" });
+    }
+});
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
