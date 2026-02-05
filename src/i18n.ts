@@ -209,8 +209,7 @@ const resources = {
             "You have {{count}} new notifications": "You have {{count}} new notifications",
             "New Campaigns": "New Campaigns",
             "Upcoming Interviews": "Upcoming Interviews",
-            "Active Campaigns": "Active Campaigns",
-            "Closed Campaigns": "Closed Campaigns",
+
             "Active Profiles": "Active Profiles",
             "Shortlisted": "Shortlisted",
             "Alerts & Warnings": "Alerts & Warnings",
@@ -225,7 +224,7 @@ const resources = {
             "Profiles / Applies Trends": "Profiles / Applies Trends",
             "Last 7 days": "Last 7 days",
             "New Profiles": "New Profiles",
-            "New Applies": "New Applies",
+
             "New Profile Source Distribution": "New Profile Source Distribution",
             "No Upcoming Interviews": "No Upcoming Interviews",
             "No Data Found": "No Data Found",
@@ -247,8 +246,8 @@ const resources = {
             "Pre-Screening": "Pre-Screening",
             "Interview": "Interview",
             "Total Profiles": "Total Profiles",
-            "Comm...": "Comm...",
-            "Comm...": "Comm...",
+
+
             "Not Reachable": "Not Reachable",
 
             // --- Login Page ---
@@ -321,17 +320,16 @@ const resources = {
             "Progressing": "Progressing",
             "Re-run Search": "Re-run Search",
             "Modify Search": "Modify Search",
-            "Favorite Profiles": "Favorite Profiles",
+
             "Access your bookmarked and starred candidates for quick reference.": "Access your bookmarked and starred candidates for quick reference.",
-            "Shared Profiles": "Shared Profiles",
-            "Shared Profiles": "Shared Profiles",
+
             "View profiles that have been shared with you by other team members or departments.": "View profiles that have been shared with you by other team members or departments.",
 
             // --- Folders Metrics ---
-            "Folder Metrics": "Folder Metrics",
+
             "Analyze candidate distribution and activity across your talent pools.": "Analyze candidate distribution and activity across your talent pools.",
             "Create Folder": "Create Folder",
-            "Total Profiles": "Total Profiles",
+
             "Profile Trends (All Folders)": "Profile Trends (All Folders)",
             "Last 6 Months": "Last 6 Months",
             "Folder Details": "Folder Details",
@@ -339,10 +337,10 @@ const resources = {
             "Folder Name": "Folder Name",
             "Added (30d)": "Added (30d)",
             "No Activity (30d)": "No Activity (30d)",
-            "Pending": "Pending",
+
             "Applicants": "Applicants",
             "Employees": "Employees",
-            "On Assignment": "On Assignment",
+
             "Not Assigned": "Not Assigned",
             "Create New Folder": "Create New Folder",
             "Folder name is required": "Folder name is required",
@@ -382,8 +380,7 @@ const resources = {
             "Try adjusting your search query.": "Try adjusting your search query.",
             "Role": "Role",
             "Availability": "Availability",
-            "Selected": "Selected",
-            "Tag": "Tag",
+
             "Referral": "Referral",
             "This feature will be available in the next update.": "This feature will be available in the next update.",
             "Action completed successfully!": "Action completed successfully!",
@@ -391,13 +388,9 @@ const resources = {
             "Active Engagement": "Active Engagement",
 
             // --- Campaigns Page ---
-            "Active Campaigns": "Active Campaigns",
-            "Closed Campaigns": "Closed Campaigns",
-            "Archived Campaigns": "Archived Campaigns",
+
             "Campaigns (Schema)": "Campaigns (Schema)",
-            "Active": "Active",
-            "Closed": "Closed",
-            "Archived": "Archived",
+
             "Title": "Title",
             "Owner": "Owner",
             "Status": "Status",
@@ -407,16 +400,15 @@ const resources = {
             "Loading Campaigns...": "Loading Campaigns...",
             "Failed to load campaigns": "Failed to load campaigns",
             "Untitled Campaign": "Untitled Campaign",
-            "Campaigns": "Campaigns",
+
 
             // --- Campaign Table ---
             "Job ID": "Job ID",
             "Days Left": "Days Left",
             "Members": "Members",
             "Updated Date": "Updated Date",
-            "Profiles": "Profiles",
             "Intelligence": "Intelligence",
-            "Source AI": "Source AI",
+
             "Attach People": "Attach People",
             "Attached Profiles": "Attached Profiles",
             "Integrations": "Integrations",
@@ -445,7 +437,7 @@ const resources = {
             // --- Settings Page ---
             "Company Information": "Company Information",
             "Manage your company profile, logos, address details, and regional settings.": "Manage your company profile, logos, address details, and regional settings.",
-            "Roles & Permissions": "Roles & Permissions",
+
             "Configure access levels, define user roles, and manage permissions for your team members.": "Configure access levels, define user roles, and manage permissions for your team members.",
             "User Management": "User Management",
             "Add, remove, or update user accounts and assign roles to your team members.": "Add, remove, or update user accounts and assign roles to your team members.",
@@ -533,8 +525,7 @@ const resources = {
             "Search roles...": "Search roles...",
             "Add Role": "Add Role",
             "Role Name": "Role Name",
-            "Last Updated": "Last Updated",
-            "Actions": "Actions",
+
             "Copy Permission Schema": "Copy Permission Schema",
             "Delete Role": "Delete Role",
             "System Role": "System Role",
@@ -546,8 +537,7 @@ const resources = {
             "Permissions": "Permissions",
             "System & Administration": "System & Administration",
             "Chatbot & AI": "Chatbot & AI",
-            "Source AI": "Source AI",
-            "Engage AI": "Engage AI",
+
 
             // --- User Management ---
             "Manage system access, roles, and user profiles.": "Manage system access, roles, and user profiles.",
@@ -558,12 +548,9 @@ const resources = {
             "Activate": "Activate",
             "Deactivate": "Deactivate",
             "User Profile": "User Profile",
-            "Basic Details": "Basic Details",
-            "Communication": "Communication",
-            "Appearance": "Appearance",
-            "Calendar": "Calendar",
+
             "Auth & Sync": "Auth & Sync",
-            "User Notifications": "User Notifications",
+
             "Login Sessions": "Login Sessions",
             "User Settings": "User Settings",
             "Manage account status and security credentials.": "Manage account status and security credentials.",
