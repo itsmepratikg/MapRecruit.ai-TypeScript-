@@ -26,7 +26,6 @@ const limiter = rateLimit({
 app.use(cors());
 app.use(limiter); // Apply global rate limiter
 app.use(express.json({ limit: '50mb' })); // Support large JSON payloads for schemaless data
-app.use(resolveTenant);
 
 // Logging Middleware
 app.use((req, res, next) => {
@@ -65,6 +64,9 @@ app.use(async (req, res, next) => {
         res.status(500).json({ message: "Database connection failed" });
     }
 });
+
+// Middleware for Tenant Resolution (Must be after DB connection)
+app.use(resolveTenant);
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
