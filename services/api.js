@@ -1,5 +1,9 @@
 import axios from 'axios';
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Construct API URL carefully
+// If env var is "http://localhost:5000", we want "http://localhost:5000/api"
+// If env var is "http://localhost:5000/api", we want "http://localhost:5000/api"
+const VITE_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = VITE_API_URL.endsWith('/api') ? VITE_API_URL : `${VITE_API_URL}/api`;
 
 import { attachSafetyInterceptor } from './SafetyInterceptor';
 
