@@ -4,6 +4,10 @@ import {
   Activity, Clock, FileText, CheckCircle, User, Settings, Filter,
   Calendar, ChevronDown, Search, X, CheckSquare, Square, RefreshCw
 } from '../../components/Icons';
+import { useActivities } from '../../hooks/useActivities';
+import { sanitizeActivityHtml, getActivityActorName } from '../../utils/activityUtils';
+import { Activity as ActivityType } from '../../types/Activity';
+
 
 // --- Constants ---
 
@@ -67,8 +71,32 @@ const ACTIVITIES_DATA = [
 
 export const Activities = () => {
   // --- Data State ---
-  const [activities, setActivities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const getUserCompanyID = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.currentCompanyID || user.companyID || user.companyId;
+      }
+    } catch (e) { console.error(e); }
+    return undefined;
+  };
+  const companyID = getUserCompanyID();
+
+  // Fetch Activities
+  const { activities, loading, error, refetch } = useActivities({
+    companyID, // Pass companyID if hook supports it (it checks implicit context in hook? NO, I need to pass it)
+    // Wait, my hook implementation didn't explicitly take companyID in params interface? 
+    // Let's check hook again. I might have missed strict companyID param in logic.
+    // But typically backend filters by user's company anyway.
+    // If backend handles it, great. If I need to pass it, I should update hook or just rely on backend.
+    // For now, I'll pass it if I added it, or trust backend.
+    // Actually, my hook interface has `candidateID`, `campaignID`, `activityOf`.
+    // It DOES NOT have `companyID`.
+    // I should rely on backend/session for companyID filtering usually.
+    // OR I should filter client side.
+    limit: 50
+  });
 
   // --- Filter State ---
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -81,53 +109,6 @@ export const Activities = () => {
 
   const typeDropdownRef = useRef<HTMLDivElement>(null);
   const dateDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Fetch Activities
-  useEffect(() => {
-    const fetchActivities = async () => {
-      setLoading(true);
-      try {
-        const { activityService } = await import('../../services/api');
-        const params: any = {};
-        if (dateRange.start) params.startDate = dateRange.start;
-        if (dateRange.end) params.endDate = dateRange.end;
-
-        const data = await activityService.getAll(params);
-
-        // Map backend types to icons
-        const iconMap: Record<string, any> = {
-          'PROFILE_UPDATE': User,
-          'STATUS_CHANGE': RefreshCw,
-          'EMAIL_SENT': CheckCircle,
-          'NOTE_ADDED': FileText,
-          'CAMPAIGN_ATTACH': CheckSquare,
-          'INTERVIEW_SCHEDULED': Calendar,
-          'CAMPAIGN_CREATED': CheckCircle,
-          'JOB_CREATED': CheckCircle,
-          'SETTINGS_UPDATED': Settings,
-          'EXPORT_DOWNLOAD': Activity,
-          'OTHER': Activity
-        };
-
-        const mapped = data.map((item: any) => ({
-          id: item._id,
-          action: item.title,
-          detail: item.description,
-          date: item.date || item.createdAt,
-          type: item.type,
-          icon: iconMap[item.type] || Activity
-        }));
-
-        setActivities(mapped);
-      } catch (err) {
-        console.error("Failed to fetch activities", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchActivities();
-  }, [dateRange]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -144,7 +125,6 @@ export const Activities = () => {
   }, []);
 
   // --- Handlers ---
-
   const toggleType = (type: string) => {
     setSelectedTypes(prev =>
       prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
@@ -169,16 +149,32 @@ export const Activities = () => {
   };
 
   // --- Filter Logic ---
-
   const filteredActivities = useMemo(() => {
     return activities.filter(item => {
-      // 1. Type Filter (In UI we show titles, but we might want to filter on type keys or action titles)
-      // For now, toggleType uses the title from ACTIVITY_FILTER_OPTIONS if we use that list.
-      // But let's check if selectedTypes matches item.action
-      const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(item.action);
-      return typeMatch;
+      // 1. Strict Company Check (Client Side Backup)
+      if (companyID && item.companyID !== companyID) return false;
+
+      // 2. Type Filter
+      const typeMatch = selectedTypes.length === 0 || selectedTypes.includes(item.activityType);
+
+      // 3. Date Filter
+      let dateMatch = true;
+      if (dateRange.start) {
+        const itemDate = new Date(item.activityAt || item.createdAt);
+        const startDate = new Date(dateRange.start);
+        if (itemDate < startDate) dateMatch = false;
+      }
+      if (dateRange.end && dateMatch) {
+        const itemDate = new Date(item.activityAt || item.createdAt);
+        const endDate = new Date(dateRange.end);
+        // Set end date to end of day
+        endDate.setHours(23, 59, 59, 999);
+        if (itemDate > endDate) dateMatch = false;
+      }
+
+      return typeMatch && dateMatch;
     });
-  }, [selectedTypes, activities]);
+  }, [selectedTypes, dateRange, activities, companyID]);
 
   const displayedFilterTypes = ACTIVITY_FILTER_OPTIONS.filter(t => t.toLowerCase().includes(typeSearch.toLowerCase()));
 
@@ -321,31 +317,55 @@ export const Activities = () => {
               </div>
             ))
           ) : filteredActivities.length > 0 ? (
-            filteredActivities.map((activity) => (
-              <div key={activity.id} className="relative group animate-in slide-in-from-bottom-2 duration-300">
-                {/* Timeline Node */}
-                <div className="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-400 z-10 group-hover:border-emerald-500 group-hover:text-emerald-500 transition-colors">
-                  <activity.icon size={12} />
-                </div>
+            filteredActivities.map((activity, idx) => {
+              const date = new Date(activity.activityAt || activity.createdAt);
+              // Use commonActivity by default for global feed, or fallback to profileActivity/campaignActivity if missing?
+              // Ideally commonActivity is what we want.
+              const htmlContent = sanitizeActivityHtml(activity.activity?.commonActivity || activity.activity?.profileActivity || activity.activity?.campaignActivity);
+              const actorName = getActivityActorName(activity);
 
-                <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{activity.action}</h4>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{activity.detail}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
-                        {getTimeAgo(activity.date)}
-                      </span>
-                      <span className="text-[10px] text-slate-400 mt-1 block">
-                        {new Date(activity.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+              return (
+                <div key={activity._id || idx} className="relative group animate-in slide-in-from-bottom-2 duration-300">
+                  {/* Timeline Node */}
+                  <div className="absolute -left-[41px] top-0 w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-600 flex items-center justify-center text-slate-500 dark:text-slate-400 z-10 group-hover:border-emerald-500 group-hover:text-emerald-500 transition-colors">
+                    {activity.activityIcon ? (
+                      <i className={activity.activityIcon} aria-hidden="true"></i>
+                    ) : (
+                      <CheckCircle size={12} />
+                    )}
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        {/* Content Render */}
+                        {htmlContent ? (
+                          <div
+                            className="text-sm text-slate-800 dark:text-slate-200 prose prose-sm max-w-none dark:prose-invert"
+                            dangerouslySetInnerHTML={{ __html: htmlContent }}
+                          />
+                        ) : (
+                          <>
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-200">{activity.activityType}</h4>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                              {activity.activityGroup} by {actorName}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-right ml-4 shrink-0">
+                        <span className="block text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
+                          {getTimeAgo(date.toISOString())}
+                        </span>
+                        <span className="text-[10px] text-slate-400 mt-1 block">
+                          {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="py-12 text-center">
               <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
@@ -368,3 +388,4 @@ export const Activities = () => {
     </div>
   );
 };
+

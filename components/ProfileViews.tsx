@@ -9,6 +9,9 @@ import { SectionCard, SecureContactCard } from './Common';
 import { CANDIDATE } from '../data';
 import { useActivities } from '../hooks/useActivities';
 import { useParams } from 'react-router-dom';
+import { sanitizeActivityHtml, getActivityActorName } from '../utils/activityUtils';
+import { Activity } from '../types/Activity';
+
 
 // Updated Profile Details Component to handle dynamic JSON schema with the OLD UI Layout
 export const ProfileDetails = ({ data, onEditSection }: { data?: any, onEditSection?: (tab: string) => void }) => {
@@ -237,12 +240,30 @@ export const ProfileDetails = ({ data, onEditSection }: { data?: any, onEditSect
    );
 };
 
-export const ActivitiesView = () => {
-   const { id: candidateID } = useParams<{ id: string }>();
-   const { activities, loading, error } = useActivities({ candidateID });
+export const ActivitiesView = ({ companyID, resumeID }: { companyID?: string, resumeID?: string }) => {
+   const { id: paramID } = useParams<{ id: string }>();
+   // Use prop resumeID if available, else fallback to param. Should match ResumeID logic.
+   const activeResumeID = resumeID || paramID;
+
+   const { activities, loading, error } = useActivities({
+      candidateID: activeResumeID,
+      limit: 50 // reasonable breakdown
+   });
 
    if (loading) return <div className="p-8 text-center text-slate-500">Loading activities...</div>;
    if (error) return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+
+   // Filter Logic: Client-side strict check just in case backend returns loose data
+   const filteredActivities = activities.filter(act => {
+      // 1. Strict Company Match
+      if (companyID && act.companyID !== companyID) return false;
+      // 2. Strict Resume Match (if we know the ResumeID)
+      if (activeResumeID && act.resumeID && !act.resumeID.includes(activeResumeID)) return false;
+      // 3. Visibility
+      if (act.visible === false || act.deleted === true) return false;
+
+      return true;
+   });
 
    return (
       <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto">
@@ -252,22 +273,14 @@ export const ActivitiesView = () => {
          </div>
 
          <div className="relative border-l-2 border-slate-200 dark:border-slate-700 ml-4 space-y-8 pb-8">
-            {activities.length === 0 && (
+            {filteredActivities.length === 0 && (
                <div className="pl-8 text-slate-500 dark:text-slate-400 italic">No activities recorded yet.</div>
             )}
-            {activities.map((act: any, idx: number) => {
-               // Default icon mapping
-               let Icon = CheckCircle;
-               let color = "bg-slate-100 text-slate-600";
-
-               switch (act.type) {
-                  case 'PROFILE_UPDATE': Icon = User; color = "bg-blue-100 text-blue-600"; break;
-                  case 'STATUS_CHANGE': Icon = CheckCircle; color = "bg-green-100 text-green-600"; break;
-                  case 'EMAIL_SENT': Icon = Mail; color = "bg-indigo-100 text-indigo-600"; break;
-                  case 'NOTE_ADDED': Icon = Paperclip; color = "bg-amber-100 text-amber-600"; break;
-                  case 'CAMPAIGN_ATTACH': Icon = Briefcase; color = "bg-purple-100 text-purple-600"; break;
-                  case 'INTERVIEW_SCHEDULED': Icon = Calendar; color = "bg-pink-100 text-pink-600"; break;
-               }
+            {filteredActivities.map((act: Activity, idx: number) => {
+               // Render Logic
+               const date = new Date(act.activityAt || act.createdAt);
+               const htmlContent = sanitizeActivityHtml(act.activity?.profileActivity);
+               const actorName = getActivityActorName(act);
 
                return (
                   <div key={act._id || idx} className="relative pl-8">
@@ -275,24 +288,39 @@ export const ActivitiesView = () => {
 
                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
                         <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 sm:mb-0">
-                           {new Date(act.date).toLocaleDateString()}
+                           {date.toLocaleDateString()}
                         </span>
                         <span className="text-xs text-slate-400 font-mono">
-                           {new Date(act.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                           {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                      </div>
 
                      <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all">
                         <div className="flex items-start gap-4">
-                           <div className={`p-2 rounded-lg ${color.replace('bg-', 'bg-opacity-20 ')} shrink-0`}>
-                              <Icon size={18} />
+                           {/* Icon: Use FontAwesome Class Directly */}
+                           <div className="p-2 rounded-lg bg-slate-100 text-slate-600 shrink-0">
+                              {act.activityIcon ? (
+                                 <i className={act.activityIcon} aria-hidden="true"></i>
+                              ) : (
+                                 <User size={18} /> // Fallback if no icon string
+                              )}
                            </div>
-                           <div>
-                              <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-0.5">{act.title}</h4>
-                              <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">{act.description}</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                 Action by <span className="font-medium text-slate-700 dark:text-slate-300">{act.userID?.firstName} {act.userID?.lastName}</span>
-                              </p>
+
+                           <div className="flex-1">
+                              {/* Content: Render HTML or Fallback */}
+                              {htmlContent ? (
+                                 <div
+                                    className="text-sm text-slate-600 dark:text-slate-300 mb-1 prose prose-sm max-w-none dark:prose-invert"
+                                    dangerouslySetInnerHTML={{ __html: htmlContent }}
+                                 />
+                              ) : (
+                                 <>
+                                    <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-0.5">{act.activityGroup} - {act.activityType}</h4>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-1">
+                                       Action by <span className="font-medium text-slate-700 dark:text-slate-300">{actorName}</span>
+                                    </p>
+                                 </>
+                              )}
                            </div>
                         </div>
                      </div>
@@ -303,6 +331,7 @@ export const ActivitiesView = () => {
       </div>
    );
 };
+
 
 export const TalentChatView = () => (
    <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col h-[600px] overflow-hidden transition-colors">

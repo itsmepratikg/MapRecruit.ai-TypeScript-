@@ -47,6 +47,21 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
   const location = useLocation();
   const { addToast } = useToast();
 
+  // Helper to get company ID from local storage/session safely
+  const getUserCompanyID = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        return user.currentCompanyID || user.companyID || user.companyId;
+      }
+    } catch (e) {
+      console.error("Error parsing user for company ID", e);
+    }
+    return undefined;
+  };
+  const userCompanyID = getUserCompanyID();
+
   const [accessDenied, setAccessDenied] = useState(false);
   const [owningEntityName, setOwningEntityName] = useState<string | null>(null);
   const [ownerDisplay, setOwnerDisplay] = useState<{ label: string, name: string } | null>(null);
@@ -391,7 +406,7 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
     switch (activeTab) {
       case 'profile': return <Overview data={resumeDetails} onEditSection={handleEditSection} />;
       case 'resume': return <Resume />;
-      case 'activity': return <Activities />;
+      case 'activity': return <Activities companyID={userCompanyID} resumeID={id} />;
       case 'chat': return <Chat />;
       case 'campaigns': return <LinkedCampaigns onPreviewCampaign={setPreviewCampaign} onShowMatchScore={() => setShowMatchScore(true)} onSaveFeedback={handleSaveCampaignFeedback} />;
       case 'folders': return <Folders />;

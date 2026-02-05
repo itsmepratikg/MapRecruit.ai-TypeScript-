@@ -1,18 +1,32 @@
 import { useState, useEffect, useCallback } from 'react';
-import { activityService } from '../services/api';
+import { activityService } from '../services/activityService';
+import { Activity } from '../types/Activity';
 
-export const useActivities = (params: { candidateID?: string, campaignID?: string, limit?: number }) => {
-    const [activities, setActivities] = useState<any[]>([]);
+interface UseActivitiesParams {
+    candidateID?: string;
+    campaignID?: string;
+    activityOf?: string; // 'common', 'user', etc.
+    limit?: number;
+    skip?: number;
+    activityType?: string;
+    activityGroup?: string;
+}
+
+export const useActivities = (params: UseActivitiesParams) => {
+    const [activities, setActivities] = useState<Activity[]>([]);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchActivities = useCallback(async () => {
-        if (!params.candidateID && !params.campaignID) return;
+        // If specific IDs are required but missing, don't fetch (unless fetching global 'common' activities)
+        if (!params.candidateID && !params.campaignID && !params.activityOf) return;
 
         try {
             setLoading(true);
-            const data = await activityService.getAll(params);
-            setActivities(data);
+            const response = await activityService.getAll(params);
+            setActivities(response.activities);
+            setTotal(response.total);
             setError(null);
         } catch (err: any) {
             console.error("Error fetching activities:", err);
@@ -20,15 +34,24 @@ export const useActivities = (params: { candidateID?: string, campaignID?: strin
         } finally {
             setLoading(false);
         }
-    }, [params.candidateID, params.campaignID, params.limit]);
+    }, [
+        params.candidateID,
+        params.campaignID,
+        params.activityOf,
+        params.limit,
+        params.skip,
+        params.activityType,
+        params.activityGroup
+    ]);
 
-    const logActivity = async (data: { type: string, title: string, description?: string, metadata?: any }) => {
+    const logActivity = async (data: any) => {
         try {
             const newActivity = await activityService.log({
                 ...data,
                 candidateID: params.candidateID,
                 campaignID: params.campaignID
             });
+            // Optimistic update or refetch
             setActivities(prev => [newActivity, ...prev]);
             return newActivity;
         } catch (err: any) {
@@ -41,5 +64,5 @@ export const useActivities = (params: { candidateID?: string, campaignID?: strin
         fetchActivities();
     }, [fetchActivities]);
 
-    return { activities, loading, error, refetch: fetchActivities, logActivity };
+    return { activities, total, loading, error, refetch: fetchActivities, logActivity };
 };
