@@ -11,7 +11,6 @@ import { UsersSettings } from './Users/Users';
 import { UserProfileContainer } from './Users/UserProfileContainer';
 import { ClientsSettings } from './Clients';
 import { ClientProfileContainer } from './ClientProfile/ClientProfileContainer';
-import { ClientProfileContainer } from './ClientProfile/ClientProfileContainer';
 import { FranchiseSettings } from './Franchise';
 import { RoleHierarchy } from './Roles/RoleHierarchy';
 
