@@ -100,12 +100,12 @@ const ColorDropdown = ({ selected, onSelect }: { selected: string, onSelect: (c:
    );
 };
 
-const ClientMultiSelect = ({ selected = [], options = [], onSelect }: { selected: string[], options: string[], onSelect: (selected: string[]) => void }) => {
+const ClientMultiSelect = ({ selected = [], options = [], onSelect }: { selected: any[] | undefined, options: any[], onSelect: (selected: any[]) => void }) => {
    const [isOpen, setIsOpen] = useState(false);
    const [search, setSearch] = useState('');
    const dropdownRef = useRef<HTMLDivElement>(null);
 
-   const filteredOptions = options.filter(opt => {
+   const filteredOptions = options.filter((opt: any) => {
       const label = typeof opt === 'string' ? opt : (opt.clientName || opt.name || '');
       return label.toLowerCase().includes(search.toLowerCase());
    });
@@ -121,8 +121,19 @@ const ClientMultiSelect = ({ selected = [], options = [], onSelect }: { selected
    }, []);
 
    const toggleOption = (option: string) => {
-      const newSelected = selected.includes(option)
-         ? selected.filter(s => s !== option)
+      // Comparison logic that handles both strings and objects
+      const isSelected = selected.some((s: any) => {
+         const sVal = typeof s === 'string' ? s : (s.clientName || s.name);
+         const optVal = typeof option === 'string' ? option : (option.clientName || (option as any).name);
+         return sVal === optVal;
+      });
+
+      const newSelected = isSelected
+         ? selected.filter((s: any) => {
+            const sVal = typeof s === 'string' ? s : (s.clientName || s.name);
+            const optVal = typeof option === 'string' ? option : (option.clientName || (option as any).name);
+            return sVal !== optVal;
+         })
          : [...selected, option];
       onSelect(newSelected);
    };
@@ -136,11 +147,14 @@ const ClientMultiSelect = ({ selected = [], options = [], onSelect }: { selected
          >
             <div className="flex flex-wrap gap-1 max-w-[90%]">
                {selected.length > 0 ? (
-                  selected.map(s => (
-                     <span key={s} className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded text-xs font-semibold">
-                        {s}
-                     </span>
-                  ))
+                  selected.map((s: any) => {
+                     const label = typeof s === 'string' ? s : (s.clientName || s.name || 'Unknown');
+                     return (
+                        <span key={label} className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded text-xs font-semibold">
+                           {label}
+                        </span>
+                     );
+                  })
                ) : (
                   <span className="text-sm text-slate-400">Select Clients access...</span>
                )}
@@ -164,16 +178,21 @@ const ClientMultiSelect = ({ selected = [], options = [], onSelect }: { selected
                   </div>
                </div>
                <div className="max-h-60 overflow-y-auto custom-scrollbar">
-                  {filteredOptions.map(opt => {
-                     const isSelected = selected.includes(opt);
+                  {filteredOptions.map((opt: any) => {
+                     const label = typeof opt === 'string' ? opt : (opt.clientName || opt.name || 'Unknown');
+                     const isSelected = selected.some((s: any) => {
+                        const sVal = typeof s === 'string' ? s : (s.clientName || s.name);
+                        return sVal === label;
+                     });
+
                      return (
                         <button
-                           key={opt}
+                           key={label}
                            type="button"
                            onClick={() => toggleOption(opt)}
                            className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center justify-between border-b border-slate-50 dark:border-slate-700/50 last:border-0 ${isSelected ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 font-bold' : 'text-slate-600 dark:text-slate-300'}`}
                         >
-                           <span>{typeof opt === 'string' ? opt : (opt.clientName || opt.name)}</span>
+                           <span>{label}</span>
                            {isSelected && (
                               <div className="flex items-center justify-center w-4 h-4 rounded bg-emerald-500 text-white">
                                  <Check size={12} strokeWidth={3} />
@@ -424,11 +443,14 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                               <Users size={12} /> {PROFILE_SCHEMA.fields.find(f => f.key === 'teams')?.label}
                            </label>
                            <div className="flex flex-wrap gap-2">
-                              {(formData.teams || []).map((client: string, idx: number) => (
-                                 <span key={idx} className={`px-2.5 py-1 text-xs font-medium rounded border ${client === formData.activeClient ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600'}`}>
-                                    {client}
-                                 </span>
-                              ))}
+                              {(formData.teams || []).map((client: any, idx: number) => {
+                                 const label = typeof client === 'string' ? client : (client.clientName || client.name || 'Unknown');
+                                 return (
+                                    <span key={idx} className={`px-2.5 py-1 text-xs font-medium rounded border ${label === formData.activeClient ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600'}`}>
+                                       {label}
+                                    </span>
+                                 );
+                              })}
                               {(!formData.teams || formData.teams.length === 0) && <p className="text-xs text-slate-400">NA</p>}
                            </div>
                         </div>
@@ -517,14 +539,14 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                               <input
                                  type="text"
                                  placeholder="First Name"
-                                 value={formData.firstName}
+                                 value={formData.firstName || ''}
                                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                                  className="flex-1 px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
                               <input
                                  type="text"
                                  placeholder="Last Name"
-                                 value={formData.lastName}
+                                 value={formData.lastName || ''}
                                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                                  className="flex-1 px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
@@ -553,7 +575,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                               </div>
                               <input
                                  type="text"
-                                 value={formData.phone}
+                                 value={formData.phone || ''}
                                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                  className="flex-1 px-3 py-2.5 border border-l-0 border-slate-200 dark:border-slate-600 rounded-r-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
@@ -564,7 +586,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Email ID <span className="text-red-500">*</span></label>
                            <input
                               type="text"
-                              value={formData.email}
+                              value={formData.email || ''}
                               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                               disabled={!userOverride} // Only editable if admin overriding
                               className={`w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-sm ${userOverride ? 'cursor-text bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200' : 'cursor-not-allowed'}`}
@@ -578,9 +600,10 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                                  <select
                                     className={`w-full appearance-none px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-sm ${userOverride ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 cursor-pointer' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'}`}
                                     disabled={!userOverride}
-                                    value={formData.role}
+                                    value={formData.role || ''}
                                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                  >
+                                    <option value="" disabled>Select Role</option>
                                     <option value="Product Admin">Product Admin</option>
                                     <option value="Admin">Admin</option>
                                     <option value="Recruiter">Recruiter</option>
@@ -600,7 +623,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                                     />
                                  </div>
                                  <div className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-sm ${selectedColorObj.class}`}>
-                                    {getInitials(formData.firstName, formData.lastName)}
+                                    {getInitials(formData.firstName || '?', formData.lastName || '?')}
                                  </div>
                               </div>
                            </div>
@@ -611,7 +634,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">User Job Title</label>
                               <input
                                  type="text"
-                                 value={formData.jobTitle}
+                                 value={formData.jobTitle || ''}
                                  onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
                                  className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
@@ -621,7 +644,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                               <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Location</label>
                               <input
                                  type="text"
-                                 value={formData.location}
+                                 value={formData.location || ''}
                                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                                  className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-sm focus:ring-2 focus:ring-emerald-500 outline-none dark:text-slate-200"
                               />
@@ -653,11 +676,14 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                            <div className="relative">
                               <select
                                  className="w-full appearance-none px-3 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 text-sm cursor-pointer outline-none focus:ring-2 focus:ring-emerald-500"
-                                 value={formData.activeClient}
+                                 value={formData.activeClient || ''}
                                  onChange={(e) => setFormData({ ...formData, activeClient: e.target.value })}
                               >
                                  <option value="" disabled>Select active client</option>
-                                 {(formData.teams || []).map(c => <option key={c} value={c}>{c}</option>)}
+                                 {(formData.teams || []).map((c: any) => {
+                                    const val = typeof c === 'string' ? c : (c.clientName || c.name || 'Unknown');
+                                    return <option key={val} value={val}>{val}</option>;
+                                 })}
                                  {(formData.teams || []).length === 0 && <option disabled>Assign clients access first</option>}
                               </select>
                               <ChevronDown size={16} className="absolute right-3 top-3 text-slate-400 pointer-events-none" />

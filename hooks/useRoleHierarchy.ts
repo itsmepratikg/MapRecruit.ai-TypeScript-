@@ -56,5 +56,5 @@ export const useRoleHierarchy = (userRoleID: string | undefined, companyID: stri
         return myRank < targetRank;
     };
 
-    return { isSeniorTo, loading };
+    return { isSeniorTo, loading, hierarchy, userRoleID };
 };

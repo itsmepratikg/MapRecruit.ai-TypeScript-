@@ -22,11 +22,12 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
 
     // Auth & Hierarchy
     const { userProfile } = useUserProfile();
-    const { isSeniorTo } = useRoleHierarchy(userProfile?.roleID?._id || userProfile?.roleID, userProfile?.companyID);
+    const { isSeniorTo, hierarchy, userRoleID } = useRoleHierarchy(userProfile?.roleID?._id || userProfile?.roleID, userProfile?.companyID);
 
     const [view, setView] = useState<'LIST' | 'EDITOR'>('LIST');
     const [users, setUsers] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
+    const [roles, setRoles] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -37,12 +38,14 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
         name: '',
         email: '',
         phone: '',
+        roleID: '',
         clients: [] as string[]
     });
 
     useEffect(() => {
         loadUsers();
         loadClients();
+        loadRoles();
     }, []);
 
     const loadUsers = async () => {
@@ -64,9 +67,19 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
         }
     };
 
+    const loadRoles = async () => {
+        try {
+            const { default: api } = await import('../../../services/api');
+            const res = await api.get('/auth/roles');
+            setRoles(res.data || []);
+        } catch (error) {
+            console.error("Failed to fetch roles:", error);
+        }
+    };
+
     const handleCreateUser = () => {
         setSelectedUser(null);
-        setFormData({ name: '', email: '', phone: '', clients: [] });
+        setFormData({ name: '', email: '', phone: '', roleID: '', clients: [] });
         setView('EDITOR');
     };
 
@@ -86,9 +99,10 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
         } else {
             setSelectedUser(user);
             setFormData({
-                name: user.name || '',
+                name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
                 email: user.email || '',
                 phone: user.phone || '',
+                roleID: user.role?._id || user.role || '',
                 clients: user.clients || [] // Assuming user object has clients array
             });
             setView('EDITOR');
@@ -96,19 +110,51 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
     };
 
     const handleSaveUser = async () => {
-        if (!formData.name || !formData.email) {
-            addToast(t("Name and Email are required"), 'error');
+        if (!formData.name || !formData.email || !formData.roleID) {
+            addToast(t("Name, Email, and Role are required"), 'error');
             return;
         }
 
+        // Split Name into First and Last
+        const [firstName, ...lastNames] = formData.name.trim().split(/\s+/);
+        const lastName = lastNames.join(' ') || '.';
+
         try {
             if (selectedUser) {
-                // Update Logic (Preserved for future, currently focused on Create)
-                await userService.update(selectedUser._id, formData);
+                // Update Logic
+                await userService.update(selectedUser._id, {
+                    ...formData,
+                    firstName,
+                    lastName
+                });
                 addToast(t("User updated successfully"), 'success');
             } else {
-                // Create Logic
-                await userService.create(formData);
+                // Create Logic: Determine Active Client
+                if (formData.clients.length === 0) {
+                    addToast(t("Please assign at least one client."), 'error');
+                    return;
+                }
+
+                // Get full client objects in selection order
+                const assignedClientDocs = formData.clients.map(id => clients.find(c => c._id === id)).filter(Boolean);
+
+                // Requirement: Give the first available active client (from selection order)
+                const activeClientDoc = assignedClientDocs.find((c: any) =>
+                    c.status === 'Active' || c.status === true || c.active === true || c.status === undefined
+                );
+
+                if (!activeClientDoc) {
+                    addToast(t("No active client exists among the selected clients. Please check client statuses."), 'error');
+                    return;
+                }
+
+                // Create user with split name and calculated active client
+                await userService.create({
+                    ...formData,
+                    firstName,
+                    lastName,
+                    activeClientID: activeClientDoc._id
+                });
                 addToast(t("User created successfully"), 'success');
             }
             setView('LIST');
@@ -197,6 +243,31 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">{t("Role")} *</label>
+                                    <div className="relative">
+                                        <Shield size={16} className="absolute left-3 top-3 text-slate-400" />
+                                        <select
+                                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none"
+                                            value={formData.roleID}
+                                            onChange={e => setFormData({ ...formData, roleID: e.target.value })}
+                                        >
+                                            <option value="">{t("Select Role")}</option>
+                                            {roles
+                                                .filter(role => {
+                                                    if (!userRoleID || !hierarchy || hierarchy.size === 0) return true;
+                                                    const myRank = hierarchy.get(userRoleID) ?? Infinity;
+                                                    const targetRank = hierarchy.get(role._id) ?? Infinity;
+                                                    return myRank <= targetRank; // Senior (low rank) or Equal
+                                                })
+                                                .map(role => (
+                                                    <option key={role._id} value={role._id}>{role.roleName}</option>
+                                                ))
+                                            }
+                                        </select>
+                                        <ChevronDown size={14} className="absolute right-3 top-3.5 text-slate-400 pointer-events-none" />
                                     </div>
                                 </div>
                                 <div>

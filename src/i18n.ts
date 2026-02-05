@@ -298,7 +298,6 @@ const resources = {
             "Shared": "Shared",
             "Run Search": "Run Search",
             "Delete": "Delete",
-            "Interview Status": "Interview Status",
             "Track candidate progress through assessment and interview stages.": "Track candidate progress through assessment and interview stages.",
             "Talent Assistant": "Talent Assistant",
             "Assessment": "Assessment",
@@ -465,7 +464,6 @@ const resources = {
             "Design and manage automated engagement workflows and candidate journeys.": "Design and manage automated engagement workflows and candidate journeys.",
             "Questionnaire Builder": "Questionnaire Builder",
             "Create screening questionnaires and assessment forms for candidates.": "Create screening questionnaires and assessment forms for candidates.",
-            "Profile Sources": "Profile Sources",
             "Manage external profile sources and configure data import settings.": "Manage external profile sources and configure data import settings.",
             "MRI Preferences": "MRI Preferences",
             "Configure MapRecruit Intelligence preferences and scoring weights.": "Configure MapRecruit Intelligence preferences and scoring weights.",
@@ -475,7 +473,6 @@ const resources = {
             // --- Company Info ---
             "Manage your organization's profile, branding, and global settings.": "Manage your organization's profile, branding, and global settings.",
             "Edit Settings": "Edit Settings",
-            "Save Changes": "Save Changes",
             "Company-Wide Settings": "Company-Wide Settings",
             "Changes made here will affect all users within this organization tenant. Ensure accuracy before saving.": "Changes made here will affect all users within this organization tenant. Ensure accuracy before saving.",
             "Branding & Logos": "Branding & Logos",

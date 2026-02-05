@@ -186,49 +186,49 @@ export const Login = ({ onLogin }: LoginProps) => {
                     {/* Abstract Background */}
                     <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[80%] rounded-full bg-emerald-900/30 blur-3xl"></div>
                     <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-indigo-900/30 blur-3xl"></div>
-                    <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
-                </div>
-
-                <div className="relative z-10">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-900/20">
-                            <Command size={24} className="text-white" />
-                        </div>
-                        <span className="text-2xl font-bold tracking-tight">MapRecruit</span>
-                    </div>
-                    <h1 className="text-5xl font-bold leading-tight mb-6">
-                        {t("Intelligent Hiring")} <br />
-                        <span className="text-emerald-400">{t("Simplified.")}</span>
-                    </h1>
-                    <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-                        {t("Streamline your recruitment process with AI-powered sourcing, matching, and engagement workflows designed for modern teams.")}
-                    </p>
-                </div>
-
-                <div className="relative z-10 space-y-6">
-                    <div className="flex gap-4">
-                        <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 w-48">
-                            <Shield size={24} className="text-emerald-400 mb-3" />
-                            <div className="h-2 w-16 bg-white/20 rounded mb-2"></div>
-                            <div className="h-2 w-24 bg-white/10 rounded"></div>
-                        </div>
-                        <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 w-48 translate-y-4">
-                            <Globe size={24} className="text-blue-400 mb-3" />
-                            <div className="h-2 w-16 bg-white/20 rounded mb-2"></div>
-                            <div className="h-2 w-24 bg-white/10 rounded"></div>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                        <span>© 2025 MapRecruit.ai</span>
-                        <span>•</span>
-                        <a href="#" className="hover:text-white transition-colors">{t("Privacy")}</a>
-                        <span>•</span>
-                        <a href="#" className="hover:text-white transition-colors">{t("Terms")}</a>
-                    </div>
-                </div>
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg viewBox=\"0 0 200 200\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cfilter id=\"noiseFilter\"%3E%3CfeTurbulence type=\"fractalNoise\" baseFrequency=\"0.65\" numOctaves=\"3\" stitchTiles=\"stitch\"/%3E%3C/filter%3E%3Crect width=\"100%25\" height=\"100%25\" filter=\"url(%23noiseFilter)\"/%3E%3C/svg%3E')] opacity-20"></div>
             </div>
 
-            {/* Right Side - Login Form */}
+            <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-900/20">
+                        <Command size={24} className="text-white" />
+                    </div>
+                    <span className="text-2xl font-bold tracking-tight">MapRecruit</span>
+                </div>
+                <h1 className="text-5xl font-bold leading-tight mb-6">
+                    {t("Intelligent Hiring")} <br />
+                    <span className="text-emerald-400">{t("Simplified.")}</span>
+                </h1>
+                <p className="text-slate-400 text-lg max-w-md leading-relaxed">
+                    {t("Streamline your recruitment process with AI-powered sourcing, matching, and engagement workflows designed for modern teams.")}
+                </p>
+            </div>
+
+            <div className="relative z-10 space-y-6">
+                <div className="flex gap-4">
+                    <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 w-48">
+                        <Shield size={24} className="text-emerald-400 mb-3" />
+                        <div className="h-2 w-16 bg-white/20 rounded mb-2"></div>
+                        <div className="h-2 w-24 bg-white/10 rounded"></div>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 w-48 translate-y-4">
+                        <Globe size={24} className="text-blue-400 mb-3" />
+                        <div className="h-2 w-16 bg-white/20 rounded mb-2"></div>
+                        <div className="h-2 w-24 bg-white/10 rounded"></div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <span>© 2025 MapRecruit.ai</span>
+                    <span>•</span>
+                    <a href="#" className="hover:text-white transition-colors">{t("Privacy")}</a>
+                    <span>•</span>
+                    <a href="#" className="hover:text-white transition-colors">{t("Terms")}</a>
+                </div>
+            </div>
+        </div>
+
+            {/* Right Side - Login Form */ }
             <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
                 <div className="w-full max-w-md space-y-8">
                     <div className="text-center lg:text-left">
@@ -354,6 +354,6 @@ export const Login = ({ onLogin }: LoginProps) => {
                 activeClientID="Unknown"
                 activeCompanyID="Unknown"
             />
-        </div>
+        </div >
     );
 };

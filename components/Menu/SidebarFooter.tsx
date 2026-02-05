@@ -220,8 +220,8 @@ export const SidebarFooter = ({
                         onClick={() => handleMenuClick('client')}
                     >
                         <Building2 size={18} className={activePopover === 'client' ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400 dark:text-slate-500"} />
-                        <span className="text-sm font-medium truncate" title={clients.find(c => (c._id || c.id) === userProfile.activeClientID)?.clientName || userProfile.activeClient}>
-                            {clients.find(c => (c._id || c.id) === userProfile.activeClientID)?.clientName || userProfile.activeClient}
+                        <span className="text-sm font-medium truncate" title={clients.find(c => (c._id || c.id) === userProfile.activeClientID)?.clientName || (typeof userProfile.activeClient === 'object' ? userProfile.activeClient.clientName : userProfile.activeClient)}>
+                            {clients.find(c => (c._id || c.id) === userProfile.activeClientID)?.clientName || (typeof userProfile.activeClient === 'object' ? userProfile.activeClient.clientName : userProfile.activeClient)}
                         </span>
                     </button>
 

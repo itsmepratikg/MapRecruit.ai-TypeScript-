@@ -156,7 +156,11 @@ export const WelcomeHeader = ({ onNavigate, counts }: { onNavigate?: (tab: strin
                   <p className="font-bold text-base truncate">{userProfile.firstName} {userProfile.lastName}</p>
                   <div className="flex items-center gap-1.5 mt-1 text-[10px] text-white/90 bg-white/10 px-2 py-0.5 rounded-full w-fit border border-white/10 backdrop-blur-sm">
                      <Briefcase size={10} />
-                     <span className="truncate">{userProfile.activeClient}</span>
+                     <span className="truncate">
+                        {typeof userProfile.activeClient === 'object'
+                           ? (userProfile.activeClient.clientName || userProfile.activeClient.name || 'Unknown')
+                           : (userProfile.activeClient || 'Unknown')}
+                     </span>
                   </div>
                </div>
             </div>
