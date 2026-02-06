@@ -9,7 +9,8 @@ import { useToast } from '../../components/Toast';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { userService } from '../../services/api';
 import { integrationService } from '../../services/integrationService';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { ConfirmationModal } from '../../components/ConfirmationModal';
 
 
 // --- Types ---
@@ -39,6 +40,7 @@ interface ConnectedCalendar {
     email: string;
     status: 'Connected' | 'Syncing' | 'Error';
     lastSynced: string;
+    validUpto?: string;
 }
 
 interface CalendarConfig {
@@ -57,14 +59,14 @@ interface CalendarConfig {
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const TIME_ZONES = [
-    '(GMT-08:00) Pacific Time (US & Canada)',
-    '(GMT-05:00) Eastern Time (US & Canada)',
-    '(GMT+00:00) London, Edinburgh',
-    '(GMT+01:00) Berlin, Paris',
-    '(GMT+05:30) Mumbai, New Delhi',
-    '(GMT+08:00) Singapore',
-    '(GMT+09:00) Tokyo',
-    '(GMT+10:00) Sydney'
+    { label: '(GMT-08:00) Pacific Time', value: 'America/Los_Angeles' },
+    { label: '(GMT-05:00) Eastern Time', value: 'America/New_York' },
+    { label: '(GMT+00:00) UTC / London', value: 'Europe/London' },
+    { label: '(GMT+01:00) Central Europe', value: 'Europe/Paris' },
+    { label: '(GMT+05:30) India Standard Time', value: 'Asia/Kolkata' },
+    { label: '(GMT+08:00) Singapore Time', value: 'Asia/Singapore' },
+    { label: '(GMT+09:00) Japan Standard Time', value: 'Asia/Tokyo' },
+    { label: '(GMT+10:00) Australian Eastern Time', value: 'Australia/Sydney' }
 ];
 const DATE_FORMATS = ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'];
 
@@ -80,22 +82,48 @@ const INITIAL_SCHEDULE: DaySchedule[] = DAYS_OF_WEEK.map(day => ({
 
 // Format Time Display based on preference
 const formatTimeDisplay = (val: string, format: '12h' | '24h') => {
-    if (!val) return '';
+    if (!val || val.includes('now')) return val || '';
     if (format === '24h') return val;
-    const [h, m] = val.split(':').map(Number);
-    const period = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
+    try {
+        const parts = val.split(':');
+        if (parts.length < 2) return val;
+        const h = parseInt(parts[0]);
+        const m = parseInt(parts[1]);
+        const period = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 || 12;
+        return `${h12}:${m.toString().padStart(2, '0')} ${period}`;
+    } catch (e) { return val; }
 };
 
 // Format Date Display based on preference
 const formatDateDisplay = (isoDate: string, format: string) => {
-    if (!isoDate) return '';
-    const [y, m, d] = isoDate.split('-');
+    if (!isoDate || isoDate.includes('now') || isoDate.includes('Unknown')) return isoDate || '';
+    try {
+        const dateStr = isoDate.split('T')[0];
+        const parts = dateStr.split('-');
+        if (parts.length < 3) return isoDate;
+        const [y, m, d] = parts;
 
-    if (format === 'MM/DD/YYYY') return `${m}/${d}/${y}`;
-    if (format === 'DD/MM/YYYY') return `${d}/${m}/${y}`;
-    return isoDate; // Default YYYY-MM-DD
+        if (format === 'MM/DD/YYYY') return `${m}/${d}/${y}`;
+        if (format === 'DD/MM/YYYY') return `${d}/${m}/${y}`;
+        return dateStr;
+    } catch (e) { return isoDate; }
+};
+
+const getExpiryStatus = (validUpto: string | undefined) => {
+    if (!validUpto || validUpto === 'Unknown') return null;
+    const now = new Date();
+    const expiry = new Date(validUpto);
+    const diffMs = expiry.getTime() - now.getTime();
+    if (diffMs <= 0) return { label: 'Expired', isUrgent: true };
+
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+
+    if (hours < 50) {
+        return { label: `${hours} hours left`, isUrgent: true };
+    }
+    return { label: `${days} days left`, isUrgent: false };
 };
 
 const generateTimeOptions = (format: '12h' | '24h', interval = 30) => {
@@ -282,21 +310,37 @@ const CopyScheduleModal = ({ sourceDay, days, onCopy, onClose }: any) => {
 };
 
 // Added mode prop to support Modal usage
-export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings', onClose }: { userOverride?: any, mode?: 'page' | 'modal', view?: 'settings' | 'events', onClose?: () => void }) => {
+export const CalendarSettings = ({ userOverride, mode = 'page', onClose, initialTab = 'settings' }: { userOverride?: any, mode?: 'page' | 'modal', onClose?: () => void, initialTab?: 'settings' | 'events' }) => {
     const { addToast } = useToast();
     const { userProfile } = useUserProfile();
 
     // Determine the active user context: either the override (admin edit) or current logged in user
     const activeUser = userOverride || userProfile;
 
-    // Initialize state from prop, but allow local switching too (though tabs will now navigate)
-    const [activeTab, setActiveTab] = useState<'settings' | 'events'>(view);
+    const navigate = useNavigate();
+    const [activeTab, setActiveTab] = useState<'settings' | 'events'>(initialTab);
 
-    // Sync prop changes if route changes
     useEffect(() => {
-        setActiveTab(view);
-    }, [view]);
+        setActiveTab(initialTab);
+    }, [initialTab]);
 
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setScrolled(window.scrollY > 50);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const handleTabChange = (tab: 'settings' | 'events') => {
+        setActiveTab(tab);
+        if (mode === 'page') {
+            if (tab === 'events') navigate('/myaccount/calendar/myevents');
+            else navigate('/myaccount/calendar');
+        }
+    };
     const [isEditing, setIsEditing] = useState(false);
     const [copyModalData, setCopyModalData] = useState<{ sourceDayIndex: number, sourceDayName: string } | null>(null);
 
@@ -304,7 +348,7 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
     const [config, setConfig] = useState<CalendarConfig>({
         timeFormat: '12h',
         dateFormat: 'MM/DD/YYYY',
-        timeZone: '(GMT-05:00) Eastern Time (US & Canada)',
+        timeZone: 'America/New_York',
         weekends: ['Saturday', 'Sunday'],
         excludeWeekends: true,
         excludeHolidays: true,
@@ -315,33 +359,83 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
         ]
     });
 
+    // Populate config from activeUser profile
+    useEffect(() => {
+        if (activeUser?.calendarSettings) {
+            const s = activeUser.calendarSettings;
+            setConfig({
+                timeFormat: s.timeFormat || (s.businessHours?.format === '24 hours' ? '24h' : '12h'),
+                dateFormat: s.dateFormat || 'MM/DD/YYYY',
+                timeZone: s.timeZoneFullName || 'America/New_York',
+                weekends: s.weekends || ['Saturday', 'Sunday'],
+                excludeWeekends: s.excludeWeekends ?? (s.businessHours?.includeWeekends === false),
+                excludeHolidays: s.excludeHolidays ?? (s.businessHours?.includeHolidays === false),
+                weeklySchedule: s.weeklyHours?.length > 0
+                    ? s.weeklyHours.map((day: any) => ({
+                        day: day.day,
+                        isWorking: day.timings?.length > 0,
+                        slots: day.timings?.map((t: any, i: number) => ({
+                            id: i.toString() + Math.random(),
+                            start: t.startTime,
+                            end: t.endTime
+                        })) || []
+                    }))
+                    : INITIAL_SCHEDULE,
+                breaks: s.breakHours?.map((b: any, i: number) => ({
+                    id: i.toString() + Math.random(),
+                    start: b.startTime,
+                    end: b.endTime
+                })) || [],
+                holidays: s.holidays || []
+            });
+        }
+    }, [activeUser]);
+
     const [connectedCalendars, setConnectedCalendars] = useState<ConnectedCalendar[]>([]);
 
     // Temp state for new entries
     const [newHoliday, setNewHoliday] = useState({ name: '', date: '', type: 'Holiday' });
     const [newBreak, setNewBreak] = useState({ start: '12:00', end: '13:00' });
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        confirmText?: string;
+        onConfirm: () => void;
+        isDelete?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { }
+    });
 
     // --- Handlers ---
 
     const handleSave = async () => {
         try {
             // Construct Payload matching User Request
+            const tzObj = TIME_ZONES.find(t => t.value === config.timeZone);
             const calendarSettings = {
-                timeZone: config.timeZone.match(/\(GMT([+-]\d{2}:\d{2})\)/)?.[1] || '+00:00', // Extract offset
-                timeZoneName: config.timeZone.split(') ')[1] || config.timeZone,
-                timeZoneFullName: config.timeZone, // Storing full string for UI restoration
+                timeZone: tzObj?.label.match(/GMT([+-]\d{2}:\d{2})/)?.[1] || '+00:00', // Extract offset
+                timeZoneName: tzObj?.label || config.timeZone,
+                timeZoneFullName: config.timeZone, // Storing IANA name
+                timeFormat: config.timeFormat,
+                dateFormat: config.dateFormat,
+                excludeWeekends: config.excludeWeekends,
+                excludeHolidays: config.excludeHolidays,
                 weeklyHours: config.weeklySchedule.map(day => ({
                     day: day.day,
+                    isWorking: day.isWorking,
                     timings: day.isWorking ? day.slots.map(s => ({
                         startTime: s.start,
                         endTime: s.end
-                    })) : [] // Empty array if not working, though user req had structure for all
+                    })) : []
                 })),
                 businessHours: {
-                    startTime: "", // As per request, empty string defaults? Or should we infer? Leaving empty as per JSON
-                    endTime: "",
+                    startTime: "09:00",
+                    endTime: "18:00",
                     format: config.timeFormat === '12h' ? "12 hours" : "24 hours",
-                    durationInHours: "",
                     includeWeekends: !config.excludeWeekends,
                     includeHolidays: !config.excludeHolidays,
                     includeAllDayEvents: true
@@ -479,34 +573,60 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
     const handleConnectCalendar = (provider: 'Google' | 'Outlook') => {
         if (!isEditing) return;
 
-        if (provider === 'Google') {
-            integrationService.connectGoogle();
-        } else {
-            addToast("Outlook integration coming soon", "info");
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: `Connect ${provider} Calendar`,
+            message: `Are you sure you want to connect your ${provider} account to sync your schedule?`,
+            confirmText: 'Connect Now',
+            onConfirm: () => {
+                if (provider === 'Google') {
+                    integrationService.connectGoogle();
+                } else {
+                    addToast("Outlook integration coming soon", "info");
+                }
+            }
+        });
     };
 
     const handleDisconnectCalendar = async (id: string, provider: 'Google' | 'Outlook') => {
         if (!isEditing) return;
-        try {
-            await integrationService.disconnect(provider.toLowerCase() as any);
-            setConnectedCalendars(prev => prev.filter(c => c.id !== id));
-            addToast("Calendar disconnected", "success");
-        } catch (error) {
-            addToast("Failed to disconnect", "error");
-        }
+
+        setConfirmModal({
+            isOpen: true,
+            title: `Disconnect ${provider}`,
+            message: `Are you sure you want to disconnect your ${provider} calendar? This will stop all event syncing.`,
+            confirmText: 'Disconnect',
+            isDelete: true,
+            onConfirm: async () => {
+                try {
+                    await integrationService.disconnect(provider.toLowerCase() as any);
+                    setConnectedCalendars(prev => prev.filter(c => c.id !== id));
+                    addToast("Calendar disconnected", "success");
+                } catch (error) {
+                    addToast("Failed to disconnect", "error");
+                }
+            }
+        });
     };
 
     const handleSyncCalendar = async (id: string) => {
-        setConnectedCalendars(prev => prev.map(c => c.id === id ? { ...c, status: 'Syncing' } : c));
-        try {
-            const result = await integrationService.syncCalendar();
-            setConnectedCalendars(prev => prev.map(c => c.id === id ? { ...c, status: 'Connected', lastSynced: 'Just now' } : c));
-            addToast(`Synced ${result.count} events successfully`, "success");
-        } catch (error) {
-            setConnectedCalendars(prev => prev.map(c => c.id === id ? { ...c, status: 'Error' } : c));
-            addToast("Failed to sync calendar", "error");
-        }
+        setConfirmModal({
+            isOpen: true,
+            title: "Manual Re-Sync",
+            message: "Do you want to force a manual sync now? This will refresh all your events from the source.",
+            confirmText: "Sync Now",
+            onConfirm: async () => {
+                setConnectedCalendars(prev => prev.map(c => c.id === id ? { ...c, status: 'Syncing' } : c));
+                try {
+                    const result = await integrationService.syncCalendar();
+                    setConnectedCalendars(prev => prev.map(c => c.id === id ? { ...c, status: 'Connected', lastSynced: 'Just now' } : c));
+                    addToast(`Synced ${result.count} events successfully`, "success");
+                } catch (error) {
+                    setConnectedCalendars(prev => prev.map(c => c.id === id ? { ...c, status: 'Error' } : c));
+                    addToast("Failed to sync calendar", "error");
+                }
+            }
+        });
     };
 
     // Load status on mount
@@ -520,7 +640,8 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
                     provider: 'Google',
                     email: status.google.email || 'Connected Account',
                     status: 'Connected',
-                    lastSynced: status.google.lastSynced || 'Unknown'
+                    lastSynced: status.google.lastSynced || 'Unknown',
+                    validUpto: status.google.validUpto
                 });
             }
             if (status.microsoft.connected) {
@@ -529,7 +650,8 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
                     provider: 'Outlook',
                     email: status.microsoft.email || 'Connected Account',
                     status: 'Connected',
-                    lastSynced: 'Unknown'
+                    lastSynced: status.microsoft.lastSynced || 'Unknown',
+                    validUpto: status.microsoft.validUpto
                 });
             }
             setConnectedCalendars(cals);
@@ -539,6 +661,16 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
 
     return (
         <div className="animate-in fade-in duration-300 pb-12">
+            {/* Global Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmText={confirmModal.confirmText}
+                isDelete={confirmModal.isDelete}
+            />
             {/* Copy Modal */}
             {copyModalData && (
                 <CopyScheduleModal
@@ -550,27 +682,31 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
             )}
 
             {/* Full Width Sticky Header */}
-            <div className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 px-8 lg:px-12 py-6 transition-all shadow-sm">
-                <div className="max-w-5xl mx-auto flex flex-col gap-6">
+            <div className={`sticky top-0 z-20 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 px-8 lg:px-12 transition-all duration-300 shadow-sm ${scrolled ? 'py-2 mt-0' : 'py-6'}`}>
+                <div className={`max-w-5xl mx-auto flex flex-col transition-all duration-300 ${scrolled ? 'gap-1' : 'gap-6'}`}>
                     <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <Calendar size={20} className="text-emerald-500" /> Calendar Settings
+                        <div className="transition-all duration-300">
+                            <h2 className={`font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 transition-all ${scrolled ? 'text-base' : 'text-xl'}`}>
+                                <Calendar size={scrolled ? 18 : 22} className="text-emerald-500" /> Calendar Settings
                             </h2>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Configure availability, time zones, and calendar integrations.</p>
+                            {!scrolled && (
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 animate-in fade-in slide-in-from-top-1">
+                                    Configure availability, time zones, and calendar integrations.
+                                </p>
+                            )}
                         </div>
                         <div className="flex gap-3">
                             {activeTab === 'settings' && (
                                 isEditing ? (
                                     <>
-                                        <button onClick={handleCancel} className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
-                                        <button onClick={handleSave} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
-                                            <Save size={16} /> Save Changes
+                                        <button onClick={handleCancel} className={`border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-all ${scrolled ? 'px-3 py-1 text-xs' : 'px-4 py-2 text-sm'}`}>Cancel</button>
+                                        <button onClick={handleSave} className={`bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-all shadow-sm flex items-center gap-2 ${scrolled ? 'px-4 py-1 text-xs' : 'px-6 py-2 text-sm'}`}>
+                                            <Save size={scrolled ? 14 : 16} /> Save Changes
                                         </button>
                                     </>
                                 ) : (
-                                    <button onClick={() => setIsEditing(true)} className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2">
-                                        <Edit2 size={16} /> Edit
+                                    <button onClick={() => setIsEditing(true)} className={`bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition-all shadow-sm flex items-center gap-2 ${scrolled ? 'px-4 py-1 text-xs' : 'px-6 py-2 text-sm'}`}>
+                                        <Edit2 size={scrolled ? 14 : 16} /> Edit
                                     </button>
                                 )
                             )}
@@ -578,31 +714,30 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
                     </div>
 
                     {/* Tabs - Only show when NOT in modal mode */}
-                    {/* Tabs - Only show when NOT in modal mode */}
                     {mode !== 'modal' && (
-                        <div className="flex border-b border-slate-200 dark:border-slate-700">
-                            <RouterLink
-                                to="/myaccount/calendar"
-                                className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'settings' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        <div className={`flex border-b border-slate-200 dark:border-slate-700 transition-all ${scrolled ? 'mt-1' : ''}`}>
+                            <button
+                                onClick={() => handleTabChange('settings')}
+                                className={`px-4 font-bold border-b-2 transition-all ${scrolled ? 'pb-1 text-xs' : 'pb-3 text-sm'} ${activeTab === 'settings' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                             >
                                 Configuration
-                            </RouterLink>
-                            <RouterLink
-                                to="/myaccount/calendar/myevents"
-                                className={`pb-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'events' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                            </button>
+                            <button
+                                onClick={() => handleTabChange('events')}
+                                className={`px-4 font-bold border-b-2 transition-all ${scrolled ? 'pb-1 text-xs' : 'pb-3 text-sm'} ${activeTab === 'events' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
                             >
                                 View Calendar
-                            </RouterLink>
+                            </button>
                         </div>
                     )}
                 </div>
             </div>
 
             {/* Padded Content Body */}
-            <div className={`px-4 lg:px-8 pt-6 ${activeTab === 'events' ? 'w-full' : 'max-w-5xl mx-auto'}`}>
+            <div className={`${activeTab === 'events' ? 'w-full' : 'px-4 lg:px-8 pt-6 max-w-5xl mx-auto'}`}>
                 {activeTab === 'events' ? (
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 h-[calc(100vh-140px)]">
-                        <CalendarView />
+                    <div className="h-auto">
+                        <CalendarView timeZone={config.timeZone} onOpenSettings={() => handleTabChange('settings')} />
                     </div>
                 ) : (
                     <div className="max-w-5xl mx-auto">
@@ -624,7 +759,9 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
                                         <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-xl font-bold text-blue-600 shadow-sm">G</div>
                                         <div className="text-left">
                                             <span className="block font-bold text-slate-700 dark:text-slate-200 text-sm">Google Calendar</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">{connectedCalendars.some(c => c.provider === 'Google') ? 'Connected' : 'Connect Account'}</span>
+                                            <span className={`text-xs font-bold ${connectedCalendars.some(c => c.provider === 'Google') ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                {connectedCalendars.some(c => c.provider === 'Google') ? 'Connected' : 'Connect Account'}
+                                            </span>
                                         </div>
                                     </button>
 
@@ -643,7 +780,9 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
                                         </div>
                                         <div className="text-left">
                                             <span className="block font-bold text-slate-700 dark:text-slate-200 text-sm">Outlook Calendar</span>
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">{connectedCalendars.some(c => c.provider === 'Outlook') ? 'Connected' : 'Connect Account'}</span>
+                                            <span className={`text-xs font-bold ${connectedCalendars.some(c => c.provider === 'Outlook') ? 'text-emerald-500' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                {connectedCalendars.some(c => c.provider === 'Outlook') ? 'Connected' : 'Connect Account'}
+                                            </span>
                                         </div>
                                     </button>
                                 </div>
@@ -658,9 +797,23 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
                                                         <div className={`w-2 h-2 rounded-full ${cal.status === 'Connected' ? 'bg-emerald-500' : cal.status === 'Syncing' ? 'bg-blue-500 animate-pulse' : 'bg-red-500'}`}></div>
                                                         <div>
                                                             <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{cal.provider} ({cal.email})</p>
-                                                            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                                                {cal.status === 'Syncing' ? 'Syncing...' : `Last synced: ${cal.lastSynced}`}
-                                                            </p>
+                                                            <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                                                {cal.status === 'Syncing' ?
+                                                                    <span className="text-blue-500 font-bold flex items-center gap-1"><RefreshCw size={10} className="animate-spin" /> Syncing...</span>
+                                                                    : (
+                                                                        <div className="flex flex-col gap-0.5">
+                                                                            <span>Last synced: {formatDateDisplay(cal.lastSynced, 'MM/DD/YYYY')} {formatTimeDisplay(cal.lastSynced?.split('T')[1]?.slice(0, 5) || '', '12h')}</span>
+                                                                            {cal.validUpto && (() => {
+                                                                                const status = getExpiryStatus(cal.validUpto);
+                                                                                return status && (
+                                                                                    <span className={`text-[10px] font-bold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full w-fit mt-1 flex items-center gap-1 ${status.isUrgent ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                                                                                        Valid upto: {formatDateDisplay(cal.validUpto, 'MM/DD/YYYY')} ({status.label})
+                                                                                    </span>
+                                                                                );
+                                                                            })()}
+                                                                        </div>
+                                                                    )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2">
@@ -728,7 +881,7 @@ export const CalendarSettings = ({ userOverride, mode = 'page', view = 'settings
                                             onChange={(e) => setConfig({ ...config, timeZone: e.target.value })}
                                             disabled={!isEditing}
                                         >
-                                            {TIME_ZONES.map(z => <option key={z} value={z}>{z}</option>)}
+                                            {TIME_ZONES.map(z => <option key={z.value} value={z.value}>{z.label}</option>)}
                                         </select>
                                     </div>
                                 </div>

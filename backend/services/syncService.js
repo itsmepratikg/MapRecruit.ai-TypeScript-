@@ -66,8 +66,14 @@ const syncService = {
                     start: event.start,
                     end: event.end,
                     link: event.htmlLink,
+                    hangoutLink: event.hangoutLink,
                     location: event.location,
-                    status: event.status
+                    status: event.status,
+                    attendees: event.attendees,
+                    conferenceData: event.conferenceData,
+                    creator: event.creator,
+                    organizer: event.organizer,
+                    reminders: event.reminders
                 },
                 lastSynced: new Date()
             };

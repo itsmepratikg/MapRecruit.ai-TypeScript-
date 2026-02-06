@@ -8,11 +8,15 @@ const getStatus = async (req, res) => {
         res.json({
             google: {
                 connected: user.integrations?.google?.connected || false,
-                email: user.integrations?.google?.email
+                email: user.integrations?.google?.email,
+                lastSynced: user.integrations?.google?.lastSynced,
+                validUpto: user.integrations?.google?.validUpto
             },
             microsoft: {
                 connected: user.integrations?.microsoft?.connected || false,
-                email: user.integrations?.microsoft?.email
+                email: user.integrations?.microsoft?.email,
+                lastSynced: user.integrations?.microsoft?.lastSynced,
+                validUpto: user.integrations?.microsoft?.validUpto
             }
         });
     } catch (error) {
@@ -66,7 +70,9 @@ const handleGoogleCallback = async (req, res) => {
         user.integrations.google = {
             connected: true,
             tokens: tokens, // includes access_token, refresh_token, expiry, etc.
-            email: userinfo.email
+            email: userinfo.email,
+            lastSynced: new Date(),
+            validUpto: tokens.expires_in ? new Date(Date.now() + tokens.expires_in * 1000) : null
         };
 
         user.markModified('integrations');
@@ -93,6 +99,13 @@ const disconnect = async (req, res) => {
             user.integrations[provider] = { connected: false };
             user.markModified('integrations');
             await user.save();
+
+            // Soft delete synced events for this provider
+            const SyncedData = require('../models/SyncedData');
+            await SyncedData.updateMany(
+                { userId: req.user.id, provider: provider },
+                { $set: { status: 'deleted' } }
+            );
         }
 
         res.json({ success: true });
@@ -197,6 +210,15 @@ const syncService = require('../services/syncService');
 const syncCalendar = async (req, res) => {
     try {
         const result = await syncService.fetchUserCalendarEvents(req.user.id);
+
+        // Update lastSynced in User document
+        const user = await User.findById(req.user.id);
+        if (user && user.integrations?.google) {
+            user.integrations.google.lastSynced = new Date();
+            user.markModified('integrations');
+            await user.save();
+        }
+
         res.json({ success: true, count: result.count });
     } catch (error) {
         console.error('Sync Calendar Error:', error);
@@ -210,13 +232,135 @@ const getCalendarEvents = async (req, res) => {
         const events = await SyncedData.find({
             userId: req.user.id,
             provider: 'google',
-            itemType: 'calendar'
+            itemType: 'calendar',
+            status: { $ne: 'deleted' }
         }).sort({ 'data.start.dateTime': 1 });
 
         res.json({ success: true, count: events.length, events });
     } catch (error) {
         console.error('Get Calendar Events Error:', error);
         res.status(500).json({ message: 'Failed to fetch events' });
+    }
+};
+
+const createCalendarEvent = async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id);
+        const accessToken = user.integrations?.google?.tokens?.access_token;
+        if (!accessToken) return res.status(401).json({ message: 'Google not connected' });
+
+        const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                summary: req.body.summary,
+                description: req.body.description,
+                start: req.body.start,
+                end: req.body.end,
+                location: req.body.location,
+                attendees: req.body.attendees?.map(email => ({ email })),
+                conferenceData: req.body.createMeeting ? {
+                    createRequest: { requestId: Date.now().toString(), conferenceSolutionKey: { type: 'hangoutsMeet' } }
+                } : null
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+
+        // Immediately sync this event locally
+        const SyncedData = require('../models/SyncedData');
+        await SyncedData.findOneAndUpdate(
+            { userId: req.user.id, externalId: data.id },
+            {
+                userId: req.user.id,
+                itemType: 'calendar',
+                provider: 'google',
+                externalId: data.id,
+                data: data,
+                lastSynced: new Date()
+            },
+            { upsert: true }
+        );
+
+        res.json({ success: true, event: data });
+    } catch (error) {
+        console.error('Create Event Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const updateCalendarEvent = async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const user = await User.findById(req.user.id);
+        const accessToken = user.integrations?.google?.tokens?.access_token;
+        if (!accessToken) return res.status(401).json({ message: 'Google not connected' });
+
+        const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}?conferenceDataVersion=1`, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                summary: req.body.summary,
+                description: req.body.description,
+                start: req.body.start,
+                end: req.body.end,
+                location: req.body.location,
+                attendees: req.body.attendees?.map((email) => ({ email })),
+                conferenceData: req.body.createMeeting ? {
+                    createRequest: { requestId: Date.now().toString(), conferenceSolutionKey: { type: 'hangoutsMeet' } }
+                } : null
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+
+        // Update local sync
+        const SyncedData = require('../models/SyncedData');
+        await SyncedData.findOneAndUpdate(
+            { userId: req.user.id, externalId: data.id },
+            { data: data, lastSynced: new Date() }
+        );
+
+        res.json({ success: true, event: data });
+    } catch (error) {
+        console.error('Update Event Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const deleteSpecificCalendarEvent = async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const user = await User.findById(req.user.id);
+        const accessToken = user.integrations?.google?.tokens?.access_token;
+        if (!accessToken) return res.status(401).json({ message: 'Google not connected' });
+
+        const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        if (response.status !== 204 && response.status !== 200) {
+            const data = await response.json();
+            throw new Error(data.error?.message || 'Delete failed');
+        }
+
+        // Remove from local sync
+        const SyncedData = require('../models/SyncedData');
+        await SyncedData.deleteOne({ userId: req.user.id, externalId: eventId });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Delete Event Error:', error);
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -227,5 +371,8 @@ module.exports = {
     getPickerToken,
     fetchDriveFile,
     syncCalendar,
-    getCalendarEvents
+    getCalendarEvents,
+    createCalendarEvent,
+    updateCalendarEvent,
+    deleteSpecificCalendarEvent
 };

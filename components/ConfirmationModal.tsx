@@ -30,28 +30,28 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">
-        <div className="p-6 text-center">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${isDelete ? 'bg-red-100 dark:bg-red-900/30 text-red-500' : 'bg-slate-100 dark:bg-slate-700 text-slate-500'}`}>
-            <AlertTriangle size={32} />
+    <div className="fixed inset-0 z-[200] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-slate-900 rounded-[28px] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-300 border border-slate-200/50 dark:border-slate-800">
+        <div className="p-8 text-center">
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isDelete ? 'bg-red-50 dark:bg-red-900/20 text-red-500 shadow-inner' : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500 shadow-inner'}`}>
+            <AlertTriangle size={36} className="animate-pulse" />
           </div>
-          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">{title}</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed">
+          <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-3 tracking-tight">{title}</h3>
+          <p className="text-[15px] text-slate-500 dark:text-slate-400 mb-8 leading-relaxed font-medium">
             {message}
           </p>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 py-2.5 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-            >
-              {effectiveCancelText}
-            </button>
+          <div className="flex flex-col gap-3">
             <button
               onClick={() => { onConfirm(); onClose(); }}
-              className={`flex-1 py-2.5 text-white rounded-lg font-bold shadow-sm transition-colors ${isDelete ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+              className={`w-full py-3.5 text-white rounded-2xl font-bold transition-all hover:-translate-y-0.5 active:scale-95 ${isDelete ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200 dark:shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200 dark:shadow-none'}`}
             >
               {effectiveConfirmText}
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full py-3 text-slate-500 dark:text-slate-400 font-bold hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+            >
+              {effectiveCancelText}
             </button>
           </div>
         </div>

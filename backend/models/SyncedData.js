@@ -29,6 +29,11 @@ const syncedDataSchema = mongoose.Schema({
     lastSynced: {
         type: Date,
         default: Date.now
+    },
+    status: {
+        type: String,
+        enum: ['active', 'deleted'],
+        default: 'active'
     }
 }, {
     timestamps: true

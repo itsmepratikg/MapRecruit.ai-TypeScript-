@@ -22,6 +22,7 @@ export interface UserProfileData {
   lastLoginAt?: string;
   loginCount?: number;
   timeZone?: string;
+  calendarSettings?: any;
 }
 
 export const PROFILE_CLIENTS = [

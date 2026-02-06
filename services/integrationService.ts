@@ -5,6 +5,7 @@ export interface IntegrationStatus {
     email?: string;
     workspaceName?: string;
     lastSynced?: string;
+    validUpto?: string;
 }
 
 export interface WorkspaceIntegrations {
@@ -113,6 +114,38 @@ export const integrationService = {
      */
     async getCalendarEvents(): Promise<{ success: boolean; count: number; events: any[] }> {
         const response = await api.get('/user/integrations/google/calendar/events');
+        return response.data;
+    },
+
+    /**
+     * Creates a new event in the synced calendar.
+     */
+    async createCalendarEvent(eventData: {
+        summary: string;
+        description?: string;
+        start: { dateTime: string; timeZone: string };
+        end: { dateTime: string; timeZone: string };
+        attendees?: string[];
+        location?: string;
+        createMeeting?: boolean;
+    }): Promise<{ success: boolean; event: any }> {
+        const response = await api.post('/user/integrations/google/calendar/events', eventData);
+        return response.data;
+    },
+
+    /**
+     * Deletes an event from the synced calendar.
+     */
+    async deleteCalendarEvent(eventId: string): Promise<{ success: boolean }> {
+        const response = await api.delete(`/user/integrations/google/calendar/events/${eventId}`);
+        return response.data;
+    },
+
+    /**
+     * Updates an event in the synced calendar.
+     */
+    async updateCalendarEvent(eventId: string, eventData: any): Promise<{ success: boolean; event: any }> {
+        const response = await api.put(`/user/integrations/google/calendar/events/${eventId}`, eventData);
         return response.data;
     }
 };
