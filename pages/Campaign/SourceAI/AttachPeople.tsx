@@ -5,7 +5,45 @@ import {
   CheckCircle, Clock, ThumbsUp, XCircle, ArrowRight, MessageSquare,
   Users
 } from '../../../components/Icons';
-import { MOCK_PROFILES } from '../../../data';
+
+const MOCK_PROFILES = [
+  {
+    id: "1",
+    name: "Alice Johnson",
+    title: "Senior Developer",
+    location: "New York, NY",
+    status: "Active",
+    avatar: "AJ",
+    matchScore: 95,
+    experience: "5 Years",
+    availability: "Immediately",
+    skills: ["React", "TypeScript", "Node.js"]
+  },
+  {
+    id: "2",
+    name: "Bob Smith",
+    title: "Product Manager",
+    location: "San Francisco, CA",
+    status: "Active",
+    avatar: "BS",
+    matchScore: 88,
+    experience: "8 Years",
+    availability: "2 Weeks Notice",
+    skills: ["Product Management", "Agile", "JIRA"]
+  },
+  {
+    id: "3",
+    name: "Charlie Brown",
+    title: "Designer",
+    location: "Remote",
+    status: "Inactive",
+    avatar: "CB",
+    matchScore: 72,
+    experience: "3 Years",
+    availability: "Serving Notice",
+    skills: ["Figma", "UI/UX", "Adobe Suite"]
+  }
+];
 import { FilterPopup, filterProfilesEngine, QUICK_FILTERS } from '../../../components/TalentSearchEngine';
 import { LandingDashboard } from '../../Profiles/SearchProfile/LandingDashboard';
 import { AdvancedSearchModal } from '../../../components/AdvancedSearchModal';
