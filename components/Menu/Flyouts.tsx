@@ -6,7 +6,6 @@ import {
     Settings, UserCog, Lock, Palette, LogOut, Search, ChevronRight, ChevronDown,
     Activity, History, Bell, HelpCircle, Globe, Building2, Check
 } from '../Icons';
-import { SIDEBAR_CAMPAIGN_DATA, GLOBAL_CAMPAIGNS } from '../../data';
 import { PROFILES_CATEGORIES, SETTINGS_CATEGORIES, TALENT_CHAT_MENU, getProfileViewPath } from './constants';
 import { COLORS } from '../../data/profile';
 import { Campaign } from '../../types';
@@ -390,9 +389,7 @@ export const AccountMenuContent = ({
                     <Lock size={16} /> {t("Change Password")}
                 </button>
 
-                <button onClick={() => { setIsThemeSettingsOpen(true); if (closeMenu) closeMenu(); }} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
-                    <Palette size={16} /> {t("Themes")}
-                </button>
+                <div className="border-t border-slate-100 dark:border-slate-700 my-1"></div>
 
                 <button
                     onClick={() => { onOpenSupport(); if (closeMenu && !isCapturingSupport) closeMenu(); }}
@@ -664,13 +661,14 @@ export const SettingsMenuContent = ({
     // Helper to map IDs to PascalCase paths (same as in Settings page)
     const getPath = (id: string) => {
         const map: Record<string, string> = {
-            'COMPANY_INFO': 'CompanyInfo',
-            'ROLES': 'Roles',
-            'USERS': 'Users',
-            'REACHOUT_LAYOUTS': 'ReachOutLayouts',
+            'COMPANY_INFO': 'companyinfo',
+            'ROLES': 'roles',
+            'USERS': 'users',
+            'REACHOUT_LAYOUTS': 'reachoutlayouts',
+            'THEMES': 'themes',
         };
         if (map[id]) return map[id];
-        return id.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('');
+        return id.toLowerCase().replace(/_/g, '');
     }
 
     const initialCategory = useMemo(() => {

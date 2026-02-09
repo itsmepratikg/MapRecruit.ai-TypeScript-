@@ -9,7 +9,7 @@ import { EngageAIWrapper } from './EngageAI';
 import { CampaignSettings } from './Settings';
 import { campaignService } from '../../services/api'; // Using generic api proxy or CampaignService?
 import { CampaignService as NewCampaignService } from '../../services/CampaignService'; // The one we refactored
-import { GLOBAL_CAMPAIGNS } from '../../data';
+
 import { Campaign } from '../../types';
 
 // Wrapper to fetch campaign and render content with Header
@@ -31,13 +31,7 @@ const ExternalRouteWrapper = ({
 
     useEffect(() => {
         const loadCampaign = async () => {
-            // 1. Mock Check
-            const mock = GLOBAL_CAMPAIGNS.find(c => c.id.toString() === id);
-            if (mock) {
-                setCampaign(mock);
-                setLoading(false);
-                return;
-            }
+
 
             // 2. API Fetch
             try {

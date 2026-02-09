@@ -6,7 +6,6 @@ import {
   FileEdit, Folder, Copy, MessageCircle, MapPin, CheckCircle, Tag as TagIcon
 } from '../components/Icons';
 import { ActionIcons, StatusBadge, EmptyView } from '../components/Common';
-import { CANDIDATE, FULL_PROFILE_DATA } from '../data';
 import { InterviewFormContent } from '../components/InterviewComponents';
 import { CampaignsView, CampaignDetailView } from '../components/ProfileCampaigns';
 import { InterviewsView } from '../components/ProfileInterviews';
@@ -23,6 +22,7 @@ import { LocalMatchAnalysisModal } from '../components/LocalMatchAnalysisModal';
 
 import { useParams, useLocation } from 'react-router-dom';
 import { useCandidateProfile } from '../hooks/useCandidateProfile';
+import { useUserProfile } from '../hooks/useUserProfile';
 import { interviewService } from '../services/interviewService';
 import { mapInterviewToCampaign } from '../components/ProfileCampaigns';
 
@@ -47,20 +47,10 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
   const location = useLocation();
   const { addToast } = useToast();
 
-  // Helper to get company ID from local storage/session safely
-  const getUserCompanyID = () => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        return user.currentCompanyID || user.companyID || user.companyId;
-      }
-    } catch (e) {
-      console.error("Error parsing user for company ID", e);
-    }
-    return undefined;
-  };
-  const userCompanyID = getUserCompanyID();
+  // Use centralized user profile hook
+  const { userProfile } = useUserProfile();
+
+  const userCompanyID = userProfile?.currentCompanyID || userProfile?.companyID || userProfile?.companyId;
 
   const [accessDenied, setAccessDenied] = useState(false);
   const [owningEntityName, setOwningEntityName] = useState<string | null>(null);
@@ -83,12 +73,10 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
   // --- ACCESS CONTROL & OWNING ENTITY LOGIC ---
   useEffect(() => {
     const validateAccess = async () => {
-      if (!liveData || loading) return;
+      if (!liveData || loading || !userProfile) return;
 
       try {
-        const userStr = localStorage.getItem('user');
-        if (!userStr) return;
-        const user = JSON.parse(userStr);
+        const user = userProfile;
 
         // Standardized Multi-Tenant IDs
         const currentUserCompanyId = user.currentCompanyID || user.companyID || user.companyId;
@@ -179,7 +167,7 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
     };
 
     validateAccess();
-  }, [liveData, loading]);
+  }, [liveData, loading, userProfile]);
 
   // --- LOG VISIT ---
   useEffect(() => {

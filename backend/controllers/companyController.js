@@ -33,23 +33,25 @@ const getCompany = async (req, res) => {
 // @access  Private
 const updateCompany = async (req, res) => {
     try {
-        const companyId = req.user.companyID;
+        const companyId = req.user?.currentCompanyID || req.companyID || req.user?.companyID;
 
-        let company;
-        if (companyId) {
-            company = await Company.findById(companyId);
-        } else {
-            company = await Company.findOne();
+        if (!companyId) {
+            return res.status(400).json({ message: 'Company ID not resolved' });
         }
+
+        const company = await Company.findById(companyId);
 
         if (!company) {
             return res.status(404).json({ message: 'Company not found' });
         }
 
-        // Update fields
-        Object.assign(company, req.body);
+        // Update fields using findByIdAndUpdate with $set to handle nested paths like 'themesdata.themeVariables.mainColor'
+        const updatedCompany = await Company.findByIdAndUpdate(
+            company._id,
+            { $set: req.body },
+            { new: true, runValidators: true }
+        );
 
-        const updatedCompany = await company.save();
         res.json(updatedCompany);
     } catch (error) {
         console.error(error);

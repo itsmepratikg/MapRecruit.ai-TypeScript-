@@ -6,8 +6,7 @@ import {
   LayoutDashboard, FileText, CornerDownLeft, Tag, Folder,
   Users, Shield, Globe, Layout, Building2
 } from './Icons';
-import { MOCK_PROFILES } from '../data';
-import { campaignService } from '../services/api';
+import { campaignService, profileService } from '../services/api';
 
 interface GlobalSearchProps {
   isOpen: boolean;
@@ -31,6 +30,8 @@ export const GlobalSearch = ({ isOpen, onClose, onNavigate }: GlobalSearchProps)
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [liveCampaigns, setLiveCampaigns] = useState<any[]>([]);
+  const [candidates, setCandidates] = useState<any[]>([]);
+
 
   useEffect(() => {
     const fetchCampaigns = async () => {
@@ -45,6 +46,25 @@ export const GlobalSearch = ({ isOpen, onClose, onNavigate }: GlobalSearchProps)
       fetchCampaigns();
     }
   }, [isOpen]);
+
+  // Debounced Candidate Search
+  useEffect(() => {
+    if (!query.trim() || !isOpen) {
+      setCandidates([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const data = await profileService.getAll({ search: query });
+        setCandidates(Array.isArray(data) ? data : (data.profiles || []));
+      } catch (err) {
+        console.error("Failed to search candidates", err);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query, isOpen]);
 
   const STATIC_ACTIONS: SearchResult[] = useMemo(() => [
     { id: 'home', title: t('Dashboard'), subtitle: t('Go to Home'), type: 'NAV', payload: { view: 'DASHBOARD' }, icon: LayoutDashboard },
@@ -102,21 +122,19 @@ export const GlobalSearch = ({ isOpen, onClose, onNavigate }: GlobalSearchProps)
     });
 
     // 3. Candidates
-    MOCK_PROFILES.forEach(p => {
-      if (p.name.toLowerCase().includes(lowerQuery) || p.title.toLowerCase().includes(lowerQuery)) {
-        searchResults.push({
-          id: `cand-${p.id}`,
-          type: 'CANDIDATE',
-          title: p.name,
-          subtitle: `${t('Candidate')} • ${p.title} • ${p.location}`, // 'Candidate' key might need addition or reuse 'Profile'
-          icon: User,
-          payload: p
-        });
-      }
+    candidates.forEach(p => {
+      searchResults.push({
+        id: `cand-${p._id || p.id}`,
+        type: 'CANDIDATE',
+        title: p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Details Unavailable',
+        subtitle: `${p.title || p.currentRole || 'Candidate'} • ${p.location || 'Unknown Location'}`,
+        icon: User, // Using User icon for candidates
+        payload: p
+      });
     });
 
     return searchResults.slice(0, 15); // Limit to 15 results for performance
-  }, [query, STATIC_ACTIONS, t, liveCampaigns]);
+  }, [query, STATIC_ACTIONS, t, liveCampaigns, candidates]);
 
   // Keyboard Navigation
   useEffect(() => {

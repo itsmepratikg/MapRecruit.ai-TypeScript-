@@ -24,34 +24,28 @@ export const ImpersonationProvider: React.FC<{ children: React.ReactNode }> = ({
     useEffect(() => {
         // Sync with storage on mount
         const adminToken = sessionStorage.getItem('admin_restore_token');
-        const currentUserStr = localStorage.getItem('user');
+        const mode = sessionStorage.getItem('impersonation_mode') as 'read-only' | 'full';
 
-        if (adminToken && currentUserStr) {
-            const user = JSON.parse(currentUserStr);
-            // Decode token safely without library if needed, or rely on stored User object
-            // For now, assume if admin_restore_token exists, we are impersonating
+        if (adminToken) {
             setState({
                 isImpersonating: true,
-                targetUser: user,
-                mode: user.mode || 'read-only', // Ensure backend sends 'mode' in user object or token
-                impersonatorId: 'admin' // Placeholder or decode from token
+                mode: mode || 'read-only'
             });
         }
     }, []);
 
     const startImpersonation = (token: string, targetUser: any, mode: 'read-only' | 'full') => {
-        const currentAdminStr = localStorage.getItem('user');
-        if (currentAdminStr) {
-            const currentAdmin = JSON.parse(currentAdminStr);
-            // Save Admin Token
-            if (currentAdmin.token) {
-                sessionStorage.setItem('admin_restore_token', currentAdmin.token);
-                sessionStorage.setItem('admin_user_backup', currentAdminStr);
-            }
+        const currentAdminToken = sessionStorage.getItem('authToken');
+
+        if (currentAdminToken) {
+            sessionStorage.setItem('admin_restore_token', currentAdminToken);
         }
 
+        // Set Impersonation Context
+        sessionStorage.setItem('impersonation_mode', mode);
+
         // Swap to Target Token
-        localStorage.setItem('user', JSON.stringify({ ...targetUser, token, mode }));
+        sessionStorage.setItem('authToken', token);
 
         setState({
             isImpersonating: true,
@@ -65,15 +59,14 @@ export const ImpersonationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const stopImpersonation = () => {
         const adminToken = sessionStorage.getItem('admin_restore_token');
-        const adminUserBackup = sessionStorage.getItem('admin_user_backup');
 
-        if (adminToken && adminUserBackup) {
-            // Restore Admin
-            localStorage.setItem('user', adminUserBackup);
+        if (adminToken) {
+            // Restore Admin Token
+            sessionStorage.setItem('authToken', adminToken);
 
-            // Clear Backup
+            // Clear Backup & Context
             sessionStorage.removeItem('admin_restore_token');
-            sessionStorage.removeItem('admin_user_backup');
+            sessionStorage.removeItem('impersonation_mode');
 
             setState({ isImpersonating: false, mode: 'read-only' });
 

@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { ShieldAlert, Mail } from 'lucide-react';
 import { SupportRequestModal } from './SupportRequestModal';
 
+import { PagePreloader } from '../Common/PagePreloader';
+
 interface AccessGuardProps {
     children: React.ReactNode;
     user: any;
@@ -11,6 +13,12 @@ interface AccessGuardProps {
 
 export const AccessGuard: React.FC<AccessGuardProps> = ({ children, user, clients }) => {
     const [isSupportOpen, setIsSupportOpen] = useState(false);
+
+    // If user is null (loading state), show a loading spinner instead of rendering children
+    // to prevent console errors in child components that expect a valid user object.
+    if (!user) {
+        return <PagePreloader message="Authenticating Environment..." />;
+    }
 
     // Lockout logic: check if clientID list is empty or logically disabled
     // Assuming clients are provided from the hook, we can also check if they are all 'Inactive' if they have a status field

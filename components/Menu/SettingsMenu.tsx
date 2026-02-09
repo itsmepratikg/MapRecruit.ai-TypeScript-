@@ -31,6 +31,7 @@ export const SettingsMenu = ({
             'USERS': 'users',
             'CLIENTS': 'clients',
             'REACHOUT_LAYOUTS': 'reachoutlayouts',
+            'THEMES': 'themes',
         };
         if (map[id]) return map[id];
         return id.toLowerCase().replace(/_/g, '');

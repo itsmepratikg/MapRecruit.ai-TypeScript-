@@ -340,7 +340,8 @@ export const ChatArea = ({
     };
 
     const canEditNote = (note: Message) => {
-        const isAdmin = userProfile.role.includes('Admin');
+        if (!userProfile) return false;
+        const isAdmin = userProfile.role?.includes('Admin');
         const isCreator = note.senderId === 'user' && note.senderName === `${userProfile.firstName} ${userProfile.lastName}`;
         return isAdmin || isCreator;
     };
@@ -584,7 +585,7 @@ export const ChatArea = ({
                             <span>{conversation.contact.company}</span>
                             <span>•</span>
                             <span className={conversation.assigneeId ? "text-indigo-600 dark:text-indigo-400 font-medium" : "text-slate-400 italic"}>
-                                {conversation.assigneeId ? `Assigned to ${conversation.assigneeName === `${userProfile.firstName} ${userProfile.lastName}` ? 'You' : conversation.assigneeName}` : 'Unassigned'}
+                                {conversation.assigneeId ? `Assigned to ${conversation.assigneeName === `${userProfile?.firstName} ${userProfile?.lastName}` ? 'You' : conversation.assigneeName}` : 'Unassigned'}
                             </span>
 
                             {/* Status Label in Header */}
@@ -639,7 +640,7 @@ export const ChatArea = ({
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className={`text-xs font-bold truncate ${conversation.assigneeId === user.id ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'}`}>
-                                                        {user.name} {user.id === userProfile.id && '(You)'}
+                                                        {user.name} {userProfile && user.id === userProfile.id && '(You)'}
                                                     </p>
                                                     <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.role}</p>
                                                 </div>

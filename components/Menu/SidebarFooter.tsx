@@ -11,7 +11,6 @@ interface SidebarFooterProps {
     setIsCreateProfileOpen: (v: boolean) => void;
     setIsCreateCampaignOpen: (v: boolean) => void;
     setIsCreateFolderOpen: (v: boolean) => void;
-    setIsThemeSettingsOpen: (v: boolean) => void;
     setIsGlobalSearchOpen: (v: boolean) => void; // New Prop
     onOpenPlaceholder: (title: string, msg: string) => void;
     onNavigate: (view: any) => void;
@@ -28,7 +27,6 @@ export const SidebarFooter = ({
     setIsCreateProfileOpen,
     setIsCreateCampaignOpen,
     setIsCreateFolderOpen,
-    setIsThemeSettingsOpen,
     setIsGlobalSearchOpen,
     onOpenPlaceholder,
     onNavigate,
@@ -304,7 +302,6 @@ export const SidebarFooter = ({
                             <div className="w-72 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl relative">
                                 <div className="absolute bottom-6 -left-2 w-4 h-4 bg-white dark:bg-slate-800 transform rotate-45 border-l border-b border-slate-200 dark:border-slate-700"></div>
                                 <AccountMenuContent
-                                    setIsThemeSettingsOpen={setIsThemeSettingsOpen}
                                     onNavigate={onNavigate}
                                     onLogout={onLogout}
                                     userProfile={userProfile}
@@ -335,7 +332,6 @@ export const SidebarFooter = ({
                         {mobileMenuOpen === 'client' && <ClientMenuContent activeClient={userProfile.activeClient} activeClientId={userProfile.activeClientID} clients={clients} onSwitchClient={handleClientSelect} onClose={() => setMobileMenuOpen(null)} />}
                         {mobileMenuOpen === 'account' && (
                             <AccountMenuContent
-                                setIsThemeSettingsOpen={setIsThemeSettingsOpen}
                                 closeMenu={() => setMobileMenuOpen(null)}
                                 onNavigate={onNavigate}
                                 onLogout={onLogout}

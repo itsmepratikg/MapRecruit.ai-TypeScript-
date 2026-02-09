@@ -44,3 +44,6 @@ backend/.env.*
 backend/debug_ids.js
 backend/seed_data.js
 backend/seed_user.js
+
+# Trash
+.trash/

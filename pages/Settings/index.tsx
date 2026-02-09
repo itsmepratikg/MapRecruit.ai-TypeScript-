@@ -13,6 +13,7 @@ import { ClientsSettings } from './Clients';
 import { ClientProfileContainer } from './ClientProfile/ClientProfileContainer';
 import { FranchiseSettings } from './Franchise';
 import { RoleHierarchy } from './Roles/RoleHierarchy';
+import { ThemeSettings } from './ThemeSettings';
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -44,6 +45,7 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
             'FRANCHISE': 'franchise',
             'REACHOUT_LAYOUTS': 'reachoutlayouts',
             'ROLE_HIERARCHY': 'rolehierarchy',
+            'THEMES': 'themes',
             // Add others as needed, or fallback to TitleCase
         };
         if (map[id]) return map[id];
@@ -87,13 +89,14 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
             <Route path={getPath('ROLE_HIERARCHY')} element={<RoleHierarchy />} />
             <Route path={getPath('FRANCHISE')} element={<FranchiseSettings />} />
             <Route path={getPath('REACHOUT_LAYOUTS')} element={<ReachOutLayouts />} />
+            <Route path={getPath('THEMES')} element={<ThemeSettings />} />
             <Route path="users/userprofile/:section/:id" element={<UserProfileContainer />} />
             <Route path="users/userprofile/:section" element={<UserProfileContainer />} />
             <Route path="clientprofile/:tab/:clientId" element={<ClientProfileContainer />} />
             {/* Add routes for other settings items */}
             {Object.keys(SETTINGS_CONTENT).map(id => {
                 // Only render placeholder for items not explicitly routed above
-                if (!['COMPANY_INFO', 'ROLES', 'USERS', 'REACHOUT_LAYOUTS', 'CLIENTS', 'FRANCHISE', 'ROLE_HIERARCHY'].includes(id)) {
+                if (!['COMPANY_INFO', 'ROLES', 'USERS', 'REACHOUT_LAYOUTS', 'CLIENTS', 'FRANCHISE', 'ROLE_HIERARCHY', 'THEMES'].includes(id)) {
                     return <Route key={id} path={getPath(id)} element={<SettingsContentWrapper id={id} />} />;
                 }
                 return null;

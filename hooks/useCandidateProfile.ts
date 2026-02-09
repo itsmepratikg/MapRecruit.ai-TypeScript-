@@ -7,7 +7,7 @@ export const useCandidateProfile = (id: string | null) => {
     const [error, setError] = useState<string | null>(null);
 
     const fetchProfile = async () => {
-        if (!id || !localStorage.getItem('user')) return;
+        if (!id || !sessionStorage.getItem('authToken')) return;
         setLoading(true);
         try {
             const data = await profileService.getById(id);

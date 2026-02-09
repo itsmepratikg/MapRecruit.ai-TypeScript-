@@ -29,7 +29,8 @@ import { ThemeSettingsModal } from './components/ThemeSettingsModal';
 import { useUserPreferences } from './hooks/useUserPreferences';
 import { useUserProfile } from './hooks/useUserProfile';
 import { useCompanyTheme } from './hooks/useCompanyTheme';
-import { GLOBAL_CAMPAIGNS } from './data';
+import { UserProvider } from './context/UserContext';
+
 import { GlobalSearch } from './components/GlobalSearch'; // Import Global Search
 import { useSessionTimeout } from './hooks/useSessionTimeout';
 import html2canvas from 'html2canvas';
@@ -53,6 +54,7 @@ import { ImpersonationProvider } from './context/ImpersonationContext';
 import { ImpersonationBanner, SafetyRequestModal } from './components/Security/ImpersonationBanner';
 import { AccessGuard } from './components/Security/AccessGuard';
 import { SupportRequestModal } from './components/Security/SupportRequestModal';
+import { PagePreloader } from './components/Common/PagePreloader';
 
 type ViewState = 'DASHBOARD' | 'PROFILES' | 'CAMPAIGNS' | 'METRICS' | 'SETTINGS' | 'MY_ACCOUNT' | 'ACTIVITIES' | 'HISTORY' | 'NOTIFICATIONS' | 'TALENT_CHAT';
 
@@ -64,6 +66,14 @@ export const LegacyProfileRedirect = () => {
 };
 
 export const App = () => {
+  return (
+    <UserProvider>
+      <AppContent />
+    </UserProvider>
+  );
+};
+
+const AppContent = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeView, setActiveView] = useState<ViewState>('DASHBOARD');
   const navigate = useNavigate();
@@ -77,7 +87,8 @@ export const App = () => {
   const { theme, updateTheme } = useUserPreferences();
 
   // Hook for User Profile Data (Synchronized)
-  const { userProfile, clients, saveProfile } = useUserProfile();
+  // Hook for User Profile Data (Synchronized via Context)
+  const { userProfile, clients, saveProfile, loading: userLoading } = useUserProfile();
 
   // Hook for Dynamic Company Theme
   // This will fetch the company color and inject CSS variables
@@ -105,7 +116,6 @@ export const App = () => {
   const [isCreateProfileOpen, setIsCreateProfileOpen] = useState(false);
   const [isCreateCampaignOpen, setIsCreateCampaignOpen] = useState(false);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
-  const [isThemeSettingsOpen, setIsThemeSettingsOpen] = useState(false);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false); // Global Search State
 
   // Placeholder Modal State
@@ -120,9 +130,8 @@ export const App = () => {
 
   // Check Authentication on Mount
   useEffect(() => {
-    const userStr = localStorage.getItem('user');
-    const token = localStorage.getItem('authToken');
-    if (userStr || token) {
+    const token = sessionStorage.getItem('authToken');
+    if (token) {
       setIsAuthenticated(true);
     }
   }, []);
@@ -183,12 +192,14 @@ export const App = () => {
 
   const handleLogin = () => {
     setIsAuthenticated(true);
-    navigate('/dashboard', { replace: true });
+    // Check if there is a redirect path state (Clean URL Logic)
+    const from = (location.state as any)?.from?.pathname || '/dashboard';
+    navigate(from, { replace: true });
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('authToken');
+    // localStorage.removeItem('user'); // Deprecated
     setIsAuthenticated(false);
     // Reset view states
     setActiveView('DASHBOARD');
@@ -322,16 +333,27 @@ export const App = () => {
 
 
   // Redirect to login or support if not authenticated
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !userLoading) {
     if (location.pathname === '/support') {
       return (
-        <React.Suspense fallback={<div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div></div>}>
+        <React.Suspense fallback={<PagePreloader message="Loading Support..." />}>
           <SupportPage />
         </React.Suspense>
       );
     }
+    // Force URL cleaning: Redirect to / (Login) if trying to access deep link while unauthenticated
+    if (location.pathname !== '/') {
+      return <Navigate to="/" state={{ from: location }} replace />;
+    }
     return <Login onLogin={handleLogin} />;
   }
+
+  // Show loader while checking session/context
+  if (userLoading) {
+    return <PagePreloader message="Loading session..." />;
+  }
+
+
 
   return (
     <QuickTourManager>
@@ -544,7 +566,6 @@ export const App = () => {
                     setIsCreateProfileOpen={setIsCreateProfileOpen}
                     setIsCreateCampaignOpen={setIsCreateCampaignOpen}
                     setIsCreateFolderOpen={setIsCreateFolderOpen}
-                    setIsThemeSettingsOpen={setIsThemeSettingsOpen}
                     setIsGlobalSearchOpen={setIsGlobalSearchOpen}
                     onOpenPlaceholder={openPlaceholder}
                     onOpenSupport={async () => {
@@ -587,11 +608,7 @@ export const App = () => {
 
               {/* Main Content */}
               <div className={`flex-1 flex flex-col h-full overflow-hidden w-full relative bg-slate-50 dark:bg-slate-900 transition-colors ${!isDesktop && !isSidebarOpen ? 'pl-16' : ''}`}>
-                <React.Suspense fallback={
-                  <div className="flex items-center justify-center h-full text-slate-400">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-                  </div>
-                }>
+                <React.Suspense fallback={<PagePreloader fullScreen={false} message="Loading Page Content..." />}>
                   <Routes>
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<Home onNavigate={(tab) => navigate(`/campaigns?tab=${tab}`)} />} />
@@ -660,8 +677,6 @@ export const App = () => {
               <CampaignCreationModal isOpen={isCreateCampaignOpen} onClose={() => setIsCreateCampaignOpen(false)} />
               {/* Create Folder Modal */}
               <CreateFolderModal isOpen={isCreateFolderOpen} onClose={() => setIsCreateFolderOpen(false)} />
-              {/* Theme Settings Modal */}
-              <ThemeSettingsModal isOpen={isThemeSettingsOpen} onClose={() => setIsThemeSettingsOpen(false)} />
               {/* Placeholder Modal */}
               <PlaceholderModal
                 isOpen={placeholderConfig.isOpen}
@@ -698,15 +713,7 @@ const CampaignDashboardWrapper = () => {
 
   useEffect(() => {
     const loadCampaign = async () => {
-      // 1. Check mock data first
-      const mockCampaign = GLOBAL_CAMPAIGNS.find(c => c.id.toString() === id);
-      if (mockCampaign) {
-        setCampaign(mockCampaign);
-        setLoading(false);
-        return;
-      }
-
-      // 2. Try fetching from service if not in mock
+      // Try fetching from service
       try {
         const campaigns = await campaignService.getAll();
         const found = campaigns.find((c: any) => (c._id?.$oid || c._id)?.toString() === id);

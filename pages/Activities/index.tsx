@@ -4,98 +4,18 @@ import {
   Activity, Clock, FileText, CheckCircle, User, Settings, Filter,
   Calendar, ChevronDown, Search, X, CheckSquare, Square, RefreshCw
 } from '../../components/Icons';
-import { useActivities } from '../../hooks/useActivities';
-import { sanitizeActivityHtml, getActivityActorName } from '../../utils/activityUtils';
-import { Activity as ActivityType } from '../../types/Activity';
-import { ActivityItem } from '../../components/ActivityItem';
+import { useUserProfile } from '../../hooks/useUserProfile';
 
-
-// --- Constants ---
-
-const ACTIVITY_FILTER_OPTIONS = [
-  "Table Downloaded",
-  "Contact Details Viewed",
-  "Duplicate Profiles Check",
-  "Accessibility Settings Updated",
-  "Campaign Members Updated",
-  "Campaign Created",
-  "Communication Channel Updated",
-  "Started Survey Round",
-  "Added New Round",
-  "Updated Role",
-  "Job Status Updated",
-  "Completed Survey Round",
-  "Started Screening Round",
-  "Profile Linked",
-  "Round Edited",
-  "Sent Time Slot Selection Mail",
-  "Email Opt-Out",
-  "Candidate Requested",
-  "Question Created",
-  "Completed Screening Round",
-  "Selected Meeting Time Slot",
-  "Job Created"
-];
-
-// Helper to get relative time for display, but we filter on real dates
-const getTimeAgo = (dateStr: string) => {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  let interval = seconds / 31536000;
-  if (interval > 1) return Math.floor(interval) + " years ago";
-  interval = seconds / 2592000;
-  if (interval > 1) return Math.floor(interval) + " months ago";
-  interval = seconds / 86400;
-  if (interval > 1) return Math.floor(interval) + " days ago";
-  interval = seconds / 3600;
-  if (interval > 1) return Math.floor(interval) + " hours ago";
-  interval = seconds / 60;
-  if (interval > 1) return Math.floor(interval) + " minutes ago";
-  return "Just now";
-};
-
-// Mock Data with specific types and ISO dates for filtering
-const ACTIVITIES_DATA = [
-  { id: 1, action: 'Contact Details Viewed', detail: 'Deanthony Quarterman', date: new Date(Date.now() - 1000 * 60 * 10).toISOString(), type: 'view', icon: User },
-  { id: 2, action: 'Campaign Created', detail: 'Senior React Developer (CAM-2025-FE)', date: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), type: 'create', icon: CheckCircle },
-  { id: 3, action: 'Accessibility Settings Updated', detail: 'Changed contrast settings', date: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(), type: 'settings', icon: Settings },
-  { id: 4, action: 'Table Downloaded', detail: 'Candidate list for "Warehouse Ops"', date: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), type: 'export', icon: Activity },
-  { id: 5, action: 'Communication Channel Updated', detail: 'Enabled SMS notifications', date: new Date(Date.now() - 1000 * 60 * 60 * 26).toISOString(), type: 'settings', icon: Settings },
-  { id: 6, action: 'Started Screening Round', detail: 'Sarah Connors', date: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), type: 'view', icon: FileText },
-  { id: 7, action: 'Added New Round', detail: 'Added "Tech Interview" to workflow', date: new Date(Date.now() - 1000 * 60 * 60 * 50).toISOString(), type: 'create', icon: FileText },
-  { id: 8, action: 'Profile Linked', detail: 'Linked 3 profiles to Campaign A', date: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(), type: 'create', icon: FileText },
-  { id: 9, action: 'Email Opt-Out', detail: 'Candidate requested unsubscribe', date: new Date(Date.now() - 1000 * 60 * 60 * 96).toISOString(), type: 'settings', icon: Settings },
-  { id: 10, action: 'Job Created', detail: 'Warehouse Manager', date: new Date(Date.now() - 1000 * 60 * 60 * 120).toISOString(), type: 'create', icon: CheckCircle },
-];
+// ... (existing imports)
 
 export const Activities = () => {
   // --- Data State ---
-  const getUserCompanyID = () => {
-    try {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        return user.currentCompanyID || user.companyID || user.companyId;
-      }
-    } catch (e) { console.error(e); }
-    return undefined;
-  };
-  const companyID = getUserCompanyID();
+  const { userProfile } = useUserProfile();
+  const companyID = userProfile?.currentCompanyID || userProfile?.companyID || userProfile?.companyId;
 
   // Fetch Activities
   const { activities, loading, error, refetch } = useActivities({
-    companyID, // Pass companyID if hook supports it (it checks implicit context in hook? NO, I need to pass it)
-    // Wait, my hook implementation didn't explicitly take companyID in params interface? 
-    // Let's check hook again. I might have missed strict companyID param in logic.
-    // But typically backend filters by user's company anyway.
-    // If backend handles it, great. If I need to pass it, I should update hook or just rely on backend.
-    // For now, I'll pass it if I added it, or trust backend.
-    // Actually, my hook interface has `candidateID`, `campaignID`, `activityOf`.
-    // It DOES NOT have `companyID`.
-    // I should rely on backend/session for companyID filtering usually.
-    // OR I should filter client side.
+    companyID,
     limit: 50
   });
 

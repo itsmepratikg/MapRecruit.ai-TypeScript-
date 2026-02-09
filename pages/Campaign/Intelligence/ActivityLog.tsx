@@ -7,21 +7,14 @@ import { Activity } from '../../../types/Activity';
 import { ActivityItem } from '../../../components/ActivityItem';
 
 
+import { useUserProfile } from '../../../hooks/useUserProfile';
+
 export const ActivityLog = () => {
     const { id: campaignID } = useParams<{ id: string }>();
 
-    // Get Company ID
-    const getUserCompanyID = () => {
-        try {
-            const userStr = localStorage.getItem('user');
-            if (userStr) {
-                const user = JSON.parse(userStr);
-                return user.currentCompanyID || user.companyID || user.companyId;
-            }
-        } catch (e) { console.error(e); }
-        return undefined;
-    };
-    const companyID = getUserCompanyID();
+    // Get Company ID from synchronized user profile
+    const { userProfile } = useUserProfile();
+    const companyID = userProfile?.currentCompanyID || userProfile?.companyID || userProfile?.companyId;
 
     const { activities, loading, error } = useActivities({
         campaignID, // If campaignID is present, hook attempts to filter by it

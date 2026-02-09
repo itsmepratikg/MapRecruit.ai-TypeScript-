@@ -20,12 +20,9 @@ attachSafetyInterceptor(api);
 // Add a request interceptor to attach the Token
 api.interceptors.request.use(
     (config) => {
-        const user = localStorage.getItem('user');
-        if (user) {
-            const { token } = JSON.parse(user);
-            if (token) {
-                config.headers.Authorization = `Bearer ${token}`;
-            }
+        const token = sessionStorage.getItem('authToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },
@@ -39,7 +36,7 @@ export const authService = {
         try {
             const response = await api.post('/auth/login', { email, password });
             if (response.data.token) {
-                localStorage.setItem('user', JSON.stringify(response.data));
+                sessionStorage.setItem('authToken', response.data.token);
             }
             return response.data;
         } catch (error) {
@@ -51,7 +48,7 @@ export const authService = {
         try {
             const response = await api.post('/auth/google', { credential });
             if (response.data.token) {
-                localStorage.setItem('user', JSON.stringify(response.data));
+                sessionStorage.setItem('authToken', response.data.token);
             }
             return response.data;
         } catch (error) {
@@ -62,18 +59,22 @@ export const authService = {
     register: async (userData) => {
         const response = await api.post('/auth/register', userData);
         if (response.data.token) {
-            localStorage.setItem('user', JSON.stringify(response.data));
+            sessionStorage.setItem('authToken', response.data.token);
         }
         return response.data;
     },
     logout: () => {
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('authToken');
     },
     switchCompany: async (companyId, clientId) => {
         const response = await api.post('/auth/switch-context', { companyId, clientId });
         if (response.data.token) {
-            localStorage.setItem('user', JSON.stringify(response.data));
+            sessionStorage.setItem('authToken', response.data.token);
         }
+        return response.data;
+    },
+    getMe: async () => {
+        const response = await api.get('/auth/me');
         return response.data;
     }
 };
@@ -164,6 +165,10 @@ export const clientService = {
     getById: async (id) => {
         const response = await api.get(`/clients/${id}`);
         return response.data;
+    },
+    update: async (id, clientData) => {
+        const response = await api.put(`/clients/${id}`, clientData);
+        return response.data;
     }
 };
 
@@ -218,7 +223,7 @@ export const passkeyService = {
     verifyLogin: async (email, body) => {
         const response = await api.post('/auth/passkey/login-verify', { email, body });
         if (response.data.token) {
-            localStorage.setItem('user', JSON.stringify(response.data));
+            sessionStorage.setItem('authToken', response.data.token);
         }
         return response.data;
     }
@@ -287,6 +292,17 @@ export const libraryService = {
     },
     delete: async (id) => {
         const response = await api.delete(`/library/${id}`);
+        return response.data;
+    }
+};
+
+export const schemaService = {
+    getByName: async (name) => {
+        const response = await api.get(`/schemas/${name}`);
+        return response.data;
+    },
+    getAll: async () => {
+        const response = await api.get('/schemas');
         return response.data;
     }
 };

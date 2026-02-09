@@ -148,7 +148,7 @@ export const Login = ({ onLogin }: LoginProps) => {
             const msAuthAction = new Promise<void>((resolve) => {
                 // Simulate backend validation
                 setTimeout(() => {
-                    localStorage.setItem('authToken', `ms-token-${response.accessToken.substring(0, 10)}`);
+                    sessionStorage.setItem('authToken', `ms-token-${response.accessToken.substring(0, 10)}`);
                     resolve();
                 }, 800);
             });

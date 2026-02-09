@@ -1,16 +1,15 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
    FolderOpen, Search, Users, MoreHorizontal, ChevronLeft, UserPlus,
    Mail, Link, Sparkles, CheckSquare, Square, X, Filter,
    Share2, Send, Briefcase, Tag as TagIcon
 } from '../../../components/Icons';
-import { MOCK_PROFILES, GLOBAL_CAMPAIGNS, FOLDERS_LIST } from '../../../data';
+import { profileService, campaignService } from '../../../services/api';
 import { useToast } from '../../../components/Toast';
 import { AccessControlModal } from '../../../components/AccessControlModal';
 import { useUserProfile } from '../../../hooks/useUserProfile';
-
 // --- SUB-COMPONENTS ---
 
 const ActionModal = ({ isOpen, onClose, title, children }: { isOpen: boolean, onClose: () => void, title: string, children?: React.ReactNode }) => {
@@ -41,20 +40,59 @@ export const FolderDetailView = ({ folder, onBack }: { folder: any, onBack: () =
    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
    // Modal States
-   const [actionType, setActionType] = useState<'COMM' | 'LINK' | 'ATTACH_CAMPAIGN' | 'TAG' | 'REFERRAL' | null>(null);
    const [activeCommTab, setActiveCommTab] = useState<'EMAIL' | 'SMS'>('EMAIL');
+   const [campaigns, setCampaigns] = useState<any[]>([]);
+   const [profiles, setProfiles] = useState<any[]>([]);
+   const [allFolders, setAllFolders] = useState<any[]>([]);
+   const [isLoading, setIsLoading] = useState(true);
+
+   useEffect(() => {
+      const fetchData = async () => {
+         setIsLoading(true);
+         try {
+            // Parallel fetch for Campaigns, Profiles, and Folders
+            const [campaignsData, foldersData, profilesData] = await Promise.all([
+               campaignService.getAll(),
+               profileService.getFolderMetrics(),
+               profileService.getAll({ folder: folder.id || folder._id }) // Fetch profiles for this folder
+            ]);
+
+            // Process Campaigns
+            setCampaigns((campaignsData || []).filter((c: any) => {
+               const status = c.schemaConfig?.mainSchema?.status || (c.status === true || c.status === 'Active' ? 'Active' : 'Closed');
+               return status === 'Active';
+            }));
+
+            // Process Folders
+            setAllFolders(foldersData || []);
+
+            // Process Profiles
+            setProfiles(profilesData || []);
+
+         } catch (err) {
+            console.error("Failed to fetch data", err);
+            addToast("Failed to load folder contents", "error");
+         } finally {
+            setIsLoading(false);
+         }
+      };
+
+      if (folder) {
+         fetchData();
+      }
+   }, [folder]);
 
    // Data Filtering
    const filteredProfiles = useMemo(() => {
-      if (!searchQuery) return MOCK_PROFILES;
+      if (!searchQuery) return profiles;
       const lower = searchQuery.toLowerCase();
-      return MOCK_PROFILES.filter(p =>
-         p.name.toLowerCase().includes(lower) ||
-         p.title.toLowerCase().includes(lower) ||
-         p.location.toLowerCase().includes(lower) ||
-         p.skills.some(s => s.toLowerCase().includes(lower))
+      return profiles.filter(p =>
+         (p.name || '').toLowerCase().includes(lower) ||
+         (p.title || '').toLowerCase().includes(lower) ||
+         (p.location || '').toLowerCase().includes(lower) ||
+         (p.skills || []).some((s: string) => s.toLowerCase().includes(lower))
       );
-   }, [searchQuery]);
+   }, [searchQuery, profiles]);
 
    const toggleSelection = (id: number) => {
       const newSet = new Set(selectedIds);
@@ -114,8 +152,10 @@ export const FolderDetailView = ({ folder, onBack }: { folder: any, onBack: () =
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("Select Campaign")}</label>
                   <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm outline-none focus:border-emerald-500 dark:text-slate-200">
                      <option>{t("Select a campaign...")}</option>
-                     {GLOBAL_CAMPAIGNS.filter(c => c.status === 'Active').map(c => (
-                        <option key={c.id} value={c.id}>{c.name} ({c.jobID})</option>
+                     {campaigns.map(c => (
+                        <option key={c._id?.$oid || c._id} value={c._id?.$oid || c._id}>
+                           {c.schemaConfig?.mainSchema?.title || c.title || 'Untitled'} ({c.migrationMeta?.jobID || '---'})
+                        </option>
                      ))}
                   </select>
                </div>
@@ -135,7 +175,7 @@ export const FolderDetailView = ({ folder, onBack }: { folder: any, onBack: () =
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t("Target Folder")}</label>
                   <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm outline-none focus:border-emerald-500 dark:text-slate-200">
                      <option>{t("Select a folder...")}</option>
-                     {FOLDERS_LIST.filter(f => f.id !== folder.id).map(f => (
+                     {allFolders.filter(f => f.id !== folder.id).map(f => (
                         <option key={f.id} value={f.id}>{f.name}</option>
                      ))}
                   </select>
@@ -280,71 +320,80 @@ export const FolderDetailView = ({ folder, onBack }: { folder: any, onBack: () =
 
          {/* TABLE */}
          <div className="flex-1 overflow-auto bg-slate-50/50 dark:bg-slate-900/50 p-6 custom-scrollbar">
-            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
-               <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-medium">
-                     <tr>
-                        <th className="px-4 py-3 w-12 text-center">
-                           <button onClick={toggleSelectAll} className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400">
-                              {selectedIds.size === filteredProfiles.length && filteredProfiles.length > 0 ? <CheckSquare size={18} className="text-emerald-600 dark:text-emerald-400" /> : <Square size={18} />}
-                           </button>
-                        </th>
-                        <th className="px-4 py-3">{t("Candidate")}</th>
-                        <th className="px-4 py-3">{t("Role")}</th>
-                        <th className="px-4 py-3">{t("Status")}</th>
-                        <th className="px-4 py-3">{t("Availability")}</th>
-                        <th className="px-4 py-3 text-right">{t("Actions")}</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                     {filteredProfiles.map((profile) => {
-                        const isSelected = selectedIds.has(profile.id);
-                        return (
-                           <tr key={profile.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group ${isSelected ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}>
-                              <td className="px-4 py-3 text-center">
-                                 <button onClick={() => toggleSelection(profile.id)} className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400">
-                                    {isSelected ? <CheckSquare size={18} className="text-emerald-600 dark:text-emerald-400" /> : <Square size={18} />}
-                                 </button>
-                              </td>
-                              <td className="px-4 py-3">
-                                 <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300`}>
-                                       {profile.avatar}
+            {isLoading ? (
+               <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400">
+                  <div className="flex flex-col items-center gap-2">
+                     <span className="animate-spin text-2xl">⏳</span>
+                     <p>{t("Loading profiles...")}</p>
+                  </div>
+               </div>
+            ) : (
+               <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                     <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-medium">
+                        <tr>
+                           <th className="px-4 py-3 w-12 text-center">
+                              <button onClick={toggleSelectAll} className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400">
+                                 {selectedIds.size === filteredProfiles.length && filteredProfiles.length > 0 ? <CheckSquare size={18} className="text-emerald-600 dark:text-emerald-400" /> : <Square size={18} />}
+                              </button>
+                           </th>
+                           <th className="px-4 py-3">{t("Candidate")}</th>
+                           <th className="px-4 py-3">{t("Role")}</th>
+                           <th className="px-4 py-3">{t("Status")}</th>
+                           <th className="px-4 py-3">{t("Availability")}</th>
+                           <th className="px-4 py-3 text-right">{t("Actions")}</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                        {filteredProfiles.map((profile) => {
+                           const isSelected = selectedIds.has(profile.id);
+                           return (
+                              <tr key={profile.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group ${isSelected ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}>
+                                 <td className="px-4 py-3 text-center">
+                                    <button onClick={() => toggleSelection(profile.id)} className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400">
+                                       {isSelected ? <CheckSquare size={18} className="text-emerald-600 dark:text-emerald-400" /> : <Square size={18} />}
+                                    </button>
+                                 </td>
+                                 <td className="px-4 py-3">
+                                    <div className="flex items-center gap-3">
+                                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300`}>
+                                          {profile.avatar}
+                                       </div>
+                                       <span className="font-bold text-slate-800 dark:text-slate-200">{profile.name}</span>
                                     </div>
-                                    <span className="font-bold text-slate-800 dark:text-slate-200">{profile.name}</span>
+                                 </td>
+                                 <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{profile.title}</td>
+                                 <td className="px-4 py-3">
+                                    <span className={`px-2 py-0.5 rounded text-xs font-medium border ${profile.status === 'Active' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600'}`}>
+                                       {profile.status}
+                                    </span>
+                                 </td>
+                                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{profile.availability}</td>
+                                 <td className="px-4 py-3 text-right">
+                                    <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                                       <MoreHorizontal size={16} />
+                                    </button>
+                                 </td>
+                              </tr>
+                           );
+                        })}
+                        {filteredProfiles.length === 0 && (
+                           <tr>
+                              <td colSpan={6} className="px-6 py-12 text-center">
+                                 <div className="flex flex-col items-center gap-2">
+                                    <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
+                                       <Search size={24} />
+                                    </div>
+                                    <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("No profiles found")}</p>
+                                    <p className="text-xs text-slate-400">{t("Try adjusting your search query.")}</p>
                                  </div>
-                              </td>
-                              <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{profile.title}</td>
-                              <td className="px-4 py-3">
-                                 <span className={`px-2 py-0.5 rounded text-xs font-medium border ${profile.status === 'Active' ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600'}`}>
-                                    {profile.status}
-                                 </span>
-                              </td>
-                              <td className="px-4 py-3 text-slate-500 dark:text-slate-400">{profile.availability}</td>
-                              <td className="px-4 py-3 text-right">
-                                 <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                                    <MoreHorizontal size={16} />
-                                 </button>
                               </td>
                            </tr>
-                        );
-                     })}
-                     {filteredProfiles.length === 0 && (
-                        <tr>
-                           <td colSpan={6} className="px-6 py-12 text-center">
-                              <div className="flex flex-col items-center gap-2">
-                                 <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
-                                    <Search size={24} />
-                                 </div>
-                                 <p className="text-sm font-medium text-slate-600 dark:text-slate-300">{t("No profiles found")}</p>
-                                 <p className="text-xs text-slate-400">{t("Try adjusting your search query.")}</p>
-                              </div>
-                           </td>
-                        </tr>
-                     )}
-                  </tbody>
-               </table>
-            </div>
+                        )}
+                     </tbody>
+                  </table>
+               </div>
+            )}
          </div>
       </div>
    );

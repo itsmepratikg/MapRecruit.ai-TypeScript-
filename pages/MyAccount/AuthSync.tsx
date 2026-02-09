@@ -245,7 +245,7 @@ export const AuthSync = () => {
         console.log("WebAuthn Credential Created:", credential);
 
         // Store credential ID locally as requested for simulation persistence
-        localStorage.setItem('maprecruit_passkey_id', credential.id);
+        sessionStorage.setItem('maprecruit_passkey_id', credential.id);
 
         setSsoStatus(prev => ({ ...prev, passkey: true }));
         addToast("Biometric Passkey registered successfully.", "success");
@@ -287,7 +287,7 @@ export const AuthSync = () => {
 
     // Revert visual state if user cancelled changes without saving
     // (Here we just reload status from storage or default)
-    const existingPasskey = localStorage.getItem('maprecruit_passkey_id');
+    const existingPasskey = sessionStorage.getItem('maprecruit_passkey_id');
     setSsoStatus(prev => ({ ...prev, passkey: !!existingPasskey }));
 
     addToast("Changes discarded", "info");
@@ -303,7 +303,7 @@ export const AuthSync = () => {
       } else {
         // Disabling Passkey (Immediate)
         setSsoStatus(prev => ({ ...prev, passkey: false }));
-        localStorage.removeItem('maprecruit_passkey_id'); // Clear legacy if exists
+        sessionStorage.removeItem('maprecruit_passkey_id'); // Clear legacy if exists
         addToast("Passkey sign-in disabled.", "info");
       }
       return;

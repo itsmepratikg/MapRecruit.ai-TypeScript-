@@ -24,7 +24,7 @@ export const CreateFolderModal = ({ isOpen, onClose }: CreateFolderModalProps) =
     // Access Settings State
     const [accessSettings, setAccessSettings] = useState<AccessSettings>({
         level: 'PRIVATE',
-        ownerId: userProfile.id || 'usr_123',
+        ownerId: userProfile?.id || userProfile?._id || 'usr_123',
         sharedWith: []
     });
 
@@ -44,7 +44,7 @@ export const CreateFolderModal = ({ isOpen, onClose }: CreateFolderModalProps) =
         setTitle('');
         setTags('');
         setDescription('');
-        setAccessSettings({ level: 'PRIVATE', ownerId: userProfile.id || 'usr_123', sharedWith: [] });
+        setAccessSettings({ level: 'PRIVATE', ownerId: userProfile?.id || userProfile?._id || 'usr_123', sharedWith: [] });
         onClose();
     };
 
@@ -69,7 +69,10 @@ export const CreateFolderModal = ({ isOpen, onClose }: CreateFolderModalProps) =
                 entityName={title || "New Folder"}
                 currentSettings={accessSettings}
                 onSave={(settings) => setAccessSettings(settings)}
-                currentUser={{ id: userProfile.id || 'usr_123', name: `${userProfile.firstName} ${userProfile.lastName}` }}
+                currentUser={{
+                    id: userProfile?.id || userProfile?._id || 'usr_123',
+                    name: userProfile ? `${userProfile.firstName} ${userProfile.lastName}` : 'Current User'
+                }}
             />
 
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200 dark:border-slate-700">

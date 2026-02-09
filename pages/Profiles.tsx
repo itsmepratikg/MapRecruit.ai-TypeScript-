@@ -13,10 +13,8 @@ import { SearchState, Campaign } from '../types';
 import { EmptyView } from '../components/Common';
 import { TalentSearchEngine } from '../components/TalentSearchEngine';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { GLOBAL_CAMPAIGNS } from '../data';
+import { profileService, campaignService } from '../services/api';
 import { useToast } from '../components/Toast';
-import { profileService } from '../services/api';
-import { useEffect } from 'react';
 
 // --- MOCK DATA FOR FOLDERS ---
 
@@ -68,10 +66,35 @@ const FolderDetailView = ({ folder, onBack }: { folder: any, onBack: () => void 
    // Modal States
    const [actionType, setActionType] = useState<'COMM' | 'LINK' | 'ATTACH_CAMPAIGN' | 'TAG' | 'REFERRAL' | null>(null);
    const [activeCommTab, setActiveCommTab] = useState<'EMAIL' | 'SMS'>('EMAIL');
+   const [campaigns, setCampaigns] = useState<any[]>([]);
+   const [folders, setFolders] = useState<any[]>([]);
 
    useEffect(() => {
       fetchProfiles();
+      fetchCampaigns();
+      fetchFolders();
    }, [folder.id, pagination.page, searchQuery]);
+
+   const fetchFolders = async () => {
+      try {
+         const data = await profileService.getFolderMetrics();
+         setFolders(data || []);
+      } catch (err) {
+         console.error("Failed to fetch folders", err);
+      }
+   };
+
+   const fetchCampaigns = async () => {
+      try {
+         const data = await campaignService.getAll();
+         setCampaigns(data.filter((c: any) => {
+            const status = c.schemaConfig?.mainSchema?.status || (c.status === true || c.status === 'Active' ? 'Active' : 'Closed');
+            return status === 'Active';
+         }));
+      } catch (err) {
+         console.error("Failed to fetch campaigns", err);
+      }
+   };
 
    const fetchProfiles = async () => {
       setLoading(true);
@@ -137,8 +160,10 @@ const FolderDetailView = ({ folder, onBack }: { folder: any, onBack: () => void 
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Select Campaign</label>
                   <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm outline-none focus:border-emerald-500 dark:text-slate-200">
                      <option>Select a campaign...</option>
-                     {GLOBAL_CAMPAIGNS.filter(c => c.status === 'Active').map(c => (
-                        <option key={c.id} value={c.id}>{c.name} ({c.jobID})</option>
+                     {campaigns.map(c => (
+                        <option key={c._id?.$oid || c._id} value={c._id?.$oid || c._id}>
+                           {c.schemaConfig?.mainSchema?.title || c.title || 'Untitled'} ({c.migrationMeta?.jobID || '---'})
+                        </option>
                      ))}
                   </select>
                </div>
@@ -158,8 +183,8 @@ const FolderDetailView = ({ folder, onBack }: { folder: any, onBack: () => void 
                   <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Target Folder</label>
                   <select className="w-full p-2.5 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm outline-none focus:border-emerald-500 dark:text-slate-200">
                      <option>Select a folder...</option>
-                     {FOLDERS_LIST.filter(f => f.id !== folder.id).map(f => (
-                        <option key={f.id} value={f.id}>{f.name}</option>
+                     {folders.filter(f => (f._id || f.id) !== (folder._id || folder.id)).map(f => (
+                        <option key={f._id || f.id} value={f._id || f.id}>{f.name}</option>
                      ))}
                   </select>
                </div>

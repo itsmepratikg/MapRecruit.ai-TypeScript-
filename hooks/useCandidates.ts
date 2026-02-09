@@ -7,7 +7,7 @@ export const useCandidates = () => {
     const [error, setError] = useState<string | null>(null);
 
     const fetchCandidates = async () => {
-        if (!localStorage.getItem('user')) return;
+        if (!sessionStorage.getItem('authToken')) return;
         setLoading(true);
         try {
             const data = await profileService.getAll();
@@ -22,7 +22,7 @@ export const useCandidates = () => {
     };
 
     useEffect(() => {
-        if (localStorage.getItem('user')) {
+        if (sessionStorage.getItem('authToken')) {
             fetchCandidates();
         }
     }, []);

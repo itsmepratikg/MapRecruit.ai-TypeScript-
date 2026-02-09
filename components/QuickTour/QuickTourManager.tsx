@@ -14,7 +14,7 @@ const TourLogic = () => {
 
     // Persist current phase
     const [phase, setPhase] = useState<TourPhase>(() => {
-        return (localStorage.getItem('quickTourPhase') as TourPhase) || 'DASHBOARD';
+        return (sessionStorage.getItem('quickTourPhase') as TourPhase) || 'DASHBOARD';
     });
 
     const isQuickTour = searchParams.get('quicktour') === 'true';

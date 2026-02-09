@@ -106,6 +106,45 @@ const getClients = async (req, res) => {
     }
 };
 
+const createClient = async (req, res) => {
+    try {
+        const { clientName, companyID, ...otherFields } = req.body;
+
+        if (!companyID || !mongoose.Types.ObjectId.isValid(companyID)) {
+            return res.status(400).json({ message: 'Valid Company ID is required' });
+        }
+
+        // 1. Fetch Company to inherit theme settings
+        const Company = require('../models/Company');
+        const company = await Company.findById(companyID);
+
+        const themesdata = company?.themesdata || {
+            themeVariables: { mainColor: '#0d6efd' }
+        };
+
+        // 2. Create the client with inherited theme
+        const client = await Client.create({
+            clientName,
+            companyID,
+            themesdata, // Inheritance from Company
+            ...otherFields,
+            updatedBy: req.user.id
+        });
+
+        // 3. Update Company document to include new client
+        if (company) {
+            if (!company.clients) company.clients = [];
+            company.clients.push(client._id);
+            await company.save();
+        }
+
+        res.status(201).json(client);
+    } catch (error) {
+        console.error('[DEBUG] createClient - FATAL ERROR:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 const getClientById = async (req, res) => {
     try {
         const { companyID, id: userId } = req.user;
@@ -182,7 +221,36 @@ const getClientById = async (req, res) => {
     }
 };
 
+const updateClient = async (req, res) => {
+    try {
+        const clientId = req.params.id;
+
+        if (!mongoose.Types.ObjectId.isValid(clientId)) {
+            return res.status(400).json({ message: 'Invalid Client ID format' });
+        }
+
+        const client = await Client.findById(clientId);
+        if (!client) {
+            return res.status(404).json({ message: 'Client not found' });
+        }
+
+        // Update fields using findByIdAndUpdate with $set to handle nested paths like 'themesdata.themeVariables.mainColor'
+        const updatedClient = await Client.findByIdAndUpdate(
+            clientId,
+            { $set: req.body },
+            { new: true, runValidators: true }
+        );
+
+        res.json(updatedClient);
+    } catch (error) {
+        console.error('[DEBUG] updateClient - FATAL ERROR:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     getClients,
-    getClientById
+    getClientById,
+    updateClient,
+    createClient
 };

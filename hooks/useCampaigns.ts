@@ -8,7 +8,7 @@ export const useCampaigns = () => {
     const [error, setError] = useState<string | null>(null);
 
     const fetchCampaigns = async () => {
-        if (!localStorage.getItem('user')) return;
+        if (!sessionStorage.getItem('authToken')) return;
         setLoading(true);
         try {
             const data = await campaignService.getAll();
@@ -25,7 +25,7 @@ export const useCampaigns = () => {
     };
 
     useEffect(() => {
-        if (localStorage.getItem('user')) {
+        if (sessionStorage.getItem('authToken')) {
             fetchCampaigns();
         }
     }, []);

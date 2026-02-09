@@ -8,9 +8,8 @@ import {
 import { useToast } from '../../components/Toast';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { COLORS } from '../../data/profile';
-import { userService } from '../../services/api';
+import { userService, schemaService } from '../../services/api';
 import { Save } from '../../components/Icons'; // Ensure Save icon is imported
-import PROFILE_SCHEMA from '../../Schema/UserProfileSchema.json';
 
 // --- Constants ---
 
@@ -232,14 +231,32 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
    const [isEditing, setIsEditing] = useState(isCreating);
 
    // Initialize with override data or global profile data
-   const [formData, setFormData] = useState(userOverride || userProfile);
+   const [formData, setFormData] = useState(userOverride || userProfile || {});
    const [zoomLevel, setZoomLevel] = useState(1);
+   const [schema, setSchema] = useState<any>(null);
+   const [schemaLoading, setSchemaLoading] = useState(true);
    const fileInputRef = useRef<HTMLInputElement>(null);
+
+   // Load Schema from MongoDB
+   useEffect(() => {
+      const loadSchema = async () => {
+         try {
+            const data = await schemaService.getByName('UserProfileSchema');
+            setSchema(data.config);
+         } catch (err) {
+            console.error("Failed to load UserProfileSchema", err);
+            // Fallback default if needed, or show error
+         } finally {
+            setSchemaLoading(false);
+         }
+      };
+      loadSchema();
+   }, []);
 
    // Sync formData with global state when not editing or when global state changes externally
    // Only if NOT using an override
    useEffect(() => {
-      if (!isEditing && !userOverride) {
+      if (!isEditing && !userOverride && userProfile) {
          setFormData(userProfile);
       }
    }, [userProfile, isEditing, userOverride]);
@@ -251,8 +268,8 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
       }
    }, [userOverride]);
 
-   const selectedCountry = COUNTRIES.find(c => c.code === formData.countryCode) || COUNTRIES[0];
-   const selectedColorObj = COLORS.find(c => c.name === formData.color) || COLORS[0];
+   const selectedCountry = COUNTRIES.find(c => c.code === formData?.countryCode) || COUNTRIES[0];
+   const selectedColorObj = COLORS.find(c => c.name === formData?.color) || COLORS[0];
 
    const getInitials = (fname?: string, lname?: string) => {
       const f = fname || '?';
@@ -305,7 +322,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
             await userService.update(userId, formData);
          } else if (isSelf) {
             // My Account (Logged in user) - Save to DB AND update local state
-            await userService.update(userProfile._id, formData);
+            await userService.update(userProfile?._id || userProfile?.id, formData);
             saveProfile({ ...formData });
          }
       })();
@@ -324,6 +341,9 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
       }
    };
 
+   if (schemaLoading) return <div className="p-12 text-center text-slate-500 animate-pulse">Loading Profile Schema...</div>;
+   if (!schema) return <div className="p-12 text-center text-red-500">Error: Profile Schema not found. Please contact administrator.</div>;
+
    return (
       <div className="p-8 lg:p-12">
          <div className="max-w-5xl mx-auto animate-in fade-in duration-300">
@@ -338,7 +358,7 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                      <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <User size={20} className="text-slate-400" /> {isCreating ? t('Create User') : (userOverride ? t('Edit User') : t('Basic Details'))}
                      </h2>
-                     {userOverride && <p className="text-xs text-slate-500 mt-1">Managing settings for {formData.firstName} {formData.lastName}</p>}
+                     {userOverride && <p className="text-xs text-slate-500 mt-1">Managing settings for {formData?.firstName} {formData?.lastName}</p>}
                   </div>
                </div>
                {!isEditing ? (
@@ -381,22 +401,22 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                         {formData.avatar ? (
                            <img src={formData.avatar} alt="Profile" className="w-full h-full object-cover" />
                         ) : (
-                           getInitials(formData.firstName || '?', formData.lastName || '?')
+                           getInitials(formData?.firstName || '?', formData?.lastName || '?')
                         )}
                      </div>
                      <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
-                        {PROFILE_SCHEMA.fields.find(f => f.key === 'avatar')?.label || 'Profile Photo'}
+                        {schema.fields.find((f: any) => f.key === 'avatar')?.label || 'Profile Photo'}
                      </p>
                   </div>
 
                   {/* Details Column - Map remaining fields */}
                   <div className="lg:col-span-8 space-y-6">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12">
-                        {PROFILE_SCHEMA.fields
-                           .filter(f => f.key !== 'avatar' && f.key !== 'teams' && f.visible)
-                           .map(field => {
+                        {schema.fields
+                           .filter((f: any) => f.key !== 'avatar' && f.key !== 'teams' && f.visible)
+                           .map((field: any) => {
                               // Handle complex value display
-                              let displayValue = formData[field.key];
+                              let displayValue = formData ? formData[field.key] : '';
 
                               if (field.key === 'phone' && formData.phone) {
                                  displayValue = `${selectedCountry.dial} ${formData.phone}`;
@@ -437,10 +457,10 @@ export const BasicDetails = ({ userOverride, onSaveOverride, onBack }: BasicDeta
                      </div>
 
                      {/* Teams / MultiSelect Section */}
-                     {PROFILE_SCHEMA.fields.find(f => f.key === 'teams' && f.visible) && (
+                     {schema.fields.find((f: any) => f.key === 'teams' && f.visible) && (
                         <div className="space-y-2">
                            <label className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">
-                              <Users size={12} /> {PROFILE_SCHEMA.fields.find(f => f.key === 'teams')?.label}
+                              <Users size={12} /> {schema.fields.find((f: any) => f.key === 'teams')?.label}
                            </label>
                            <div className="flex flex-wrap gap-2">
                               {(formData.teams || []).map((client: any, idx: number) => {

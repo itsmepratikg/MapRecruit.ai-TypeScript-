@@ -1,12 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
    FolderOpen, FolderPlus, Users,
    TrendingUp, MoreHorizontal, Search, BarChart2
 } from '../../../components/Icons';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FOLDERS_LIST } from '../../../data'; // Moved mock data to centralized data file or keep here
+import { profileService } from '../../../services/api';
 import { FolderDetailView } from './FolderDetailView';
 import { CreateFolderModal } from './CreateFolderModal';
 
@@ -31,6 +31,23 @@ export const FolderMetricsView = () => {
    const { t } = useTranslation();
    const [selectedFolder, setSelectedFolder] = useState<any | null>(null);
    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+   const [folders, setFolders] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+      const fetchFolders = async () => {
+         try {
+            setLoading(true);
+            const data = await profileService.getFolderMetrics();
+            setFolders(data || []);
+         } catch (err) {
+            console.error("Failed to fetch folder metrics", err);
+         } finally {
+            setLoading(false);
+         }
+      };
+      fetchFolders();
+   }, []);
 
    // Drill-down View
    if (selectedFolder) {
@@ -150,32 +167,49 @@ export const FolderMetricsView = () => {
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                     {FOLDERS_LIST.map((folder) => (
-                        <tr key={folder.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
-                           <td className="px-6 py-3">
-                              <button
-                                 onClick={() => setSelectedFolder(folder)}
-                                 className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-2"
-                              >
-                                 <FolderOpen size={16} /> {folder.name}
-                              </button>
-                           </td>
-                           <td className="px-6 py-3 text-slate-500 dark:text-slate-400">{folder.createdDate}</td>
-                           <td className="px-6 py-3 text-center font-mono font-bold text-slate-700 dark:text-slate-300">{folder.totalProfiles}</td>
-                           <td className="px-6 py-3 text-center font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10">+{folder.addedLast30}</td>
-                           <td className="px-6 py-3 text-center font-mono text-red-500">{folder.noActivity30 > 0 ? folder.noActivity30 : '-'}</td>
-                           <td className="px-6 py-3 text-center font-mono text-slate-600 dark:text-slate-300 border-l border-slate-100 dark:border-slate-700 bg-yellow-50/20 dark:bg-yellow-900/5">{folder.pending}</td>
-                           <td className="px-6 py-3 text-center font-mono text-slate-600 dark:text-slate-300 bg-blue-50/20 dark:bg-blue-900/5">{folder.applicants}</td>
-                           <td className="px-6 py-3 text-center font-mono font-bold text-slate-800 dark:text-slate-200 border-l border-slate-100 dark:border-slate-700">{folder.employees}</td>
-                           <td className="px-6 py-3 text-center font-mono text-slate-500 dark:text-slate-400">{folder.onAssignment}</td>
-                           <td className="px-6 py-3 text-center font-mono text-slate-400 dark:text-slate-500">{folder.notOnAssignment}</td>
-                           <td className="px-6 py-3 text-right">
-                              <button className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-                                 <MoreHorizontal size={16} />
-                              </button>
+                     {loading ? (
+                        <tr>
+                           <td colSpan={11} className="px-6 py-12 text-center text-slate-400">
+                              <div className="flex flex-col items-center gap-2">
+                                 <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-600 rounded-full animate-spin"></div>
+                                 <span className="text-xs font-bold uppercase tracking-widest">{t("Loading Folders...")}</span>
+                              </div>
                            </td>
                         </tr>
-                     ))}
+                     ) : folders.length > 0 ? (
+                        folders.map((folder) => (
+                           <tr key={folder._id || folder.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group">
+                              <td className="px-6 py-3">
+                                 <button
+                                    onClick={() => setSelectedFolder(folder)}
+                                    className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-2"
+                                 >
+                                    <FolderOpen size={16} /> {folder.name}
+                                 </button>
+                              </td>
+                              <td className="px-6 py-3 text-slate-500 dark:text-slate-400">{folder.createdDate || new Date(folder.createdAt).toLocaleDateString()}</td>
+                              <td className="px-6 py-3 text-center font-mono font-bold text-slate-700 dark:text-slate-300">{folder.totalProfiles || 0}</td>
+                              <td className="px-6 py-3 text-center font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10">+{folder.addedLast30 || 0}</td>
+                              <td className="px-6 py-3 text-center font-mono text-red-500">{(folder.noActivity30 || 0) > 0 ? folder.noActivity30 : '-'}</td>
+                              <td className="px-6 py-3 text-center font-mono text-slate-600 dark:text-slate-300 border-l border-slate-100 dark:border-slate-700 bg-yellow-50/20 dark:bg-yellow-900/5">{folder.pending || 0}</td>
+                              <td className="px-6 py-3 text-center font-mono text-slate-600 dark:text-slate-300 bg-blue-50/20 dark:bg-blue-900/5">{folder.applicants || 0}</td>
+                              <td className="px-6 py-3 text-center font-mono font-bold text-slate-800 dark:text-slate-200 border-l border-slate-100 dark:border-slate-700">{folder.employees || 0}</td>
+                              <td className="px-6 py-3 text-center font-mono text-slate-500 dark:text-slate-400">{folder.onAssignment || 0}</td>
+                              <td className="px-6 py-3 text-center font-mono text-slate-400 dark:text-slate-500">{folder.notOnAssignment || 0}</td>
+                              <td className="px-6 py-3 text-right">
+                                 <button className="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-600 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
+                                    <MoreHorizontal size={16} />
+                                 </button>
+                              </td>
+                           </tr>
+                        ))
+                     ) : (
+                        <tr>
+                           <td colSpan={11} className="px-6 py-12 text-center text-slate-400">
+                              <p className="text-sm font-medium">{t("No folders found")}</p>
+                           </td>
+                        </tr>
+                     )}
                   </tbody>
                </table>
             </div>

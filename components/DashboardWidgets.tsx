@@ -76,8 +76,8 @@ export const WelcomeHeader = ({ onNavigate, counts }: { onNavigate?: (tab: strin
       bgGradient: 'from-indigo-900 to-indigo-800'
    });
 
-   const userColorObj = COLORS.find(c => c.name === userProfile.color) || COLORS[0];
-   const initials = (userProfile.firstName.charAt(0) + userProfile.lastName.charAt(0)).toUpperCase();
+   const userColorObj = COLORS.find(c => c.name === userProfile?.color) || COLORS[0];
+   const initials = ((userProfile?.firstName?.charAt(0) || '') + (userProfile?.lastName?.charAt(0) || '')).toUpperCase() || '??';
    const { t } = useTranslation();
 
    useEffect(() => {
@@ -123,14 +123,14 @@ export const WelcomeHeader = ({ onNavigate, counts }: { onNavigate?: (tab: strin
          <div className="z-10 flex-1">
             <div className="flex justify-between items-start mb-4">
                <div>
-                  <h2 className="text-xl font-bold tracking-tight">{t(timeData.greeting)}, {userProfile.firstName}</h2>
-                  <p className="text-[10px] text-white/60 mt-0.5">{t("Timezone")}: {userProfile.timeZone || 'Asia/Kolkata (IST)'}</p>
+                  <h2 className="text-xl font-bold tracking-tight">{t(timeData.greeting)}, {userProfile?.firstName || 'User'}</h2>
+                  <p className="text-[10px] text-white/60 mt-0.5">{t("Timezone")}: {userProfile?.timeZone || 'Asia/Kolkata (IST)'}</p>
                </div>
                <div className="flex flex-col items-end gap-1">
                   <span className="text-[10px] text-white/80 bg-black/20 px-2 py-1 rounded border border-white/10 whitespace-nowrap">
-                     {t("Last Active")}: {formatDisplayTime(userProfile.lastActiveAt)}
+                     {t("Last Active")}: {formatDisplayTime(userProfile?.lastActiveAt)}
                   </span>
-                  {userProfile.loginCount !== undefined && (
+                  {userProfile?.loginCount !== undefined && (
                      <span className="text-[9px] text-white/60">
                         {t("Login count")}: {userProfile.loginCount}
                      </span>
@@ -143,8 +143,8 @@ export const WelcomeHeader = ({ onNavigate, counts }: { onNavigate?: (tab: strin
             </p>
 
             <div className="flex items-center gap-4 mb-2">
-               <div className={`w-12 h-12 rounded-xl p-0.5 shadow-lg ring-2 ring-white/20 shrink-0 ${!userProfile.avatar ? 'bg-white' : 'bg-transparent'}`}>
-                  {userProfile.avatar ? (
+               <div className={`w-12 h-12 rounded-xl p-0.5 shadow-lg ring-2 ring-white/20 shrink-0 ${!userProfile?.avatar ? 'bg-white' : 'bg-transparent'}`}>
+                  {userProfile?.avatar ? (
                      <img src={userProfile.avatar} className="w-full h-full object-cover rounded-lg" alt="User" />
                   ) : (
                      <div className={`w-full h-full rounded-lg flex items-center justify-center text-lg font-bold ${userColorObj.class}`}>
@@ -153,13 +153,13 @@ export const WelcomeHeader = ({ onNavigate, counts }: { onNavigate?: (tab: strin
                   )}
                </div>
                <div className="min-w-0">
-                  <p className="font-bold text-base truncate">{userProfile.firstName} {userProfile.lastName}</p>
+                  <p className="font-bold text-base truncate">{userProfile?.firstName || 'Current'} {userProfile?.lastName || 'User'}</p>
                   <div className="flex items-center gap-1.5 mt-1 text-[10px] text-white/90 bg-white/10 px-2 py-0.5 rounded-full w-fit border border-white/10 backdrop-blur-sm">
                      <Briefcase size={10} />
                      <span className="truncate">
-                        {typeof userProfile.activeClient === 'object'
+                        {typeof userProfile?.activeClient === 'object'
                            ? (userProfile.activeClient.clientName || userProfile.activeClient.name || 'Unknown')
-                           : (userProfile.activeClient || 'Unknown')}
+                           : (userProfile?.activeClient || 'Unknown')}
                      </span>
                   </div>
                </div>
