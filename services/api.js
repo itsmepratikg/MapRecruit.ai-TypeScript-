@@ -31,6 +31,27 @@ api.interceptors.request.use(
     }
 );
 
+// Add a response interceptor to handle 401 Unauthorized
+api.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error) => {
+        if (error.response?.status === 401) {
+            // Check if we are on the login page to avoid infinite loops
+            const isLogin = window.location.pathname === '/';
+            if (!isLogin) {
+                console.warn("[API] 401 Unauthorized detected. Clearing session and redirecting...");
+                sessionStorage.removeItem('authToken');
+                // We don't want to use navigate here as this is outside a React component
+                // but window.location will force a reload and redirect via App.tsx logic
+                window.location.href = '/';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const authService = {
     login: async (email, password) => {
         try {
