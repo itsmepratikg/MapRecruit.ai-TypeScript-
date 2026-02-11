@@ -1,5 +1,5 @@
 // Mock Data matching the user's provided context and schema analysis (MapRecruit, TRC, Peachtree, Google, Diversified)
-import { ClientData } from '../Schema/ClientSchema';
+import { ClientData } from '../types';
 
 const MOCK_CLIENTS: ClientData[] = [
     // 1. MapRecruit Demo (Simple structure)

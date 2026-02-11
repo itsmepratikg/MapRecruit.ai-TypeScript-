@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ClientData } from '../../../../Schema/ClientSchema';
+import { ClientData } from '../../../../types';
 import { useTranslation } from 'react-i18next';
 import { Save, ChevronDown, Check, AlertCircle } from '../../../../components/Icons';
 import { useToast } from '../../../../components/Toast';

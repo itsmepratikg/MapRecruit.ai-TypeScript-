@@ -47,7 +47,7 @@ export interface ActivityLog {
   author: string;
   time: string;
   dateGroup: string;
-  icon: React.FC<any>; 
+  icon: React.FC<any>;
   color: string;
   description?: string;
 }
@@ -133,7 +133,7 @@ export interface Campaign {
   type?: string; // e.g. Direct Hire
   daysOpen?: number;
   // Access Control Integration
-  access?: AccessSettings; 
+  access?: AccessSettings;
 }
 
 export interface Tag {
@@ -219,7 +219,7 @@ export interface EngageNode {
   title: string;
   x: number;
   y: number;
-  data: { 
+  data: {
     desc: string;
     meetType?: string[]; // e.g. ['Video'], ['In-Person', 'Phone']
     stats?: {
@@ -239,4 +239,26 @@ export interface EngageEdge {
   label?: string;
   start?: { x: number, y: number };
   end?: { x: number, y: number };
+}
+
+export interface ClientData {
+  _id: string;
+  clientName: string;
+  clientNameAlias?: string; // Optional based on mock
+  clientCode: string;
+  clientType: string;
+  country: string;
+  status: string;
+  companyID?: string;
+  clientURL?: string;
+  clientLogo?: string;
+  language?: string;
+  countryCode?: string;
+  enable?: boolean;
+  description?: string;
+  settings?: any; // or specific interface if known
+  locations?: any[];
+  ClientUsersList?: any[];
+  createdAt?: string; // or Date
+  updatedAt?: string; // or Date
 }

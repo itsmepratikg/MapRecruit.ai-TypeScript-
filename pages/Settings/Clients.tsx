@@ -6,8 +6,8 @@ import {
     X, Save, Building2
 } from '../../components/Icons';
 import { useToast } from '../../components/Toast';
-import { clientService } from '../../services/api';
-import { CLIENT_SCHEMA, ClientData } from '../../Schema/ClientSchema'; // We just created this
+import { clientService, schemaService } from '../../services/api';
+import { ClientData } from '../../types';
 import SchemaTable from '../../components/Schema/SchemaTable';
 
 interface ClientsSettingsProps {
@@ -19,6 +19,7 @@ export const ClientsSettings = ({ onSelectClient }: ClientsSettingsProps) => {
     const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState<'Active' | 'Inactive'>('Active');
     const [clients, setClients] = useState<ClientData[]>([]);
+    const [columns, setColumns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -29,11 +30,18 @@ export const ClientsSettings = ({ onSelectClient }: ClientsSettingsProps) => {
     const loadClients = async () => {
         try {
             setLoading(true);
-            const data = await clientService.getAll();
+            const [data, schemaData] = await Promise.all([
+                clientService.getAll(),
+                schemaService.getByName('Client')
+            ]);
             setClients(data);
+            if (schemaData && schemaData.config) {
+                setColumns(schemaData.config);
+            }
         } catch (error) {
-            console.error("Failed to fetch clients:", error);
-            addToast(t("Failed to load clients"), 'error');
+            console.error("Failed to fetch clients or schema:", error);
+            // Don't show toast for schema failure if clients loaded, just log it
+            if (!clients.length) addToast(t("Failed to load data"), 'error');
         } finally {
             setLoading(false);
         }
@@ -139,7 +147,8 @@ export const ClientsSettings = ({ onSelectClient }: ClientsSettingsProps) => {
                         ) : (
                             <SchemaTable
                                 data={filteredClients}
-                                columns={CLIENT_SCHEMA} // Use the schema we defined
+                                columns={columns} // Use fetched schema
+
                                 title={t("Clients")}
                                 onEdit={handleEditClient}
                             />

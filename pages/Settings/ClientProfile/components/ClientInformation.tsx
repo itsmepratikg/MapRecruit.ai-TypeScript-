@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ClientData } from '../../../../Schema/ClientSchema';
+import { ClientData } from '../../../../types';
 import { useTranslation } from 'react-i18next';
 import { Save, Building2, Globe, Mail, Phone, MapPin, Clock, Calendar } from '../../../../components/Icons';
 import { useToast } from '../../../../components/Toast';
