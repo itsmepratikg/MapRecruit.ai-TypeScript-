@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next';
 import {
     X, CheckCircle, UserPlus, Briefcase, FolderPlus, Tag, User,
     Settings, UserCog, Lock, Palette, LogOut, Search, ChevronRight, ChevronDown,
-    Activity, History, Bell, HelpCircle, Globe, Building2, Check
+    Activity, History, Bell, HelpCircle, Globe, Building2, Check, Pin
 } from '../Icons';
+import { useRecentItems } from '../../hooks/useRecentItems';
 import { PROFILES_CATEGORIES, SETTINGS_CATEGORIES, TALENT_CHAT_MENU, getProfileViewPath } from './constants';
 import { COLORS } from '../../data/profile';
 import { Campaign } from '../../types';
@@ -13,6 +14,7 @@ import { campaignService, authService } from '../../services/api';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { HoverMenu } from '../Campaign/HoverMenu';
+import { SmartPinCard } from './SmartPinCard';
 
 // --- Client Menu ---
 export const ClientMenuContent = ({ activeClient, activeClientId, clients, onSwitchClient, onClose }: { activeClient: string, activeClientId?: string, clients: any[], onSwitchClient: (client: string) => void, onClose: () => void }) => {
@@ -300,6 +302,75 @@ export const CreateMenuContent = ({
     );
 };
 
+// --- Helper Component for Recent/Pinned ---
+const PinnedAndRecentSection = ({
+    onNavigate,
+    closeMenu,
+    showPinned = true,
+    showRecent = true
+}: {
+    onNavigate?: (url: string) => void,
+    closeMenu?: () => void,
+    showPinned?: boolean,
+    showRecent?: boolean
+}) => {
+    const { recentItems, pinnedItems, togglePin, isPinned } = useRecentItems();
+    const { t } = useTranslation();
+    const navigate = useNavigate();
+
+    const handleNav = (url: string) => {
+        if (onNavigate) onNavigate(url);
+        else navigate(url);
+        if (closeMenu) closeMenu();
+    };
+
+    if ((recentItems.length === 0 && showRecent) && (pinnedItems.length === 0 && showPinned)) return null;
+
+    return (
+        <div className={showRecent && recentItems.length > 0 ? "mb-1 pb-1" : "mb-1"}>
+            {/* Pinned Items */}
+            {showPinned && pinnedItems.length > 0 && (
+                <div className="mb-2 px-1 border-b border-slate-100 dark:border-slate-700 pb-2">
+                    <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                        {t('Pinned')}
+                    </div>
+                    {pinnedItems.map(item => (
+                        <SmartPinCard
+                            key={item.url}
+                            item={item}
+                            onUnpin={togglePin}
+                            onClick={handleNav}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {/* Recent Items */}
+            {showRecent && recentItems.length > 0 && (
+                <div className="bg-slate-50/50 dark:bg-slate-900/30 py-2 rounded-md">
+                    {/* Header removed as it's now under 'History' accordion usually. But let's keep it minimal if unrelated context. 
+                        Actually, if nested under "History", we don't need the header "Recent". 
+                    */}
+                    {recentItems.map(item => (
+                        <div key={item.url} className="group relative px-4 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between transition-colors cursor-pointer" onClick={() => handleNav(item.url)}>
+                            <div className="flex-1 min-w-0 pr-2">
+                                <div className="text-xs text-slate-600 dark:text-slate-400 truncate">{item.title}</div>
+                            </div>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); togglePin(item); }}
+                                className={`text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 p-1 ${isPinned(item.url) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
+                                title={isPinned(item.url) ? "Unpin" : "Pin"}
+                            >
+                                <Pin size={12} className={isPinned(item.url) ? "fill-current text-indigo-600 dark:text-indigo-400" : ""} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // --- Account Menu ---
 export const AccountMenuContent = ({
     setIsThemeSettingsOpen,
@@ -322,6 +393,7 @@ export const AccountMenuContent = ({
 }) => {
     const { t } = useTranslation();
     const userColorObj = COLORS.find(c => c.name === userProfile.color) || COLORS[0];
+    const [historyOpen, setHistoryOpen] = React.useState(true); // Default open
 
     return (
         <>
@@ -350,6 +422,9 @@ export const AccountMenuContent = ({
             </div>
 
             <div className="py-2 bg-white dark:bg-slate-800 rounded-b-lg overflow-y-auto max-h-[600px] custom-scrollbar">
+                {/* Pinned Items - Top */}
+                <PinnedAndRecentSection onNavigate={onNavigate} closeMenu={closeMenu} showPinned={true} showRecent={false} />
+
                 <button
                     onClick={() => {
                         if (onNavigate) onNavigate('/myaccount/basicdetails');
@@ -363,14 +438,29 @@ export const AccountMenuContent = ({
                     </div>
                 </button>
 
-                {/* New Added Items */}
+                {/* Activities */}
                 <button onClick={() => { if (onNavigate) onNavigate('/activities'); if (closeMenu) closeMenu(); }} data-tour="nav-activities" className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
                     <Activity size={16} /> {t("Activities")}
                 </button>
 
-                <button onClick={() => { if (onNavigate) onNavigate('/history'); if (closeMenu) closeMenu(); }} data-tour="nav-history" className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
-                    <History size={16} /> {t("History")}
-                </button>
+                {/* History Section */}
+                <div className="border-t border-slate-100 dark:border-slate-700 border-b my-1 pb-1">
+                    <button
+                        onClick={() => setHistoryOpen(!historyOpen)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium"
+                    >
+                        <div className="flex items-center gap-3">
+                            <History size={16} /> {t("History")}
+                        </div>
+                        <ChevronRight size={14} className={`transition-transform ${historyOpen ? 'rotate-90' : ''}`} />
+                    </button>
+                    {historyOpen && (
+                        <div className="animate-in slide-in-from-top-1">
+                            <PinnedAndRecentSection onNavigate={onNavigate} closeMenu={closeMenu} showPinned={false} showRecent={true} />
+                            <button onClick={() => { if (onNavigate) onNavigate('/history'); if (closeMenu) closeMenu(); }} className="w-full text-[10px] text-center text-indigo-500 hover:underline py-1">View Full History</button>
+                        </div>
+                    )}
+                </div>
 
                 <button onClick={() => { if (onNavigate) onNavigate('/notifications'); if (closeMenu) closeMenu(); }} data-tour="nav-notifications" className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors font-medium">
                     <Bell size={16} /> {t("Notifications")}
@@ -541,9 +631,11 @@ export const CampaignMenuContent = ({
     }, [groupedCampaigns]);
 
 
+    const navigate = useNavigate();
+
     const handleNavigateToList = (e: React.MouseEvent, tab: string) => {
         e.stopPropagation();
-        onNavigate(tab);
+        navigate('/campaigns', { state: { tab } });
         onClose();
     };
 

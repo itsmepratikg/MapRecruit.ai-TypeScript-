@@ -12,3 +12,22 @@ export const NODE_TYPES: any = {
     INTERVIEW: { color: "bg-orange-100 border-orange-300 text-orange-700", icon: Video, label: "Interview" },
     SURVEY: { color: "bg-teal-100 border-teal-300 text-teal-700", icon: MessageSquare, label: "Survey" },
 };
+
+export const MOCK_SCREENING_ROUND = {
+    roundName: "New Screening Round",
+    roundType: "Assessment",
+    communicationMethod: "Inbound",
+    description: { text: "", mediaURL: "" },
+    questions: [],
+    roundEligibility: {
+        eligibilityCriteria: "All of these",
+        MRI: { enable: false, minMRIScore: 0, maxMRIScore: 10 },
+        EQ: { enable: false, minEQScore: 0, maxEQScore: 10 }
+    },
+    automateDetails: {
+        automate: false,
+        automationPreference: "Immediate",
+        excludeDays: [],
+        timings: []
+    }
+};

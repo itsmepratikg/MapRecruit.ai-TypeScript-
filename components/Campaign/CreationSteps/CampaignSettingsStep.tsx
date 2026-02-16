@@ -27,7 +27,7 @@ const CampaignSettingsStep: React.FC<CampaignSettingsStepProps> = ({ settings, o
     };
 
     return (
-        <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+        <div className="h-full space-y-8 animate-in slide-in-from-right-4 duration-300 overflow-y-auto custom-scrollbar p-1">
             {/* General Settings */}
             <section className="space-y-6 bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg border-b border-slate-100 dark:border-slate-800 pb-2">Campaign Settings</h3>

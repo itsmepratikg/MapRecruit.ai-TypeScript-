@@ -7,6 +7,8 @@ import { CandidateList } from './CandidateList';
 export const EngageAIWrapper = ({ activeView = 'BUILDER' }: { activeView?: string }) => {
     if (activeView === 'ROOM') return <InterviewPanel />;
     if (activeView === 'TRACKING') return <CandidateList />;
-    
-    return <WorkflowBuilder />;
+
+    // For Builder, Questionnaire, Automation, Templates - render Builder
+    // The Builder will handle opening the correct modal based on URL/Props
+    return <WorkflowBuilder activeView={activeView} />;
 };

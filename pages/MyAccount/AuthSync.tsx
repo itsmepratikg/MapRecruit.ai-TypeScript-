@@ -242,7 +242,7 @@ export const AuthSync = () => {
       const credential = await navigator.credentials.create({ publicKey });
 
       if (credential) {
-        console.log("WebAuthn Credential Created:", credential);
+
 
         // Store credential ID locally as requested for simulation persistence
         sessionStorage.setItem('maprecruit_passkey_id', credential.id);
@@ -251,7 +251,6 @@ export const AuthSync = () => {
         addToast("Biometric Passkey registered successfully.", "success");
       }
     } catch (err: any) {
-      console.error("WebAuthn Error:", err);
 
       if (err.name === 'NotAllowedError' || (err.message && err.message.includes('not enabled'))) {
         // Handle both User Cancellation AND Feature Policy Block

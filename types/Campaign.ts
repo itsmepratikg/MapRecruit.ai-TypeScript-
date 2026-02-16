@@ -137,4 +137,5 @@ export interface Campaign {
     // Other
     customData?: Record<string, any>;
     tags?: string[];
+    engageStatus?: 'Green' | 'Yellow' | 'Grey';
 }

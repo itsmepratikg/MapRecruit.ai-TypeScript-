@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
-import { ShieldAlert, Mail } from 'lucide-react';
+import { ShieldAlert, Mail, LogOut } from 'lucide-react';
 import { SupportRequestModal } from './SupportRequestModal';
+import { useUserContext } from '../../context/UserContext';
 
 import { PagePreloader } from '../Common/PagePreloader';
 
@@ -12,6 +13,7 @@ interface AccessGuardProps {
 }
 
 export const AccessGuard: React.FC<AccessGuardProps> = ({ children, user, clients }) => {
+    const { logout } = useUserContext();
     const [isSupportOpen, setIsSupportOpen] = useState(false);
 
     // If user is null (loading state), show a loading spinner instead of rendering children
@@ -64,6 +66,14 @@ export const AccessGuard: React.FC<AccessGuardProps> = ({ children, user, client
                         <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-mono text-slate-500">
                             Error Code: ERR_NO_ACTIVE_CLIENT_SLOT
                         </div>
+
+                        <button
+                            onClick={logout}
+                            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-xl hover:opacity-90 transition-all shadow-lg active:scale-[0.98]"
+                        >
+                            <LogOut size={18} />
+                            Log out
+                        </button>
                     </div>
                 </div>
 

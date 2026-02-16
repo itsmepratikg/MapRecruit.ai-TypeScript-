@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const http = require('http'); // Import HTTP
+const { Server } = require("socket.io"); // Import Socket.io
 
 // Load environment variables
 dotenv.config();
@@ -12,6 +14,14 @@ mongoose.set('strictQuery', false);
 const { resolveTenant } = require('./middleware/tenantMiddleware');
 
 const app = express();
+const server = http.createServer(app); // Create HTTP server
+const io = new Server(server, {
+    cors: {
+        origin: "*", // Allow all origins for now (adjust for production)
+        methods: ["GET", "POST"]
+    }
+});
+
 const rateLimit = require('express-rate-limit');
 
 // Rate Limiting
@@ -31,6 +41,92 @@ app.use(express.json({ limit: '50mb' })); // Support large JSON payloads for sch
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
     next();
+});
+
+// In-Memory State for Active Users
+// Map structure: socketId -> { userId, firstName, lastName, avatar, campaignId, status, lastSeen }
+const activeUsers = new Map();
+
+io.on('connection', (socket) => {
+    console.log(`User Connected: ${socket.id}`);
+
+    socket.on('join-page', (data) => {
+        const { campaignId, user } = data;
+        if (!campaignId || !user) return;
+
+        socket.join(campaignId);
+
+        const userData = {
+            ...user,
+            campaignId,
+            socketId: socket.id,
+            status: 'active',
+            lastSeen: new Date()
+        };
+        activeUsers.set(socket.id, { ...userData });
+
+        // 1. Send initial sync list ONLY to the joining user
+        const roomUsers = Array.from(activeUsers.values()).filter(u => u.campaignId === campaignId);
+        socket.emit('room-sync', roomUsers);
+
+        // 2. Broadcast ONLY the new user to others in the room
+        socket.to(campaignId).emit('user-joined', userData);
+
+        console.log(`User ${user.firstName} joined campaign ${campaignId}`);
+    });
+
+    socket.on('leave-page', (data) => {
+        const { campaignId, userId } = data;
+        if (!campaignId) return;
+
+        socket.leave(campaignId);
+
+        const user = activeUsers.get(socket.id);
+        if (user && user.campaignId === campaignId) {
+            activeUsers.delete(socket.id);
+
+            // Broadcast ONLY the leaf event to the room
+            io.to(campaignId).emit('user-left', { userId, socketId: socket.id });
+            console.log(`User ${userId} left campaign ${campaignId}`);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        const user = activeUsers.get(socket.id);
+        if (user) {
+            const { campaignId, id: userId } = user;
+            activeUsers.delete(socket.id);
+
+            if (campaignId) {
+                // Broadcast ONLY the leaf event to the room
+                io.to(campaignId).emit('user-left', { userId, socketId: socket.id });
+            }
+            console.log(`User Disconnected: ${socket.id}`);
+        }
+    });
+
+    socket.on('user-idle', (isIdle) => {
+        const user = activeUsers.get(socket.id);
+        if (user) {
+            user.status = isIdle ? 'idle' : 'active';
+            activeUsers.set(socket.id, user);
+
+            // Broadcast status change ONLY
+            io.to(user.campaignId).emit('user-updated', {
+                userId: user.id || user.userId,
+                socketId: socket.id,
+                status: user.status
+            });
+        }
+    });
+
+    socket.on('heartbeat', () => {
+        const user = activeUsers.get(socket.id);
+        if (user) {
+            user.lastSeen = new Date();
+            activeUsers.set(socket.id, user); // Update timestamp
+        }
+    });
 });
 
 // Database Connection
@@ -122,13 +218,14 @@ const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
     connectDB().then(() => {
-        app.listen(PORT, () => {
+        // Change app.listen to server.listen to support Socket.io
+        server.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
     });
 }
 
-module.exports = app;
+module.exports = app; // Note: For serverless, you might need to export 'server' or adapter
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
     console.log(`Error: ${err.message}`);

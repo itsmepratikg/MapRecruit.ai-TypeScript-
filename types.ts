@@ -132,6 +132,7 @@ export interface Campaign {
   rounds: Round[];
   type?: string; // e.g. Direct Hire
   daysOpen?: number;
+  engageStatus?: 'Green' | 'Yellow' | 'Grey';
   // Access Control Integration
   access?: AccessSettings;
 }

@@ -22,23 +22,82 @@ export const CampaignsMenu = ({
     const navigate = useNavigate();
 
     // Parse current active section from URL
-    // URL pattern: /campaigns/:id/:tab/:subtab
     const pathParts = location.pathname.split('/');
-    const currentTab = pathParts[3] || 'Intelligence'; // Default to Intelligence
-    const currentSubTab = pathParts[4];
+    const isNewRoute = pathParts[1] === 'showcampaign';
 
-    const baseUrl = `/campaigns/${selectedCampaign?.id || '1'}`; // Fallback ID if undefined
+    let campaignId = selectedCampaign?.id || selectedCampaign?._id;
+    if (typeof campaignId === 'object' && campaignId?.$oid) campaignId = campaignId.$oid;
 
-    const isActive = (tab: string, subTab?: string) => {
-        if (subTab) {
-            return currentTab === tab && currentSubTab === subTab;
+    // Fallback ID from URL
+    if (!campaignId) {
+        if (isNewRoute) {
+            // Pattern: /showcampaign/module/sub/id OR /showcampaign/module/id
+            // Intelligence: /showcampaign/intelligence/:id (id is index 3)
+            // SourceAI: /showcampaign/sourceai/attachpeople/:id (id is index 4)
+            // EngageAI: /showcampaign/engageai/:id (id is index 3)
+            // Helper to find ID: it's usually the last or second to last part that looks like an ID
+            // For simplicity, we assume it's one of the parts.
+            // Let's rely on the fact that IDs are usually long alphanumeric strings.
+            const idPart = pathParts.find(p => /^[a-f0-9]{24}$/.test(p));
+            if (idPart) campaignId = idPart;
+        } else {
+            campaignId = pathParts[2]; // /campaigns/id
         }
-        return currentTab === tab;
+    }
+
+    const currentModule = isNewRoute ? pathParts[2]?.toLowerCase() : (pathParts[3] || 'Intelligence');
+    const currentSub = isNewRoute ? pathParts[3]?.toLowerCase() : pathParts[4];
+
+    const getLink = (module: string, sub?: string) => {
+        const cid = campaignId || '1';
+        if (module === 'Intelligence') return `/showcampaign/intelligence/${cid}`;
+        if (module === 'SourceAI') {
+            if (sub === 'Attach') return `/showcampaign/sourceai/attachpeople/${cid}`;
+            if (sub === 'Profiles') return `/showcampaign/sourceai/profiles/${cid}`;
+            if (sub === 'Integrations') return `/showcampaign/sourceai/integrations/${cid}`;
+            if (sub === 'JD') return `/showcampaign/sourceai/jobdescription/${cid}`;
+        }
+        if (module === 'MatchAI') return `/showcampaign/matchai/${cid}`;
+        if (module === 'EngageAI') {
+            if (sub === 'Builder') return `/showcampaign/engageai/${cid}`;
+            if (sub === 'Room') return `/showcampaign/engageai/${cid}/1/room`; // Default Round 1
+            if (sub === 'Tracking') return `/showcampaign/engageai/${cid}/1/dashboard`; // Default Round 1
+        }
+        if (module === 'Recommendations') return `/showcampaign/recommendedprofiles/${cid}`;
+        if (module === 'Settings') return `/campaigns/${cid}/Settings`; // Keep legacy for now or update? User said "work on building later".
+
+        return `/showcampaign/intelligence/${cid}`;
     };
 
-    const handleNav = (tab: string, subTab?: string) => {
-        const path = subTab ? `${baseUrl}/${tab}/${subTab}` : `${baseUrl}/${tab}`;
-        navigate(path);
+    const isActive = (module: string, sub?: string) => {
+        const mod = module.toLowerCase();
+        if (sub) {
+            // Mapping for active check is tricky because URL structure varies
+            if (mod === 'sourceai') {
+                if (sub === 'Attach') return location.pathname.includes('attachpeople');
+                if (sub === 'Profiles') return location.pathname.includes('/profiles');
+                if (sub === 'Integrations') return location.pathname.includes('integrations');
+                if (sub === 'JD') return location.pathname.includes('jobdescription');
+            }
+            if (mod === 'engageai') {
+                if (sub === 'Builder') return location.pathname.endsWith(`/engageai/${campaignId}`) || location.pathname.includes('/automation') || location.pathname.includes('/questionnaire');
+                if (sub === 'Room') return location.pathname.includes('/room');
+                if (sub === 'Tracking') return location.pathname.includes('/dashboard');
+            }
+            return false;
+        }
+        // Module level active check
+        if (mod === 'intelligence') return location.pathname.includes('/intelligence');
+        if (mod === 'sourceai') return location.pathname.includes('/sourceai');
+        if (mod === 'matchai') return location.pathname.includes('/matchai');
+        if (mod === 'engageai') return location.pathname.includes('/engageai');
+        if (mod === 'recommendations') return location.pathname.includes('/recommendedprofiles');
+
+        return false;
+    };
+
+    const handleNav = (module: string, sub?: string) => {
+        navigate(getLink(module, sub));
         if (!isDesktop) setIsSidebarOpen(false);
     };
 
@@ -53,8 +112,8 @@ export const CampaignsMenu = ({
             </button>
 
             <div className={`px-3 mb-6 ${isCollapsed ? 'hidden' : 'block'}`}>
-                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 leading-tight">{selectedCampaign?.name}</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">ID: {selectedCampaign?.jobID}</p>
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 leading-tight">{selectedCampaign?.name || 'Campaign'}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-1">ID: {selectedCampaign?.jobID || campaignId?.substring(0, 8)}</p>
             </div>
 
             <div className="space-y-1">
@@ -62,7 +121,7 @@ export const CampaignsMenu = ({
                     icon={Brain}
                     label="Intelligence"
                     activeTab={isActive('Intelligence')}
-                    to={`${baseUrl}/Intelligence`}
+                    to={getLink('Intelligence')}
                     onClick={() => { if (!isDesktop) setIsSidebarOpen(false); }}
                     isCollapsed={isCollapsed}
                 />
@@ -72,12 +131,12 @@ export const CampaignsMenu = ({
                     <NavItem
                         icon={Search}
                         label="Source AI"
-                        activeTab={currentTab === 'SourceAI'}
-                        to={`${baseUrl}/SourceAI/Attach`}
+                        activeTab={isActive('SourceAI')}
+                        to={getLink('SourceAI', 'Attach')}
                         onClick={() => { if (!isDesktop) setIsSidebarOpen(false); }}
                         isCollapsed={isCollapsed}
                     />
-                    {currentTab === 'SourceAI' && !isCollapsed && (
+                    {isActive('SourceAI') && !isCollapsed && (
                         <div className="ml-8 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-700 pl-3 animate-in slide-in-from-left-2 duration-200">
                             <button onClick={() => handleNav('SourceAI', 'Attach')} className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${isActive('SourceAI', 'Attach') ? 'text-emerald-700 dark:text-emerald-400 font-medium bg-slate-50 dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                 Attach People
@@ -99,7 +158,7 @@ export const CampaignsMenu = ({
                     icon={GitBranch}
                     label="Match AI"
                     activeTab={isActive('MatchAI')}
-                    to={`${baseUrl}/MatchAI`}
+                    to={getLink('MatchAI')}
                     onClick={() => { if (!isDesktop) setIsSidebarOpen(false); }}
                     isCollapsed={isCollapsed}
                 />
@@ -109,12 +168,12 @@ export const CampaignsMenu = ({
                     <NavItem
                         icon={MessageCircle}
                         label="Engage AI"
-                        activeTab={currentTab === 'EngageAI'}
-                        to={`${baseUrl}/EngageAI/Builder`}
+                        activeTab={isActive('EngageAI')}
+                        to={getLink('EngageAI', 'Builder')}
                         onClick={() => { if (!isDesktop) setIsSidebarOpen(false); }}
                         isCollapsed={isCollapsed}
                     />
-                    {currentTab === 'EngageAI' && !isCollapsed && (
+                    {isActive('EngageAI') && !isCollapsed && (
                         <div className="ml-8 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-700 pl-3 animate-in slide-in-from-left-2 duration-200">
                             <button onClick={() => handleNav('EngageAI', 'Builder')} className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${isActive('EngageAI', 'Builder') ? 'text-emerald-700 dark:text-emerald-400 font-medium bg-slate-50 dark:bg-slate-800' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
                                 Workflow Builder
@@ -133,7 +192,7 @@ export const CampaignsMenu = ({
                     icon={ThumbsUp}
                     label="Recommended"
                     activeTab={isActive('Recommendations')}
-                    to={`${baseUrl}/Recommendations`}
+                    to={getLink('Recommendations')}
                     onClick={() => { if (!isDesktop) setIsSidebarOpen(false); }}
                     isCollapsed={isCollapsed}
                 />
@@ -142,7 +201,7 @@ export const CampaignsMenu = ({
                     icon={Settings}
                     label="Settings"
                     activeTab={isActive('Settings')}
-                    to={`${baseUrl}/Settings`}
+                    to={getLink('Settings')}
                     onClick={() => { if (!isDesktop) setIsSidebarOpen(false); }}
                     isCollapsed={isCollapsed}
                 />

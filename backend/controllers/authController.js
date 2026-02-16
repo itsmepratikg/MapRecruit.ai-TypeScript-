@@ -138,7 +138,7 @@ const loginUser = async (req, res) => {
         const user = await User.findOne({ email: { $eq: email } });
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ message: 'Invalid email address' });
         }
 
         if (user.status === false) {
@@ -505,23 +505,7 @@ const googleLogin = async (req, res) => {
         let user = await User.findOne({ email });
 
         if (!user) {
-            // Check if we allow auto-registration
-            // For now, let's create a basic user to unblock login
-            const randomPwd = Math.random().toString(36).slice(-8) + "1Aa!";
-            const Company = require('../models/Company');
-            const defaultCompany = await Company.findOne({}); // Fallback
-
-            if (!defaultCompany) {
-                return res.status(400).json({ message: 'No company context found. Cannot auto-register.' });
-            }
-
-            user = await User.create({
-                email,
-                password: randomPwd,
-                role: 'User',
-                companyID: defaultCompany._id, // Assign to first company
-                isGoogleLinked: true
-            });
+            return res.status(404).json({ message: 'Invalid email address' });
         }
 
         // 3. Generate JWT (Same as loginUser)

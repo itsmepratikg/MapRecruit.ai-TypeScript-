@@ -1,5 +1,6 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { usePrevious } from "@uidotdev/usehooks";
 import {
   Edit3, Trash2, PlusCircle, Layout, Settings, Zap, X
 } from 'lucide-react';
@@ -7,6 +8,8 @@ import { MOCK_QUESTIONS_DATA } from '../../data';
 import { EngageNode } from '../../types';
 import { AutomationConfig } from './AutomationConfig';
 import { AnnouncementConfig, TemplatePreviewPanel } from './rounds/AnnouncementConfig';
+import { ScreeningRoundConfig } from '../../pages/Campaign/EngageAI/components/Screening/ScreeningRoundConfig'; // Import the new component
+import { ScreeningRound } from '../../types/Round';
 
 export const AutomationPlaceholderModal = ({ onClose, isEnabled, onToggle }: { onClose: () => void, isEnabled: boolean, onToggle: (val: boolean) => void }) => {
   return (
@@ -112,10 +115,19 @@ export const TemplateManager = ({ nodeType, config, onUpdate }: any) => {
   );
 };
 
-export const NodeConfigurationModal = ({ node, onClose, onSave }: { node: EngageNode, onClose: () => void, onSave: (node: EngageNode) => void }) => {
+export const NodeConfigurationModal = ({ node, onClose, onSave, onDelete }: { node: EngageNode, onClose: () => void, onSave: (node: EngageNode) => void, onDelete?: () => void }) => {
   const [roundName, setRoundName] = useState(node.title);
-  const [nodeConfig, setNodeConfig] = useState(node.data.config || {});
+  const [nodeConfig, setNodeConfig] = useState(node.data.config || {}); // This will be ScreeningRound for screening nodes
   const [previewTemplateId, setPreviewTemplateId] = useState<string | null>(null);
+
+  const prevConfig = usePrevious(nodeConfig);
+
+  useEffect(() => {
+    if (prevConfig && JSON.stringify(prevConfig) !== JSON.stringify(nodeConfig)) {
+      // Placeholder: Emit 'user-editing' event here in future
+      // console.log("User is editing node configuration...", node.id);
+    }
+  }, [nodeConfig, prevConfig, node.id]);
 
   const tabs = useMemo(() => {
     if (node.type === 'ANNOUNCEMENT') return ['Template Configuration'];
@@ -124,6 +136,37 @@ export const NodeConfigurationModal = ({ node, onClose, onSave }: { node: Engage
   }, [node.type]);
 
   const [activeTab, setActiveTab] = useState(tabs[0]);
+
+  // Special rendering for SCREENING type (using the new ScreeningRoundConfig)
+  if (['SCREENING', 'INTERVIEW', 'SURVEY', 'ANNOUNCEMENT'].includes(node.type)) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
+        <div className={`h-full bg-white dark:bg-slate-800 shadow-2xl w-full flex flex-col overflow-hidden animate-in slide-in-from-right duration-300 transition-all max-w-[85vw] lg:max-w-4xl`}>
+          <div className="flex h-full flex-col">
+            <div className="flex justify-between items-center px-6 py-3 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wide">{node.type}</span>
+                <span className="text-slate-400">/</span>
+                <span className="font-medium text-slate-600 dark:text-slate-300">{roundName}</span>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => onSave({ ...node, title: nodeConfig.roundName || roundName, data: { ...node.data, config: nodeConfig } })} className='px-4 py-1.5 bg-emerald-600 text-white font-bold rounded-lg text-sm hover:bg-emerald-700 transition-colors'>Save & Close</button>
+                <button onClick={onClose} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full text-slate-400 hover:text-slate-600 transition-colors"><X size={20} /></button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden relative">
+              <ScreeningRoundConfig
+                round={nodeConfig as ScreeningRound}
+                roundIndex={node.data.index || 0} // pass index if available
+                onChange={(updates) => setNodeConfig({ ...nodeConfig, ...updates })}
+                onDelete={onDelete || (() => { })}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">

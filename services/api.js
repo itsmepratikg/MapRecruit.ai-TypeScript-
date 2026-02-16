@@ -61,7 +61,6 @@ export const authService = {
             }
             return response.data;
         } catch (error) {
-            console.error("Login Failed:", error.response?.data?.message || error.message);
             throw error;
         }
     },
@@ -73,7 +72,6 @@ export const authService = {
             }
             return response.data;
         } catch (error) {
-            console.error("Google Login Failed:", error);
             throw error;
         }
     },
@@ -174,6 +172,10 @@ export const campaignService = {
     },
     bulkUpdateStatus: async (ids, status) => {
         const response = await api.post('/campaigns/bulk-status', { ids, status });
+        return response.data;
+    },
+    toggleFavorite: async (id) => {
+        const response = await api.post(`/campaigns/${id}/favorite`);
         return response.data;
     },
 };

@@ -6,13 +6,17 @@ import {
 import { EngageNode, EngageEdge } from '../../../types';
 import { INITIAL_NODES_GRAPH, INITIAL_EDGES_GRAPH } from '../../../components/engage/demoData';
 import {
-    START_NODE_WIDTH, START_NODE_HEIGHT, BUBBLE_SIZE, CARD_WIDTH, CARD_HEIGHT, NODE_TYPES
+    START_NODE_WIDTH, START_NODE_HEIGHT, BUBBLE_SIZE, CARD_WIDTH, CARD_HEIGHT, NODE_TYPES, MOCK_SCREENING_ROUND
 } from '../../../components/engage/constants';
 import { NodeCard, BezierEdge } from '../../../components/engage/CanvasNodes';
 import { AutomationPlaceholderModal, NodeConfigurationModal } from '../../../components/engage/ConfigModals';
 import { NetworkGraphModal } from '../../../components/NetworkGraphModal';
 import { JobFitCalibration } from '../../../components/Campaign/JobFitCalibration';
 import { WorkflowShareModal } from '../../../components/engage/WorkflowShareModal';
+import { ConfirmationModal } from '../../../components/Common/ConfirmationModal';
+import { useWebSocket } from '../../../context/WebSocketContext';
+import { CoPresenceAvatars } from '../../../components/engage/CoPresenceAvatars';
+import { useUserProfile } from '../../../hooks/useUserProfile';
 
 const INITIAL_JOB_FIT_CONFIG = {
     answerContext: { enable: true, weightage: 5 },
@@ -25,28 +29,9 @@ const INITIAL_JOB_FIT_CONFIG = {
 
 // --- MODALS ---
 
-const SaveConfirmationModal = ({ isOpen, onClose, onConfirm }: any) => {
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-200">
-                <div className="flex flex-col items-center text-center">
-                    <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mb-4 text-indigo-600 dark:text-indigo-400">
-                        <Save size={24} />
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2">Save Workflow?</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                        This will overwrite the current active workflow configuration. Undo/Redo history will be cleared.
-                    </p>
-                    <div className="flex gap-3 w-full">
-                        <button onClick={onClose} className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">Cancel</button>
-                        <button onClick={onConfirm} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 shadow-sm transition-colors">Confirm Save</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
+// --- MODALS ---
+
+// Removed local SaveConfirmationModal in favor of generic ConfirmationModal
 
 const ValidationErrorsModal = ({ isOpen, onClose, errors }: any) => {
     if (!isOpen) return null;
@@ -183,8 +168,35 @@ const calculateAutoLayout = (nodes: EngageNode[], edges: EngageEdge[], direction
 
 import { workflowService } from '../../../services/api';
 
-export const WorkflowBuilder = () => {
-    const { id: campaignId } = useParams<{ id: string }>();
+export const WorkflowBuilder = ({ activeView = 'BUILDER' }: { activeView?: string }) => {
+    const { id: campaignId, roundId } = useParams<{ id: string, roundId?: string }>();
+    const { joinRoom, activeUsers } = useWebSocket();
+    const { userProfile } = useUserProfile();
+
+    // Join Room Effect
+    useEffect(() => {
+        if (campaignId && userProfile) {
+            joinRoom(campaignId, {
+                id: userProfile._id || userProfile.id,
+                firstName: userProfile.firstName,
+                lastName: userProfile.lastName,
+                avatar: userProfile.avatar,
+                email: userProfile.email,
+                color: userProfile.color
+            });
+        }
+    }, [campaignId, userProfile?._id, joinRoom]);
+
+    // Update Title with Active User Count
+    useEffect(() => {
+        if (!campaignId) return;
+        const count = Array.from(activeUsers.values()).filter(u => u.campaignId === campaignId).length;
+        if (count > 1) {
+            document.title = `(${count}) Workflow Builder - MapRecruit`;
+        } else {
+            document.title = `Workflow Builder - MapRecruit`;
+        }
+    }, [activeUsers, campaignId]);
 
     // Graph State
     const [nodes, setNodes] = useState<EngageNode[]>([]);
@@ -202,7 +214,9 @@ export const WorkflowBuilder = () => {
     const [editingNode, setEditingNode] = useState<EngageNode | null>(null);
     const [configCriteriaId, setConfigCriteriaId] = useState<string | null>(null);
     const [connectingNodeId, setConnectingNodeId] = useState<string | null>(null);
+
     const [showSaveModal, setShowSaveModal] = useState(false);
+    const [nodeToDelete, setNodeToDelete] = useState<string | null>(null);
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
     const [showAnalytics, setShowAnalytics] = useState<string | null>(null);
 
@@ -253,6 +267,20 @@ export const WorkflowBuilder = () => {
 
         fetchWorkflowData();
     }, [campaignId]);
+
+    // Handle Deep Linking to Config
+    useEffect(() => {
+        if (!loading && roundId && nodes.length > 0) {
+            const targetNode = nodes.find(n => n.id === roundId || n.title.includes(roundId)); // Fallback if ID mismatch
+
+            if (activeView === 'QUESTIONNAIRE' || activeView === 'TEMPLATES' || activeView === 'AUTOSCHEDULE') {
+                // Find node and open edit
+                if (targetNode) setEditingNode(targetNode);
+            } else if (activeView === 'AUTOMATION') {
+                if (targetNode) setConfigCriteriaId(targetNode.id);
+            }
+        }
+    }, [loading, roundId, activeView, nodes]);
 
     // --- HISTORY MANAGEMENT ---
 
@@ -424,6 +452,26 @@ export const WorkflowBuilder = () => {
         recordHistory(newNodes, edgesList);
     };
 
+    const handleRequestDeleteNode = (id: string) => {
+        setNodeToDelete(id);
+    };
+
+    const confirmDeleteNode = () => {
+        if (!nodeToDelete) return;
+
+        const newNodes = nodes.filter(n => n.id !== nodeToDelete);
+        const newEdges = edgesList.filter(e => e.from !== nodeToDelete && e.to !== nodeToDelete);
+
+        setNodes(newNodes);
+        setEdgesList(newEdges);
+        recordHistory(newNodes, newEdges);
+        setIsSaved(false);
+        setNodeToDelete(null);
+        if (editingNode?.id === nodeToDelete) {
+            setEditingNode(null);
+        }
+    };
+
     const handleToggleAutomation = (criteriaId: string, enabled: boolean) => {
         const newNodes = nodes.map(n => {
             if (n.id === criteriaId) {
@@ -590,9 +638,24 @@ export const WorkflowBuilder = () => {
             data: { desc: 'Logic', config: { enabled: false } }
         };
 
+        // Determine initial config based on type
+        let initialConfig = {};
+        if (['SCREENING', 'INTERVIEW', 'SURVEY', 'ANNOUNCEMENT'].includes(type)) {
+            const roundMap: any = {
+                'SCREENING': 'Assessment',
+                'INTERVIEW': 'Interview',
+                'SURVEY': 'Survey',
+                'ANNOUNCEMENT': 'Announcement'
+            };
+            initialConfig = {
+                ...MOCK_SCREENING_ROUND,
+                roundType: roundMap[type] || 'Assessment'
+            };
+        }
+
         const newNode: EngageNode = {
             id: newNodeId, type, title: `New ${NODE_TYPES[type]?.label || 'Step'}`, x: nodeX, y: nodeY,
-            data: { desc: 'Configure this step' }
+            data: { desc: 'Configure this step', config: initialConfig }
         };
 
         const nextNodes = [...nodes, newCriteria, newNode];
@@ -616,12 +679,35 @@ export const WorkflowBuilder = () => {
 
     return (
         <div className="flex h-full bg-slate-50 dark:bg-slate-900 overflow-hidden relative transition-colors">
-            <SaveConfirmationModal isOpen={showSaveModal} onClose={() => setShowSaveModal(false)} onConfirm={confirmSave} />
+            {/* Save Confirmation */}
+            <ConfirmationModal
+                isOpen={showSaveModal}
+                onClose={() => setShowSaveModal(false)}
+                onConfirm={confirmSave}
+                title="Save Workflow?"
+                message="This will overwrite the current active workflow configuration. Undo/Redo history will be cleared."
+                confirmText="Confirm Save"
+                icon="save"
+            />
+
+            {/* Delete Confirmation */}
+            <ConfirmationModal
+                isOpen={!!nodeToDelete}
+                onClose={() => setNodeToDelete(null)}
+                onConfirm={confirmDeleteNode}
+                title="Delete Step?"
+                message="Are you sure you want to delete this step? This action cannot be undone and will remove all connections."
+                confirmText="Delete"
+                cancelText="Cancel"
+                icon="danger"
+                variant="danger"
+            />
             <ValidationErrorsModal isOpen={validationErrors.length > 0} onClose={() => setValidationErrors([])} errors={validationErrors} />
             <NetworkGraphModal isOpen={!!showAnalytics} onClose={() => setShowAnalytics(null)} initialRoundType={showAnalytics || 'Screening'} />
 
             {/* Top Toolbar - Save Action */}
             <div className="absolute top-4 right-6 z-20 flex gap-2">
+                <CoPresenceAvatars />
                 <button
                     onClick={() => setShowShareModal(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors"
@@ -700,13 +786,7 @@ export const WorkflowBuilder = () => {
                             isSelected={selectedNode?.id === node.id}
                             onSelect={setSelectedNode}
                             onEdit={handleEditNode}
-                            onDelete={(id: string) => {
-                                const newNodes = nodes.filter(n => n.id !== id);
-                                const newEdges = edgesList.filter(e => e.from !== id && e.to !== id);
-                                setNodes(newNodes);
-                                setEdgesList(newEdges);
-                                recordHistory(newNodes, newEdges);
-                            }}
+                            onDelete={handleRequestDeleteNode}
                             onStartConnect={handleStartConnect}
                             onEndConnect={handleEndConnect}
                             isConnecting={!!connectingNodeId}
@@ -770,6 +850,7 @@ export const WorkflowBuilder = () => {
                     node={editingNode}
                     onClose={() => setEditingNode(null)}
                     onSave={handleSaveNode}
+                    onDelete={() => handleRequestDeleteNode(editingNode.id)}
                 />
             )}
 

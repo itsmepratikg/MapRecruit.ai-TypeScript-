@@ -2,6 +2,8 @@ const Campaign = require('../models/Campaign');
 const User = require('../models/User');
 const Client = require('../models/Client');
 const { sanitizeNoSQL, isValidObjectId } = require('../utils/securityUtils');
+const ScrapeService = require('../services/scrapeService');
+const Workflow = require('../models/Workflow');
 
 // Helper to get allowed client IDs for user in current company
 const getAllowedClientIds = async (userId, companyId) => {
@@ -32,12 +34,79 @@ const getCampaigns = async (req, res) => {
         const campaigns = await Campaign.find({
             companyID: companyID,
             clientID: { $in: allowedClients }
-        }).populate('clientID', '_id clientName name clientType clientLogo');
+        }).populate('clientID', '_id clientName name clientType clientLogo')
+            .populate('ownerID', 'firstName lastName avatar color email')
+            .lean(); // Use lean for performance and modification
 
-        res.status(200).json(campaigns);
+        // Fetch Workflows for these campaigns to determine automation status
+        const campaignIds = campaigns.map(c => c._id);
+
+        let workflows = [];
+        try {
+            workflows = await Workflow.find({
+                campaignID: { $in: campaignIds },
+                status: 'Active'
+            }).select('campaignID').lean();
+        } catch (wfError) {
+            console.error('Workflow fetch error (non-fatal):', wfError);
+            // Continue without workflows if this fails
+        }
+
+        const workflowMap = new Set(workflows.map(w => w.campaignID.toString()));
+
+        // augment campaigns with computed fields
+        const augmentedCampaigns = campaigns.map(campaign => {
+            // 1. Owner logic (take first owner if array)
+            const ownerObj = (campaign.ownerID && campaign.ownerID.length > 0) ? campaign.ownerID[0] : null;
+            const owner = ownerObj ? {
+                id: ownerObj._id,
+                name: `${ownerObj.firstName} ${ownerObj.lastName}`,
+                initials: `${ownerObj.firstName?.[0] || ''}${ownerObj.lastName?.[0] || ''}`.toUpperCase(),
+                color: ownerObj.color || 'bg-slate-500',
+                avatar: ownerObj.avatar
+            } : { initials: "U", color: "bg-slate-500", name: "User" };
+
+            // 2. Favorites logic (customData.favorites)
+            const favorites = campaign.customData?.favorites || [];
+            const isFavorite = favorites.some(uid => uid.toString() === req.user.id);
+
+            // 3. Days Left logic (customData.closedAt)
+            let daysLeft = 0;
+            if (campaign.customData?.closedAt) {
+                const closedAt = new Date(campaign.customData.closedAt);
+                const now = new Date();
+                const diffTime = closedAt - now;
+                daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+
+            // 4. Engage AI Status (Green/Yellow/Grey)
+            // Grey: No screening rounds
+            // Yellow: Rounds exist, no workflow
+            // Green: Rounds exist + workflow exists
+            let engageStatus = 'Grey';
+            const hasRounds = (campaign.screeningRounds && campaign.screeningRounds.length > 0);
+
+            if (hasRounds) {
+                if (workflowMap.has(campaign._id.toString())) {
+                    engageStatus = 'Green';
+                } else {
+                    engageStatus = 'Yellow';
+                }
+            }
+
+            return {
+                ...campaign,
+                owner, // override ownerID with formatted object for frontend convenience if needed, or just add 'owner'
+                isFavorite,
+                daysLeft,
+                engageStatus
+            };
+        });
+
+        res.status(200).json(augmentedCampaigns);
     } catch (error) {
         console.error('getCampaigns Error:', error);
-        res.status(500).json({ message: 'Server Error' });
+        res.status(500).json({ message: 'Server Error ' + error.message });
     }
 };
 
@@ -314,6 +383,71 @@ const bulkUpdateStatus = async (req, res) => {
     }
 };
 
+// @desc    Scrape job description from URL
+// @route   POST /api/campaigns/scrape
+// @access  Private
+const scrapeJobUrl = async (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) {
+            return res.status(400).json({ message: 'URL is required' });
+        }
+
+        const result = await ScrapeService.scrapeJobDescription(url);
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('scrapeJobUrl Error:', error);
+        res.status(500).json({ message: error.message || 'Failed to scrape URL' });
+    }
+};
+
+// @desc    Toggle Campaign Favorite
+// @route   POST /api/campaigns/:id/favorite
+// @access  Private
+const toggleFavorite = async (req, res) => {
+    try {
+        const companyID = req.user.currentCompanyID || req.user.companyID;
+        const userId = req.user.id;
+        const campaignId = req.params.id;
+
+        if (!isValidObjectId(campaignId)) {
+            return res.status(400).json({ message: 'Invalid Campaign ID' });
+        }
+
+        const campaign = await Campaign.findOne({ _id: campaignId, companyID });
+        if (!campaign) {
+            return res.status(404).json({ message: 'Campaign not found' });
+        }
+
+        // Initialize customData and favorites if not exist
+        if (!campaign.customData) campaign.customData = {};
+        if (!campaign.customData.favorites) campaign.customData.favorites = [];
+
+        const favorites = campaign.customData.favorites.map(id => id.toString());
+        const index = favorites.indexOf(userId);
+
+        let isFavorite = false;
+        if (index === -1) {
+            // Add favorite
+            campaign.customData.favorites.push(userId);
+            isFavorite = true;
+        } else {
+            // Remove favorite
+            campaign.customData.favorites.splice(index, 1);
+            isFavorite = false;
+        }
+
+        // Mark modified because customData is Mixed type
+        campaign.markModified('customData');
+        await campaign.save();
+
+        res.status(200).json({ isFavorite, id: campaignId });
+    } catch (error) {
+        console.error('toggleFavorite Error:', error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+};
+
 module.exports = {
     getCampaigns,
     getCampaign,
@@ -322,5 +456,8 @@ module.exports = {
     createCampaign,
     updateCampaign,
     deleteCampaign,
-    bulkUpdateStatus
+    bulkUpdateStatus,
+    bulkUpdateStatus,
+    scrapeJobUrl,
+    toggleFavorite
 };

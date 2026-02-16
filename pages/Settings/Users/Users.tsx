@@ -53,17 +53,15 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
             const data = await userService.getAll();
             setUsers(data);
         } catch (error) {
-            console.error("Failed to fetch users:", error);
+            // Handled by UI
         }
     };
 
     const loadClients = async () => {
         try {
-            const data = await clientService.getAll();
-            console.log('[DEBUG] Users Page - Loaded Clients:', data.length, data);
             setClients(data);
         } catch (error) {
-            console.error("Failed to fetch clients:", error);
+            // Handled by UI
         }
     };
 
@@ -73,7 +71,7 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
             const res = await api.get('/auth/roles');
             setRoles(res.data || []);
         } catch (error) {
-            console.error("Failed to fetch roles:", error);
+            // Handled by UI
         }
     };
 
@@ -160,7 +158,6 @@ export const UsersSettings = ({ onSelectUser }: UsersSettingsProps) => {
             setView('LIST');
             loadUsers();
         } catch (error: any) {
-            console.error("Failed to save user:", error);
             if (!error.isSafetyBlock) {
                 addToast(error.response?.data?.message || t("Failed to save user"), 'error');
             }

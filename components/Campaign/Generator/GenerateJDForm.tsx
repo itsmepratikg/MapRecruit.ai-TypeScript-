@@ -85,22 +85,6 @@ export const GenerateJDForm: React.FC<GenerateJDFormProps> = ({ onBack, onSubmit
 
     return (
         <div className="flex flex-col h-full bg-white dark:bg-slate-900 animate-in slide-in-from-right-4 duration-300">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <button type="button" onClick={onBack} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500">
-                        <ArrowLeft size={20} />
-                    </button>
-                    <div>
-                        <h2 className="text-xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-2">
-                            <Sparkles size={20} className="text-violet-500" />
-                            {t("AI Job Description Generator")}
-                        </h2>
-                        <p className="text-sm text-slate-500">Target the perfect candidate with precision</p>
-                    </div>
-                </div>
-            </div>
-
             {/* Form Content */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50/50 dark:bg-slate-950/50">
                 <div className="max-w-4xl mx-auto space-y-8 pb-10">

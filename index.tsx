@@ -18,9 +18,9 @@ console.error = (...args: any) => {
   error(...args);
 };
 
-// IMPORTANT: Replace with your actual Client IDs
-const GOOGLE_CLIENT_ID = "INSERT_GOOGLE_CLIENT_ID_HERE";
-const MS_CLIENT_ID = "INSERT_MICROSOFT_CLIENT_ID_HERE";
+// IMPORTANT: Using environment variables for Client IDs
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "INSERT_GOOGLE_CLIENT_ID_HERE";
+const MS_CLIENT_ID = import.meta.env.VITE_MICROSOFT_CLIENT_ID || "INSERT_MICROSOFT_CLIENT_ID_HERE";
 
 // MSAL Configuration
 const msalConfig = {

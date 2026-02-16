@@ -33,7 +33,7 @@ export const UserProfileContainer = () => {
                     const data = await userService.getById(id);
                     setUserData(data);
                 } catch (error) {
-                    console.error("Failed to fetch user:", error);
+                    // Fail silently, UI will show loading or empty state
                 } finally {
                     setLoading(false);
                 }

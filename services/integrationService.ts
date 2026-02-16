@@ -13,7 +13,7 @@ export interface WorkspaceIntegrations {
     microsoft: IntegrationStatus;
 }
 
-const GOOGLE_CLIENT_ID = "1001864596436-5uldln2ve14spbphgo2rpjf02jrntm2d.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "1001864596436-5uldln2ve14spbphgo2rpjf02jrntm2d.apps.googleusercontent.com";
 const REDIRECT_URI = `${window.location.origin}/auth/google/callback`;
 
 export const integrationService = {
@@ -152,7 +152,5 @@ export const integrationService = {
 
 // Helper for UI notifications (since service is outside component tree)
 const addToast = (msg: string, type: 'success' | 'info' | 'error') => {
-    // This is a bridge to the toast system if needed, 
-    // though usually handled in the component
-    console.log(`[IntegrationService] ${type}: ${msg}`);
+    // UI components handle their own toast notifications
 };

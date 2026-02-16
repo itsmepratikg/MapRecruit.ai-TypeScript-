@@ -21,8 +21,6 @@ const TalentChat = React.lazy(() => import('./pages/TalentChat/index').then(modu
 const SupportPage = React.lazy(() => import('./pages/Support/index').then(module => ({ default: module.SupportPage })));
 const GoogleCallback = React.lazy(() => import('./pages/MyAccount/GoogleCallback').then(m => ({ default: m.GoogleCallback })));
 import { Campaign } from './types';
-import { CreateProfileModal } from './components/CreateProfileModal';
-import { CreateFolderModal } from './pages/Profiles/FoldersMetrics/CreateFolderModal';
 import { PlaceholderModal } from './components/PlaceholderModal';
 import { useScreenSize } from './hooks/useScreenSize';
 import { ThemeSettingsModal } from './components/ThemeSettingsModal';
@@ -30,30 +28,39 @@ import { useUserPreferences } from './hooks/useUserPreferences';
 import { useUserProfile } from './hooks/useUserProfile';
 import { useCompanyTheme } from './hooks/useCompanyTheme';
 import { UserProvider } from './context/UserContext';
+import { useRecentItems } from './hooks/useRecentItems';
+import { WebSocketProvider } from './context/WebSocketContext';
 
-import { GlobalSearch } from './components/GlobalSearch'; // Import Global Search
 import { useSessionTimeout } from './hooks/useSessionTimeout';
-import html2canvas from 'html2canvas';
 import { campaignService } from './services/api';
 import { useClarity } from './hooks/useClarity';
+import { mapCampaignToUI } from './pages/Campaigns';
 
-// Import New Menu Components
-import { DashboardMenu } from './components/Menu/DashboardMenu';
-import { SidebarFooter } from './components/Menu/SidebarFooter';
-import { CampaignsMenu } from './components/Menu/CampaignsMenu';
-import { ProfilesMenu } from './components/Menu/ProfilesMenu';
-import { SettingsMenu } from './components/Menu/SettingsMenu';
-import { MyAccountMenu } from './components/Menu/MyAccountMenu';
-import { CandidateMenu } from './components/Menu/CandidateMenu';
-import { UserAdminMenu } from './components/Menu/UserAdminMenu';
-import { TalentChatMenu } from './components/Menu/TalentChatMenu';
-import { ClientProfileMenu } from './components/Menu/ClientProfileMenu';
+// Import Providers and Security Components
 import { QuickTourManager } from './components/QuickTour/QuickTourManager';
-import { CampaignCreationModal } from './components/Campaign/CampaignCreationModal';
 import { ImpersonationProvider } from './context/ImpersonationContext';
 import { ImpersonationBanner, SafetyRequestModal } from './components/Security/ImpersonationBanner';
 import { AccessGuard } from './components/Security/AccessGuard';
 import { SupportRequestModal } from './components/Security/SupportRequestModal';
+import { SidebarFooter } from './components/Menu/SidebarFooter';
+
+// Lazy Load Components
+const GlobalSearch = React.lazy(() => import('./components/GlobalSearch').then(m => ({ default: m.GlobalSearch })));
+const CampaignCreationModal = React.lazy(() => import('./components/Campaign/CampaignCreationModal').then(m => ({ default: m.CampaignCreationModal })));
+const CreateProfileModal = React.lazy(() => import('./components/CreateProfileModal').then(m => ({ default: m.CreateProfileModal })));
+const CreateFolderModal = React.lazy(() => import('./pages/Profiles/FoldersMetrics/CreateFolderModal').then(m => ({ default: m.CreateFolderModal })));
+
+// Lazy Load Menus
+const DashboardMenu = React.lazy(() => import('./components/Menu/DashboardMenu').then(m => ({ default: m.DashboardMenu })));
+const CampaignsMenu = React.lazy(() => import('./components/Menu/CampaignsMenu').then(m => ({ default: m.CampaignsMenu })));
+const ProfilesMenu = React.lazy(() => import('./components/Menu/ProfilesMenu').then(m => ({ default: m.ProfilesMenu })));
+const SettingsMenu = React.lazy(() => import('./components/Menu/SettingsMenu').then(m => ({ default: m.SettingsMenu })));
+const MyAccountMenu = React.lazy(() => import('./components/Menu/MyAccountMenu').then(m => ({ default: m.MyAccountMenu })));
+const CandidateMenu = React.lazy(() => import('./components/Menu/CandidateMenu').then(m => ({ default: m.CandidateMenu })));
+const UserAdminMenu = React.lazy(() => import('./components/Menu/UserAdminMenu').then(m => ({ default: m.UserAdminMenu })));
+const TalentChatMenu = React.lazy(() => import('./components/Menu/TalentChatMenu').then(m => ({ default: m.TalentChatMenu })));
+const ClientProfileMenu = React.lazy(() => import('./components/Menu/ClientProfileMenu').then(m => ({ default: m.ClientProfileMenu })));
+
 import { PagePreloader } from './components/Common/PagePreloader';
 
 type ViewState = 'DASHBOARD' | 'PROFILES' | 'CAMPAIGNS' | 'METRICS' | 'SETTINGS' | 'MY_ACCOUNT' | 'ACTIVITIES' | 'HISTORY' | 'NOTIFICATIONS' | 'TALENT_CHAT';
@@ -68,13 +75,14 @@ export const LegacyProfileRedirect = () => {
 export const App = () => {
   return (
     <UserProvider>
-      <AppContent />
+      <WebSocketProvider>
+        <AppContent />
+      </WebSocketProvider>
     </UserProvider>
   );
 };
 
 const AppContent = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeView, setActiveView] = useState<ViewState>('DASHBOARD');
   const navigate = useNavigate();
   const location = useLocation();
@@ -128,13 +136,59 @@ const AppContent = () => {
   const [capturedScreenshot, setCapturedScreenshot] = useState<string | null>(null);
   const [isCapturingSupport, setIsCapturingSupport] = useState(false);
 
-  // Check Authentication on Mount
+  // Check Authentication State (Directly from storage to avoid sync issues)
+  const isAuthenticated = !!sessionStorage.getItem('authToken');
+
+
+
+  // History Tracking
+  const { addRecentItem } = useRecentItems();
+
   useEffect(() => {
-    const token = sessionStorage.getItem('authToken');
-    if (token) {
-      setIsAuthenticated(true);
-    }
-  }, []);
+    if (!isAuthenticated) return;
+
+    // Delay to allow page title to update
+    const timer = setTimeout(() => {
+      let type: 'CAMPAIGN' | 'PROFILE' | 'ACCOUNT' | 'PAGE' = 'PAGE';
+      if (location.pathname.includes('/showcampaign/')) type = 'CAMPAIGN';
+      else if (location.pathname.includes('/profile/')) type = 'PROFILE';
+      else if (location.pathname.includes('/myaccount')) type = 'ACCOUNT';
+
+      // Clean title
+      let title = document.title.replace(' - MapRecruit', '').replace('MapRecruit', '').trim();
+      if (!title) {
+        // Fallback to path
+        const parts = location.pathname.split('/').filter(Boolean);
+        title = parts[parts.length - 1] || 'Dashboard';
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+      }
+
+      // Extract Entity ID for Smart Features
+      let entityId = '';
+      if (type === 'CAMPAIGN') {
+        const match = location.pathname.match(/\/showcampaign\/[^/]+\/([^/]+)/);
+        if (match) entityId = match[1];
+      } else if (type === 'PROFILE') {
+        const match = location.pathname.match(/\/profile\/profile\/([^/]+)/);
+        if (match) entityId = match[1];
+        else {
+          // Try legacy /profile/:id
+          const parts = location.pathname.split('/');
+          if (parts.length === 3 && parts[1] === 'profile') entityId = parts[2];
+        }
+      }
+
+      addRecentItem({
+        id: location.pathname,
+        url: location.pathname + location.search,
+        title: title || 'Page',
+        type,
+        metadata: { entityId }
+      });
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [location.pathname, isAuthenticated, addRecentItem]);
 
   // Detect and handle company_id URL parameter for permanent switching
   useEffect(() => {
@@ -191,22 +245,22 @@ const AppContent = () => {
   }, []);
 
   const handleLogin = () => {
-    setIsAuthenticated(true);
     // Check if there is a redirect path state (Clean URL Logic)
     const from = (location.state as any)?.from?.pathname || '/dashboard';
     navigate(from, { replace: true });
+    window.location.reload(); // Refresh to ensure providers catch the new token
   };
 
   const handleLogout = () => {
+    // If context logout is available, use it, otherwise fallback to local reset
+    // This is primarily for Login.tsx's convenience, but context handles its own state
     sessionStorage.removeItem('authToken');
-    // localStorage.removeItem('user'); // Deprecated
-    setIsAuthenticated(false);
-    // Reset view states
-    setActiveView('DASHBOARD');
-    setSelectedCandidateId(null);
-    setSelectedCampaign(null);
-    setSelectedAdminUser(null);
+    localStorage.removeItem('user_profile_cache');
+    localStorage.removeItem('session_expiry');
+
+    // Force UI refresh or navigation
     navigate('/', { replace: true });
+    window.location.reload(); // Hard reload is safest for full state reset
   };
 
   const openPlaceholder = (title: string, message: string) => {
@@ -243,7 +297,7 @@ const AppContent = () => {
   }, [isDesktop, navigate]);
 
   const handleCampaignClick = React.useCallback((c: any) => {
-    navigate(`/campaigns/${c.id || c._id?.$oid || c._id}`);
+    navigate(`/showcampaign/intelligence/${c.id || c._id?.$oid || c._id}`);
   }, [navigate]);
 
   const handleSwitchClient = async (newClientId: string) => {
@@ -251,6 +305,10 @@ const AppContent = () => {
       const { authService } = await import('./services/api');
       const currentCompanyId = (userProfile.currentCompanyID || userProfile.companyID)?.toString();
       await authService.switchCompany(currentCompanyId, newClientId);
+
+      // Clear cache to avoid stale data on reload
+      localStorage.removeItem('user_profile_cache');
+
       window.location.reload();
     } catch (error: any) {
       console.error('Failed to switch client context', error);
@@ -365,11 +423,13 @@ const AppContent = () => {
             <AccessGuard user={userProfile} clients={clients}>
 
               {/* Global Search Modal */}
-              <GlobalSearch
-                isOpen={isGlobalSearchOpen}
-                onClose={() => setIsGlobalSearchOpen(false)}
-                onNavigate={handleGlobalNavigate}
-              />
+              <React.Suspense fallback={null}>
+                <GlobalSearch
+                  isOpen={isGlobalSearchOpen}
+                  onClose={() => setIsGlobalSearchOpen(false)}
+                  onNavigate={handleGlobalNavigate}
+                />
+              </React.Suspense>
 
               {/* ... (Sidebar logic remains same, wrapped in parent div) ... */}
 
@@ -429,136 +489,146 @@ const AppContent = () => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar py-4 px-3 space-y-1">
-                  <Routes>
-                    <Route path="/campaigns/:id/*" element={
-                      <CampaignsMenu
-                        selectedCampaign={selectedCampaign} // Needs refactor to context or fetch
-                        onBack={() => navigate('/campaigns')}
-                        isCollapsed={isCollapsed}
-                        setIsSidebarOpen={setIsSidebarOpen}
-                      />
-                    } />
-                    {/* Profiles Menu for List Views */}
-                    <Route path="/profiles/searchprofiles/*" element={
-                      <ProfilesMenu
-                        onBack={() => navigate('/dashboard')}
-                        isCollapsed={isCollapsed}
-                        setIsSidebarOpen={setIsSidebarOpen}
-                        activeProfileSubView={activeProfileSubView}
-                        setActiveProfileSubView={setActiveProfileSubView}
-                      />
-                    } />
-                    {/* Candidate Profile Menu - Ensure route matches main content structure /profile/:tab/:id */}
-                    <Route path="/profile/:tab/:id" element={
-                      <CandidateMenu
-                        selectedCandidateId={selectedCandidateId}
-                        activeProfileTab={activeProfileTab}
-                        setActiveProfileTab={setActiveProfileTab}
-                        onBack={() => navigate('/profiles/searchprofiles/Search')}
-                        isCollapsed={isCollapsed}
-                        setIsSidebarOpen={setIsSidebarOpen}
-                      />
-                    } />
-                    {/* Handle legacy /profile/:id and /profile/:id/:tab */}
-                    <Route path="/profile/:id" element={<LegacyProfileRedirect />} />
-                    <Route path="/profile/:id/:tab" element={<LegacyProfileRedirect />} />
+                  <React.Suspense fallback={<div className="p-4 flex justify-center"><div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>}>
+                    <Routes>
+                      <Route path="/campaigns/:id/*" element={
+                        <CampaignsMenu
+                          selectedCampaign={selectedCampaign} // Needs refactor to context or fetch
+                          onBack={() => navigate('/campaigns')}
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                        />
+                      } />
+                      <Route path="/showcampaign/*" element={
+                        <CampaignsMenu
+                          selectedCampaign={selectedCampaign} // Needs refactor to context or fetch
+                          onBack={() => navigate('/campaigns')}
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                        />
+                      } />
+                      {/* Profiles Menu for List Views */}
+                      <Route path="/profiles/searchprofiles/*" element={
+                        <ProfilesMenu
+                          onBack={() => navigate('/dashboard')}
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                          activeProfileSubView={activeProfileSubView}
+                          setActiveProfileSubView={setActiveProfileSubView}
+                        />
+                      } />
+                      {/* Candidate Profile Menu - Ensure route matches main content structure /profile/:tab/:id */}
+                      <Route path="/profile/:tab/:id" element={
+                        <CandidateMenu
+                          selectedCandidateId={selectedCandidateId}
+                          activeProfileTab={activeProfileTab}
+                          setActiveProfileTab={setActiveProfileTab}
+                          onBack={() => navigate('/profiles/searchprofiles/Search')}
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                        />
+                      } />
+                      {/* Handle legacy /profile/:id and /profile/:id/:tab */}
+                      <Route path="/profile/:id" element={<LegacyProfileRedirect />} />
+                      <Route path="/profile/:id/:tab" element={<LegacyProfileRedirect />} />
 
-                    {/* Redirect legacy /profiles to searchprofiles */}
-                    <Route path="/profiles" element={<Navigate to="/profiles/searchprofiles/Search" replace />} />
+                      {/* Redirect legacy /profiles to searchprofiles */}
+                      <Route path="/profiles" element={<Navigate to="/profiles/searchprofiles/Search" replace />} />
 
-                    <Route path="/settings/users/userprofile/*" element={
-                      <UserAdminMenu
-                        onBack={() => navigate('/settings/users')}
-                        activeAdminUserTab={''}
-                        setActiveAdminUserTab={setActiveAdminUserTab}
-                        selectedAdminUser={selectedAdminUser}
-                        isCollapsed={isCollapsed}
-                        setIsSidebarOpen={setIsSidebarOpen}
-                      />
-                    } />
-                    <Route path="/settings/clientprofile/*" element={
-                      <ClientProfileMenu
-                        onBack={() => navigate('/settings/clients')}
-                        activeTab={activeClientProfileTab}
-                        setActiveTab={setActiveClientProfileTab}
-                        onNavigate={(tab) => {
-                          // We need the clientId from the URL path. 
-                          // Sidebar doesn't inherently know it unless passed, but we are inside Routes relative to /settings/clientprofile/* 
-                          // ACTUALLY, the route matches /settings/clientprofile/:tab/:clientId
-                          // So we can assume the URL structure.
-                          const parts = location.pathname.split('/');
-                          const clientId = parts[parts.length - 1]; // Last part should be ID
-                          navigate(`/settings/clientprofile/${tab}/${clientId}`);
-                        }}
-                        clientId={location.pathname.split('/').pop()} // Approximate ID extraction
-                        isCollapsed={isCollapsed}
-                        setIsSidebarOpen={setIsSidebarOpen}
-                      />
-                    } />
-                    <Route path="/settings/*" element={
-                      <SettingsMenu
-                        onBack={() => navigate('/dashboard')}
-                        activeSettingsTab={activeSettingsTab}
-                        setActiveSettingsTab={setActiveSettingsTab}
-                        isCollapsed={isCollapsed}
-                        setIsSidebarOpen={setIsSidebarOpen}
-                      />
-                    } />
-                    <Route path="/myaccount/*" element={
-                      <MyAccountMenu
-                        onBack={() => navigate('/dashboard')}
-                        activeAccountTab={activeAccountTab}
-                        setActiveAccountTab={setActiveAccountTab}
-                        isCollapsed={isCollapsed}
-                        setIsSidebarOpen={setIsSidebarOpen}
-                      />
-                    } />
-                    <Route path="/talent-chat/*" element={
-                      <TalentChatMenu
-                        onBack={() => navigate('/dashboard')}
-                        isCollapsed={isCollapsed}
-                        setIsSidebarOpen={setIsSidebarOpen}
-                        activeTab={activeTalentChatTab}
-                        setActiveTab={setActiveTalentChatTab}
-                      />
-                    } />
+                      <Route path="/settings/users/userprofile/*" element={
+                        <UserAdminMenu
+                          onBack={() => navigate('/settings/users')}
+                          activeAdminUserTab={''}
+                          setActiveAdminUserTab={setActiveAdminUserTab}
+                          selectedAdminUser={selectedAdminUser}
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                        />
+                      } />
+                      <Route path="/settings/clientprofile/*" element={
+                        <ClientProfileMenu
+                          onBack={() => navigate('/settings/clients')}
+                          activeTab={activeClientProfileTab}
+                          setActiveTab={setActiveClientProfileTab}
+                          onNavigate={(tab) => {
+                            // We need the clientId from the URL path. 
+                            // Sidebar doesn't inherently know it unless passed, but we are inside Routes relative to /settings/clientprofile/* 
+                            // ACTUALLY, the route matches /settings/clientprofile/:tab/:clientId
+                            // So we can assume the URL structure.
+                            const parts = location.pathname.split('/');
+                            const clientId = parts[parts.length - 1]; // Last part should be ID
+                            navigate(`/settings/clientprofile/${tab}/${clientId}`);
+                          }}
+                          clientId={location.pathname.split('/').pop()} // Approximate ID extraction
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                        />
+                      } />
+                      <Route path="/settings/*" element={
+                        <SettingsMenu
+                          onBack={() => navigate('/dashboard')}
+                          activeSettingsTab={activeSettingsTab}
+                          setActiveSettingsTab={setActiveSettingsTab}
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                        />
+                      } />
+                      <Route path="/myaccount/*" element={
+                        <MyAccountMenu
+                          onBack={() => navigate('/dashboard')}
+                          activeAccountTab={activeAccountTab}
+                          setActiveAccountTab={setActiveAccountTab}
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                        />
+                      } />
+                      <Route path="/talent-chat/*" element={
+                        <TalentChatMenu
+                          onBack={() => navigate('/dashboard')}
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                          activeTab={activeTalentChatTab}
+                          setActiveTab={setActiveTalentChatTab}
+                        />
+                      } />
 
-                    {/* Default Menu for other routes */}
+                      {/* Default Menu for other routes */}
 
-                    {/* Default Menu for other routes */}
-                    <Route path="*" element={
-                      <DashboardMenu
-                        onNavigate={(view) => {
-                          // Map view names to routes
-                          const routeMap: Record<string, string> = {
-                            'DASHBOARD': '/dashboard',
-                            'PROFILES': '/profiles/searchprofiles',
-                            'CAMPAIGNS': '/campaigns',
-                            'METRICS': '/metrics',
-                            'SETTINGS': '/settings/companyinfo',
-                            'MY_ACCOUNT': '/myaccount',
-                            'ACTIVITIES': '/activities',
-                            'HISTORY': '/history',
-                            'NOTIFICATIONS': '/notifications',
-                            'TALENT_CHAT': '/talent-chat'
-                          };
-                          navigate(routeMap[view] || '/dashboard');
-                          if (!isDesktop) setIsSidebarOpen(false);
-                        }}
-                        isCollapsed={isCollapsed}
-                        setIsSidebarOpen={setIsSidebarOpen}
-                        activeProfileSubView={activeProfileSubView}
-                        setActiveProfileSubView={setActiveProfileSubView}
-                        activeSettingsTab={activeSettingsTab}
-                        setActiveSettingsTab={setActiveSettingsTab}
-                        activeTalentChatTab={activeTalentChatTab}
-                        setActiveTalentChatTab={setActiveTalentChatTab}
-                        userProfile={userProfile}
-                        onNavigateToCampaign={handleCampaignClick}
-                        handleNavigateToCampaignList={handleNavigateToCampaignList}
-                      />
-                    } />
-                  </Routes>
+                      {/* Default Menu for other routes */}
+                      <Route path="*" element={
+                        <DashboardMenu
+                          onNavigate={(view) => {
+                            // Map view names to routes
+                            const routeMap: Record<string, string> = {
+                              'DASHBOARD': '/dashboard',
+                              'PROFILES': '/profiles/searchprofiles',
+                              'CAMPAIGNS': '/campaigns',
+                              'METRICS': '/metrics',
+                              'SETTINGS': '/settings/companyinfo',
+                              'MY_ACCOUNT': '/myaccount',
+                              'ACTIVITIES': '/activities',
+                              'HISTORY': '/history',
+                              'NOTIFICATIONS': '/notifications',
+                              'TALENT_CHAT': '/talent-chat'
+                            };
+                            navigate(routeMap[view] || '/dashboard');
+                            if (!isDesktop) setIsSidebarOpen(false);
+                          }}
+                          isCollapsed={isCollapsed}
+                          setIsSidebarOpen={setIsSidebarOpen}
+                          activeProfileSubView={activeProfileSubView}
+                          setActiveProfileSubView={setActiveProfileSubView}
+                          activeSettingsTab={activeSettingsTab}
+                          setActiveSettingsTab={setActiveSettingsTab}
+                          activeTalentChatTab={activeTalentChatTab}
+                          setActiveTalentChatTab={setActiveTalentChatTab}
+                          userProfile={userProfile}
+                          onNavigateToCampaign={handleCampaignClick}
+                          handleNavigateToCampaignList={handleNavigateToCampaignList}
+                        />
+                      } />
+                    </Routes>
+                  </React.Suspense>
                 </div>
 
                 {!isCollapsed && (
@@ -571,6 +641,7 @@ const AppContent = () => {
                     onOpenSupport={async () => {
                       setIsCapturingSupport(true);
                       try {
+                        const { default: html2canvas } = await import('html2canvas');
                         const canvas = await html2canvas(document.body, {
                           useCORS: true,
                           allowTaint: true,
@@ -628,19 +699,19 @@ const AppContent = () => {
                     <Route path="/campaigns" element={
                       <Campaigns onNavigateToCampaign={(c: any) => {
                         const id = c.id || c._id?.$oid || c._id;
-                        navigate(`/campaigns/${id}`);
+                        navigate(`/showcampaign/intelligence/${id}`);
                       }} initialTab={'Active'} />
                     } />
                     <Route path="/closedcampaigns" element={
                       <Campaigns onNavigateToCampaign={(c: any) => {
                         const id = c.id || c._id?.$oid || c._id;
-                        navigate(`/campaigns/${id}`);
+                        navigate(`/showcampaign/intelligence/${id}`);
                       }} initialTab={'Closed'} />
                     } />
                     <Route path="/archivedcampaigns" element={
                       <Campaigns onNavigateToCampaign={(c: any) => {
                         const id = c.id || c._id?.$oid || c._id;
-                        navigate(`/campaigns/${id}`);
+                        navigate(`/showcampaign/intelligence/${id}`);
                       }} initialTab={'Archived'} />
                     } />
 
@@ -671,12 +742,15 @@ const AppContent = () => {
                 </React.Suspense>
               </div>
 
-              {/* Create Profile Modal */}
-              <CreateProfileModal isOpen={isCreateProfileOpen} onClose={() => setIsCreateProfileOpen(false)} />
-              {/* Create Campaign Modal */}
-              <CampaignCreationModal isOpen={isCreateCampaignOpen} onClose={() => setIsCreateCampaignOpen(false)} />
-              {/* Create Folder Modal */}
-              <CreateFolderModal isOpen={isCreateFolderOpen} onClose={() => setIsCreateFolderOpen(false)} />
+              {/* Modals wrapped in Suspense */}
+              <React.Suspense fallback={null}>
+                {/* Create Profile Modal */}
+                <CreateProfileModal isOpen={isCreateProfileOpen} onClose={() => setIsCreateProfileOpen(false)} />
+                {/* Create Campaign Modal */}
+                <CampaignCreationModal isOpen={isCreateCampaignOpen} onClose={() => setIsCreateCampaignOpen(false)} />
+                {/* Create Folder Modal */}
+                <CreateFolderModal isOpen={isCreateFolderOpen} onClose={() => setIsCreateFolderOpen(false)} />
+              </React.Suspense>
               {/* Placeholder Modal */}
               <PlaceholderModal
                 isOpen={placeholderConfig.isOpen}
@@ -718,7 +792,7 @@ const CampaignDashboardWrapper = () => {
         const campaigns = await campaignService.getAll();
         const found = campaigns.find((c: any) => (c._id?.$oid || c._id)?.toString() === id);
         if (found) {
-          setCampaign(found);
+          setCampaign(mapCampaignToUI(found));
         }
       } catch (err) {
         console.error("Failed to fetch campaign details", err);

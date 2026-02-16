@@ -108,6 +108,7 @@ export const Paperclip = (props: any) => <Icon {...props} iconClass="fa-solid fa
 export const Phone = (props: any) => <Icon {...props} iconClass="fa-solid fa-phone" />;
 export const PieChart = (props: any) => <Icon {...props} iconClass="fa-solid fa-chart-pie" />;
 export const Pilcrow = (props: any) => <Icon {...props} iconClass="fa-solid fa-paragraph" />;
+export const Pin = (props: any) => <Icon {...props} iconClass="fa-solid fa-thumbtack" />;
 export const Play = (props: any) => <Icon {...props} iconClass="fa-solid fa-play" />;
 export const Plus = (props: any) => <Icon {...props} iconClass="fa-solid fa-plus" />;
 export const PlusCircle = (props: any) => <Icon {...props} iconClass="fa-solid fa-circle-plus" />;

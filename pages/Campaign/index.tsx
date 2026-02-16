@@ -14,8 +14,11 @@ import { EngageAIWrapper } from './EngageAI';
 import { Recommendations } from './Recommendations';
 import { CampaignSettings } from './Settings';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useWebSocket } from '../../context/WebSocketContext';
+import { useUserProfile } from '../../hooks/useUserProfile';
+import { CoPresenceAvatars } from '../../components/engage/CoPresenceAvatars';
 
-export const CampaignHeader = ({ campaign, isScrolled, onBack }: { campaign: Campaign, isScrolled: boolean, onBack?: () => void }) => {
+export const CampaignHeader = ({ campaign, isScrolled, onBack, currentUserId }: { campaign: Campaign, isScrolled: boolean, onBack?: () => void, currentUserId?: string }) => {
 
    return (
       <div className={`bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 shadow-sm sticky top-0 z-30 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-0'}`}>
@@ -61,9 +64,8 @@ export const CampaignHeader = ({ campaign, isScrolled, onBack }: { campaign: Cam
                         {m.initials}
                      </div>
                   ))}
-                  <button className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 border-2 border-white dark:border-slate-800 flex items-center justify-center text-xs text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-                     <Plus size={14} />
-                  </button>
+                  {/* Real-time Presence */}
+                  <CoPresenceAvatars campaignId={String(campaign.id)} currentUserId={currentUserId || ''} />
                </div>
 
                <div className="h-8 w-px bg-gray-200 dark:bg-slate-700 mx-1 hidden md:block"></div>
@@ -83,6 +85,31 @@ export const CampaignHeader = ({ campaign, isScrolled, onBack }: { campaign: Cam
 export const CampaignDashboard = ({ campaign, onBack }: { campaign: Campaign, onBack?: () => void }) => {
    const [isScrolled, setIsScrolled] = useState(false);
    const scrollContainerRef = useRef<HTMLDivElement>(null);
+   const { joinRoom, leaveRoom } = useWebSocket();
+   const { userProfile } = useUserProfile();
+   const location = useLocation();
+
+   // Derive activeTab from the current URL path
+   const activeTab = location.pathname.split('/').pop() || 'Intelligence';
+
+   // Join Campaign Room for Co-presence
+   useEffect(() => {
+      if (campaign?.id && userProfile) {
+         const roomId = String(campaign.id);
+         joinRoom(roomId, {
+            id: userProfile.id || 'visitor',
+            firstName: userProfile.firstName || 'Visitor',
+            lastName: userProfile.lastName || '',
+            email: userProfile.email || '',
+            color: userProfile.color || 'blue',
+            avatar: userProfile.avatar
+         }, activeTab);
+
+         return () => {
+            leaveRoom(roomId, userProfile.id || 'visitor');
+         };
+      }
+   }, [campaign?.id, userProfile, joinRoom, leaveRoom, activeTab]);
 
    useEffect(() => {
       const handleScroll = () => {
@@ -99,7 +126,8 @@ export const CampaignDashboard = ({ campaign, onBack }: { campaign: Campaign, on
 
    return (
       <div className="flex flex-col h-full bg-slate-50/50 dark:bg-slate-900 transition-colors overflow-hidden">
-         <CampaignHeader campaign={campaign} isScrolled={isScrolled} onBack={onBack} />
+         <CampaignHeader campaign={campaign} isScrolled={isScrolled} onBack={onBack} currentUserId={userProfile?.id} />
+         {/* Pass userProfile to header if needed, but CoPresenceAvatars uses context */}
          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
             <Routes>
                <Route path="/" element={<Navigate to="Intelligence" replace />} />

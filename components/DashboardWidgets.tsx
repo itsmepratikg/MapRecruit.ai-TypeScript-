@@ -11,6 +11,7 @@ import {
    PieChart, Pie, Cell, Legend, BarChart, Bar
 } from 'recharts';
 import { useUserProfile } from '../hooks/useUserProfile';
+import { useCompanyTheme } from '../hooks/useCompanyTheme';
 import { COLORS } from '../data/profile';
 
 // --- MOCK DATA ---
@@ -70,7 +71,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 // --- WIDGET COMPONENTS ---
 
 export const WelcomeHeader = ({ onNavigate, counts }: { onNavigate?: (tab: string) => void, counts?: any }) => {
-   const { userProfile } = useUserProfile();
+   const { userProfile, clients } = useUserProfile();
+   const { companyName } = useCompanyTheme(userProfile);
    const [timeData, setTimeData] = useState({
       greeting: 'Good Evening',
       bgGradient: 'from-indigo-900 to-indigo-800'
@@ -126,9 +128,11 @@ export const WelcomeHeader = ({ onNavigate, counts }: { onNavigate?: (tab: strin
       localStorage.setItem('dismiss-tz-alert', 'true');
    };
 
-   const activeClientName = typeof userProfile?.activeClient === 'object'
-      ? (userProfile.activeClient.clientName || userProfile.activeClient.name || 'Unknown')
-      : (userProfile?.activeClient || 'Unknown');
+   // Correctly resolve active client name from ID or object
+   const activeClientObj = clients?.find(c => (c._id || c.id) === (userProfile?.activeClientID || userProfile?.activeClient));
+   const activeClientName = activeClientObj?.clientName || activeClientObj?.name ||
+      (typeof userProfile?.activeClient === 'object' ? (userProfile.activeClient.clientName || userProfile.activeClient.name) : userProfile?.activeClient) ||
+      'No Active Client Selected';
 
    return (
       <div className={`bg-gradient-to-br ${timeData.bgGradient} rounded-2xl p-6 text-white flex flex-col h-full relative overflow-hidden shadow-lg border border-white/10 dark:border-slate-600 transition-colors duration-1000`}>
@@ -184,9 +188,9 @@ export const WelcomeHeader = ({ onNavigate, counts }: { onNavigate?: (tab: strin
                </div>
                <div className="min-w-0">
                   <p className="font-bold text-base truncate">{userProfile?.firstName || 'Current'} {userProfile?.lastName || 'User'}</p>
-                  <div className="flex items-center gap-1.5 mt-1 text-[11px] text-white/95 bg-white/10 px-2.5 py-1 rounded-full w-fit border border-white/20 backdrop-blur-md font-semibold">
-                     <Briefcase size={12} className="text-white/80" />
-                     <span className="truncate">{activeClientName}</span>
+                  <div className="flex items-center gap-2 mt-2 text-[10px] text-white/90 bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full w-fit border border-white/20 backdrop-blur-lg font-bold shadow-sm transition-all duration-300">
+                     <Briefcase size={12} className="text-white/70" />
+                     <span className="truncate tracking-wide">{activeClientName}</span>
                   </div>
                </div>
             </div>

@@ -292,3 +292,21 @@ export const INTERVIEW_TEMPLATES = [
 
 // --- DYNAMIC FULL PROFILE DATA ---
 
+// --- SINGLE CANDIDATE MOCK FOR PROFILE VIEWS ---
+export const CANDIDATE = {
+  id: 'cand_001',
+  name: "Sarah Jenkins",
+  role: "Frontend Developer",
+  location: "New York, NY",
+  about: "Experienced Frontend Developer with 5+ years in React and TypeScript.",
+  recommended: [
+    { id: 101, name: "Senior React Developer", jobID: "JOB-2024-001", location: "Remote", company: "TechCorp Inc." },
+    { id: 102, name: "Frontend Engineer", jobID: "JOB-2024-045", location: "New York, NY", company: "FinanceFlow" },
+    { id: 103, name: "UI/UX Developer", jobID: "JOB-2024-112", location: "Remote", company: "CreativeStudio" }
+  ],
+  similar: [
+    { id: 201, name: "Michael Chen", role: "Frontend Dev", location: "San Francisco, CA", score: 92 },
+    { id: 202, name: "Priya Sharma", role: "React Developer", location: "Austin, TX", score: 88 },
+    { id: 203, name: "James Wilson", role: "Web Developer", location: "Remote", score: 85 }
+  ]
+};

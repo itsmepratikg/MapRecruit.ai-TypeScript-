@@ -73,6 +73,9 @@ export const HoverMenu = ({ campaign, onAction, isOpenMobile, position = 'right'
                             </div>
                         )}
                     </div>
+                    <button onClick={(e) => { e.stopPropagation(); onAction('RECOMMENDED'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">
+                        {t("Recommended Profiles")}
+                    </button>
                 </div>
             </div>
         </div>

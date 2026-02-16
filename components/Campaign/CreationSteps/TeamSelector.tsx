@@ -4,8 +4,8 @@ import React, { useMemo } from 'react';
 // Using a simplified user interface for the selector
 interface User {
     id: string;
-    name: string;
-    email: string; // Used for display or secondary info
+    name?: string;
+    email?: string; // Used for display or secondary info
     avatar?: string;
 }
 
@@ -75,17 +75,17 @@ const TeamSelector: React.FC<TeamSelectorProps> = ({ teams, onChange, users, cur
 
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     {user.avatar ? (
-                                        <img src={user.avatar} className="w-6 h-6 rounded-full" alt={user.name} />
+                                        <img src={user.avatar} className="w-6 h-6 rounded-full" alt={user.name || 'User'} />
                                     ) : (
-                                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-xs">
-                                            {user.name.charAt(0)}
+                                        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-xs text-slate-600 dark:text-slate-300">
+                                            {(user.name || user.email || '?').charAt(0).toUpperCase()}
                                         </div>
                                     )}
                                     <div className="flex flex-col truncate">
                                         <span className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
-                                            {user.name} {isMe && <span className="text-xs text-blue-500">(You)</span>}
+                                            {user.name || user.email || 'Unknown User'} {isMe && <span className="text-xs text-blue-500">(You)</span>}
                                         </span>
-                                        <span className="text-xs text-slate-400 truncate">{user.email}</span>
+                                        <span className="text-xs text-slate-400 truncate">{user.email || ''}</span>
                                     </div>
                                 </div>
                             </div>

@@ -195,7 +195,10 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
         else if (action === 'INTEGRATIONS') onNavigateToCampaign(campWithId, 'Source AI:INTEGRATIONS');
         else if (action === 'JOB_DESC') onNavigateToCampaign(campWithId, 'Source AI:JD');
         else if (action === 'MATCH_AI') onNavigateToCampaign(campWithId, 'Match AI');
-        else if (action === 'ENGAGE_AI' || action === 'ENGAGE_CANDIDATES') onNavigateToCampaign(campWithId, 'Engage AI:TRACKING');
+        else if (action === 'ENGAGE_AI') onNavigateToCampaign(campWithId, 'Engage AI');
+        else if (action === 'RECOMMENDED') onNavigateToCampaign(campWithId, 'Recommended Profiles');
+
+        // Legacy / Granular
         else if (action === 'ENGAGE_WORKFLOW') onNavigateToCampaign(campWithId, 'Engage AI:BUILDER');
         else if (action === 'ENGAGE_INTERVIEW') onNavigateToCampaign(campWithId, 'Engage AI:ROOM');
     };
@@ -298,42 +301,77 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
             accessor: (item: any) => <span className="text-slate-500 dark:text-slate-400 font-mono text-xs">{item.passcode || item.migrationMeta?.jobID || '---'}</span>
         },
         {
-            header: t('Owner'),
+            header: t('Owner / Team'),
             accessor: (item: any) => {
-                let ownerParams = null;
-                const firstOwner = item.ownerID?.[0]; // Assuming populated?
+                const teams = item.teams || {};
+                const owner = teams.ownerID?.[0];
+                const managers = teams.managerID || [];
+                const recruiters = teams.recruiterID || [];
 
-                // Logic: If firstOwner is string -> "Unavailable" (because not populated or missing in DB)
-                // If object -> check active status. 
+                // Collect all unique members for avatar group
+                const allMembers = [
+                    ...(Array.isArray(owner) ? owner : (owner ? [owner] : [])),
+                    ...managers,
+                    ...recruiters
+                ].filter(m => typeof m === 'object' && (m._id || m.id));
 
-                if (!firstOwner) {
-                    return <span className="text-xs text-slate-400 italic">Unavailable</span>;
-                }
+                const uniqueMembers = Array.from(new Set(allMembers.map(m => (m._id || m.id).toString())))
+                    .map(id => allMembers.find(m => (m._id || m.id).toString() === id));
 
-                // Check if it's a full user object
-                if (typeof firstOwner === 'object' && firstOwner._id) {
-                    // Check Status
-                    // Assuming 'isActive' or 'status' field exists on User. 
-                    // Common practice: status 'Active' or boolean true
-                    const isActive = firstOwner.status === 'Active' || firstOwner.isActive === true || firstOwner.status === true;
-
-                    if (!isActive) {
-                        return <span className="text-xs text-red-400 italic">Inactive</span>;
-                    }
-
-                    ownerParams = firstOwner.firstName || firstOwner.name || 'User';
-                } else {
-                    // If it's just an ID string, it means it wasn't populated properly or user missing
-                    return <span className="text-xs text-slate-400 italic">Unavailable</span>;
+                if (uniqueMembers.length === 0) {
+                    return <span className="text-xs text-slate-400 italic">No Team</span>;
                 }
 
                 return (
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800" title={ownerParams}>
-                            {ownerParams.slice(0, 2).toUpperCase()}
+                    <div className="flex -space-x-2 overflow-hidden">
+                        {uniqueMembers.slice(0, 3).map((m: any, i) => (
+                            <div
+                                key={m._id || m.id || i}
+                                className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-800 bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 overflow-hidden"
+                                title={`${m.firstName || m.name || t('User')} (${m.role || t('Member')})`}
+                            >
+                                {m.avatar ? (
+                                    <img src={m.avatar} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                    (m.firstName || m.name || "?").slice(0, 2).toUpperCase()
+                                )}
+                            </div>
+                        ))}
+                        {uniqueMembers.length > 3 && (
+                            <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-800 bg-slate-100 dark:bg-slate-700 text-[10px] font-medium text-slate-500">
+                                +{uniqueMembers.length - 3}
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+        },
+        {
+            header: t('Days Left'),
+            accessor: (item: any) => {
+                const endDate = item.jobPosting?.endDate;
+                if (!endDate || item.status === 'Closed' || item.status === 'Archived') return <span className="text-slate-400 text-xs">---</span>;
+
+                const end = new Date(endDate);
+                const now = new Date();
+                const diff = end.getTime() - now.getTime();
+                const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+                if (days < 0) return <span className="text-red-500 text-xs font-bold uppercase">{t("Expired")}</span>;
+
+                const color = days <= 3 ? 'text-red-500 font-bold' : days <= 7 ? 'text-amber-500' : 'text-emerald-500';
+
+                return (
+                    <div className="flex flex-col gap-0.5">
+                        <span className={`text-xs ${color}`}>{days} {t("days")}</span>
+                        <div className="w-16 h-1 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full ${days <= 3 ? 'bg-red-500' : days <= 7 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                style={{ width: `${Math.min(100, Math.max(10, (days / 30) * 100))}%` }}
+                            />
                         </div>
                     </div>
-                )
+                );
             }
         },
         {
@@ -343,9 +381,14 @@ export const SchemaCampaignList = ({ status, onNavigateToCampaign, onTabChange, 
         {
             header: t('Created'),
             accessor: (item: any) => (
-                <span className="text-slate-400 text-xs">
-                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '---'}
-                </span>
+                <div className="flex flex-col">
+                    <span className="text-slate-600 dark:text-slate-300 text-xs font-medium">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '---'}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </span>
+                </div>
             )
         }
     ];

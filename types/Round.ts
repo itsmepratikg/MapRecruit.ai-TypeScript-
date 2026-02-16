@@ -64,6 +64,26 @@ export interface RoundEligibility {
     };
 }
 
+export interface ReachOutChannelConfig {
+    selected: boolean;
+    senderID?: string;
+    templateID?: string;
+    conditionalTemplate?: boolean;
+    followUp?: {
+        selected: boolean;
+        maxCount?: number;
+        duration?: number;
+        timeUnit?: string; // "Hours", "Days"
+    };
+}
+
+export interface ReachOutSources {
+    email?: ReachOutChannelConfig;
+    SMS?: ReachOutChannelConfig;
+    whatsApp?: ReachOutChannelConfig;
+    phone?: ReachOutChannelConfig;
+}
+
 export interface ScreeningRound {
     roundName: string;
     roundType: "Announcement" | "Assessment" | "Note" | "Interview" | "Survey" | string;
@@ -111,6 +131,7 @@ export interface ScreeningRound {
     // Configuration
     automateDetails?: RoundAutomation["automateDetails"]; // Flatted in some JSONs or nested
     roundEligibility?: RoundEligibility;
+    reachOutSources?: ReachOutSources;
 
     // UI State
     collapsed?: boolean;

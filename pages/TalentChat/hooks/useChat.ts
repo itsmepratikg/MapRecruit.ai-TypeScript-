@@ -3,6 +3,6 @@
 export const useChat = () => {
     return {
         messages: [],
-        sendMessage: (msg: string) => console.log(msg)
+        sendMessage: (msg: string) => { }
     };
 };

@@ -1,10 +1,17 @@
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
+import { JDSourceStep, JDSource } from './CreationSteps/JDSourceStep';
 import { GenerateJDForm, GenerateJDFormState } from './Generator/GenerateJDForm';
 import CampaignSettingsStep from './CreationSteps/CampaignSettingsStep';
-import { CampaignService, CampaignSettings, MongoCampaign } from '../../services/CampaignService';
+import { MatchAIConfigStep } from './CreationSteps/MatchAIConfigStep';
+import { EngageAIConfigStep } from './CreationSteps/EngageAIConfigStep';
+import { SourceCandidatesStep } from './CreationSteps/SourceCandidatesStep';
+import { CampaignService, CampaignSettings } from '../../services/CampaignService';
+import { Campaign } from '../../types/Campaign';
+import { useUserProfile } from '../../hooks/useUserProfile';
+import { userService } from '../../services/api';
 import toast from 'react-hot-toast';
 
 interface CampaignCreationModalProps {
@@ -43,16 +50,44 @@ const INITIAL_SETTINGS: CampaignSettings = {
 
 export const CampaignCreationModal: React.FC<CampaignCreationModalProps> = ({ isOpen, onClose }) => {
     const { t } = useTranslation();
-    const [step, setStep] = useState<number>(1);
+    const { userProfile } = useUserProfile();
+
+    // State for Wizard
+    const [step, setStep] = useState<number>(0);
+    const [campaignTitle, setCampaignTitle] = useState('');
+    const [selectedSource, setSelectedSource] = useState<JDSource | null>(null);
+
+    // State for Data
     const [jdFormData, setJdFormData] = useState<GenerateJDFormState | null>(null);
     const [generatedHtml, setGeneratedHtml] = useState<string>('');
     const [settings, setSettings] = useState<CampaignSettings>(INITIAL_SETTINGS);
+    const [companyUsers, setCompanyUsers] = useState<any[]>([]);
     const [saving, setSaving] = useState(false);
+    const [createdCampaignId, setCreatedCampaignId] = useState<string | null>(null);
 
-    // Current User Session Mock
-    const currentUser = { id: 'usr_123', companyId: 'cmp_001', clientId: 'cli_001' };
+    // Close on ESC key
+    React.useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [isOpen, onClose]);
 
-    if (!isOpen) return null;
+    const handleSourceSelect = (source: JDSource, data?: any) => {
+        setSelectedSource(source);
+        // Only auto-advance for sources that are fully "provided" on selection (URL fetch or Upload)
+        // Manual and AI generation require further steps (typing or clicking Generate)
+        if (source === 'URL' || source === 'UPLOAD') {
+            if (typeof data === 'string') setGeneratedHtml(data);
+            setStep(2);
+        } else if (source === 'MANUAL') {
+            if (typeof data === 'string') setGeneratedHtml(data);
+            // Stay on step 0, wait for onNext call from component
+        }
+    };
 
     const handleJDSubmit = (html: string, formData: GenerateJDFormState) => {
         setGeneratedHtml(html);
@@ -62,39 +97,57 @@ export const CampaignCreationModal: React.FC<CampaignCreationModalProps> = ({ is
 
     const handleBack = () => {
         if (step === 2) {
-            setStep(1);
+            setStep(selectedSource === 'AI' ? 1 : 0);
+        } else if (step === 3) {
+            setStep(2);
+        } else if (step === 4) {
+            // Check if Step 3 was skipped
+            if (!settings.campaignModules.matchAI) {
+                setStep(2);
+            } else {
+                setStep(3);
+            }
+        } else if (step === 5) {
+            if (!settings.campaignModules.engageAI) {
+                if (!settings.campaignModules.matchAI) setStep(2);
+                else setStep(3);
+            } else {
+                setStep(4);
+            }
+        } else if (step === 1) {
+            setStep(0);
         } else {
             onClose();
         }
     };
 
-    const handleCreateCampaign = async () => {
-        if (!jdFormData) return;
-
+    const handleStep2Complete = async () => {
         setSaving(true);
         try {
-            const payload: MongoCampaign = CampaignService.createCampaignPayload(
-                jdFormData,
-                jdFormData.jobTitle, // Use Job Title as Campaign Title for now
+            const payload: Partial<Campaign> = CampaignService.createCampaignPayload(
+                jdFormData || {} as any,
+                campaignTitle || jdFormData?.jobTitle || "Untitled Campaign",
                 generatedHtml,
                 settings,
-                currentUser
+                userProfile
             );
-
-            // Mock Check for Changes (Dirty Checking) - In creation, it's always new, 
-            // but effectively we are saving the *current* state.
 
             const result = await CampaignService.saveCampaign(payload);
 
-            if (result.success) {
-                toast.success("Campaign Created Successfully!");
-                onClose();
-                // Reset State
-                setStep(1);
-                setJdFormData(null);
-                setSettings(INITIAL_SETTINGS);
+            if (result.success && result.data?._id) {
+                setCreatedCampaignId(result.data._id);
+                toast.success("Campaign Job Created!");
+
+                // Decide next step
+                if (settings.campaignModules.matchAI) {
+                    setStep(3);
+                } else if (settings.campaignModules.engageAI) {
+                    setStep(4);
+                } else {
+                    setStep(5);
+                }
             } else {
-                toast.error("Failed to create campaign.");
+                toast.error("Failed to create campaign base.");
             }
         } catch (error) {
             console.error(error);
@@ -104,30 +157,107 @@ export const CampaignCreationModal: React.FC<CampaignCreationModalProps> = ({ is
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative">
+    const handleStep3Complete = () => {
+        if (settings.campaignModules.engageAI) {
+            setStep(4);
+        } else {
+            setStep(5);
+        }
+    };
 
-                {/* Header for Step 2 (Step 1 has its own header) */}
-                {step === 2 && (
-                    <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+    const handleStep4Complete = () => {
+        setStep(5);
+    };
+
+    const handleFinalize = () => {
+        if (createdCampaignId) {
+            window.location.href = `/showcampaign/intelligence/${createdCampaignId}`;
+        } else {
+            onClose();
+        }
+    };
+
+    // --- Stepper Visualization ---
+    const steps = [
+        { label: 'Source', desc: 'Select JD Source' },
+        { label: 'Details', desc: 'Review & Teams' },
+        { label: 'Match AI', desc: 'Matching Config' },
+        { label: 'Engage AI', desc: 'Screening Rounds' },
+        { label: 'Source', desc: 'Finish & Source' }
+    ];
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 lg:p-8 animate-in fade-in duration-300">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-6xl h-full max-h-[92vh] rounded-2xl shadow-[0_0_50px_-12px_rgba(0,0,0,0.3)] flex flex-col overflow-hidden relative border border-slate-200 dark:border-slate-800">
+
+                {/* --- Visual Flow Stepper (Header) --- */}
+                <div className="px-8 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800 shrink-0 bg-white dark:bg-slate-900 z-10">
+                    <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                                {t("Review & Settings")}
+                            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+                                {t("Create New Campaign")}
                             </h2>
-                            <p className="text-sm text-slate-500">Configure campaign visibility and teams</p>
+                            <p className="text-sm text-slate-500 font-medium">Step {Math.min(step + 1, 5)} of 5: {steps[Math.min(step, 4)].desc}</p>
                         </div>
-                        <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                        <button
+                            onClick={onClose}
+                            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all"
+                            title="Close (Esc)"
+                        >
                             <X size={24} />
                         </button>
                     </div>
-                )}
 
-                {/* Content */}
+                    <div className="relative flex justify-between">
+                        {/* Progress Bar Background */}
+                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 dark:bg-slate-800 -translate-y-1/2" />
+                        {/* Active Progress Line */}
+                        <div
+                            className="absolute top-1/2 left-0 h-0.5 bg-blue-500 -translate-y-1/2 transition-all duration-500 ease-out"
+                            style={{ width: `${(Math.min(step, 4) / 4) * 100}%` }}
+                        />
+
+                        {steps.map((s, idx) => {
+                            const isCompleted = step > idx;
+                            const isActive = step === idx || (step === 1 && idx === 0); // Step 0 and 1 are Source phase
+                            const displayIdx = idx;
+
+                            return (
+                                <div key={idx} className="relative z-10 flex flex-col items-center gap-2">
+                                    <div
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border-2 font-bold
+                                            ${isCompleted ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-500/20' :
+                                                isActive ? 'bg-white dark:bg-slate-900 border-blue-500 text-blue-600 scale-110 shadow-xl' :
+                                                    'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400'}`}
+                                    >
+                                        {isCompleted ? '✓' : idx + 1}
+                                    </div>
+                                    <span className={`text-[11px] font-bold uppercase tracking-wider ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'}`}>
+                                        {s.label}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 <div className="flex-1 overflow-hidden relative">
+                    {step === 0 && (
+                        <JDSourceStep
+                            title={campaignTitle}
+                            generatedHtml={generatedHtml}
+                            selectedSource={selectedSource}
+                            onTitleChange={setCampaignTitle}
+                            onSourceSelect={handleSourceSelect}
+                            onNext={() => setStep(1)}
+                        />
+                    )}
+
                     {step === 1 && (
                         <GenerateJDForm
-                            onBack={onClose}
+                            onBack={() => setStep(0)}
                             onSubmit={handleJDSubmit}
                         />
                     )}
@@ -141,7 +271,14 @@ export const CampaignCreationModal: React.FC<CampaignCreationModalProps> = ({ is
                                     <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
                                         <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">Job Description Preview</h3>
                                         <button
-                                            onClick={() => setStep(1)}
+                                            onClick={() => {
+                                                if (selectedSource !== 'AI') {
+                                                    setSelectedSource('MANUAL');
+                                                    setStep(0);
+                                                } else {
+                                                    setStep(1);
+                                                }
+                                            }}
                                             className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                                         >
                                             Edit Details
@@ -156,11 +293,36 @@ export const CampaignCreationModal: React.FC<CampaignCreationModalProps> = ({ is
                                 <CampaignSettingsStep
                                     settings={settings}
                                     onChange={setSettings}
-                                    users={MOCK_USERS}
-                                    currentUserID={currentUser.id}
+                                    users={companyUsers.length > 0 ? companyUsers : MOCK_USERS}
+                                    currentUserID={userProfile?._id}
                                 />
                             </div>
                         </div>
+                    )}
+
+                    {step === 3 && (
+                        <MatchAIConfigStep
+                            onBack={handleBack}
+                            onSkip={handleStep3Complete}
+                            onSkipAll={handleFinalize}
+                            onContinue={handleStep3Complete}
+                        />
+                    )}
+
+                    {step === 4 && (
+                        <EngageAIConfigStep
+                            onBack={handleBack}
+                            onSkip={handleStep4Complete}
+                            onSkipAll={handleFinalize}
+                            onContinue={handleStep4Complete}
+                        />
+                    )}
+
+                    {step === 5 && (
+                        <SourceCandidatesStep
+                            onBack={handleBack}
+                            onContinue={handleFinalize}
+                        />
                     )}
                 </div>
 
@@ -174,17 +336,20 @@ export const CampaignCreationModal: React.FC<CampaignCreationModalProps> = ({ is
                             {t("Back")}
                         </button>
                         <button
-                            onClick={handleCreateCampaign}
+                            onClick={handleStep2Complete}
                             disabled={saving}
                             className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg shadow-blue-500/30 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {saving ? (
                                 <>
                                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                    {t("Creating...")}
+                                    {t("Saving...")}
                                 </>
                             ) : (
-                                t("Create Campaign")
+                                <>
+                                    {t("Confirm & Continue")}
+                                    <ArrowRight size={18} />
+                                </>
                             )}
                         </button>
                     </div>

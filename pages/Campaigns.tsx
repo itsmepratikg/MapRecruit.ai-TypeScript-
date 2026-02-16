@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Briefcase, Lock, Archive, Search, ChevronDown, RefreshCw, MoreVertical, HelpCircle,
+  Search, ChevronDown, RefreshCw, MoreVertical, HelpCircle,
   Heart, Share2, Network, ChevronRight, CheckCircle, PlusCircle, Users, Link, FileText, X
 } from '../components/Icons';
 import { Campaign } from '../types';
@@ -9,52 +9,7 @@ import { useToast } from '../components/Toast';
 
 // --- MAIN COMPONENTS ---
 
-const CampaignStats = ({ activeTab, onTabChange, counts }: { activeTab: string, onTabChange: (tab: string) => void, counts: any }) => (
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div
-      onClick={() => onTabChange('Active')}
-      className={`p-6 rounded-xl shadow-sm border cursor-pointer transition-all ${activeTab === 'Active' ? 'ring-2 ring-emerald-500 border-emerald-500 bg-white dark:bg-slate-800' : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-800'}`}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-slate-100">{counts.active}</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 font-medium">Active Campaigns</p>
-        </div>
-        <div className="bg-gray-100 dark:bg-slate-700 p-4 rounded-xl">
-          <Briefcase size={32} className="text-gray-400 dark:text-slate-400" />
-        </div>
-      </div>
-    </div>
-    <div
-      onClick={() => onTabChange('Closed')}
-      className={`p-6 rounded-xl shadow-sm border cursor-pointer transition-all ${activeTab === 'Closed' ? 'ring-2 ring-emerald-500 border-emerald-500 bg-white dark:bg-slate-800' : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-800'}`}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-green-500">{counts.closed}</h2>
-          <p className="text-sm text-green-600 font-medium">Closed Campaigns</p>
-        </div>
-        <div className="bg-green-100 dark:bg-green-900/30 p-4 rounded-xl">
-          <Lock size={32} className="text-green-600 dark:text-green-400" />
-        </div>
-      </div>
-    </div>
-    <div
-      onClick={() => onTabChange('Archived')}
-      className={`p-6 rounded-xl shadow-sm border cursor-pointer transition-all ${activeTab === 'Archived' ? 'ring-2 ring-emerald-500 border-emerald-500 bg-white dark:bg-slate-800' : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-800'}`}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-green-700 dark:text-green-500">{counts.archived}</h2>
-          <p className="text-sm text-green-600 dark:text-green-400 font-medium">Archived Campaigns</p>
-        </div>
-        <div className="bg-green-500 p-4 rounded-xl">
-          <Archive size={32} className="text-white" />
-        </div>
-      </div>
-    </div>
-  </div>
-);
+// --- MAIN COMPONENTS ---
 
 const FilterDropdown = ({ onChange }: { onChange: (filter: string) => void }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -112,9 +67,11 @@ interface CampaignsProps {
 }
 
 import { useCampaigns } from '../hooks/useCampaigns';
+import { campaignService } from '../services/api';
+import { useLocation } from 'react-router-dom';
 
 // Map Backend Campaign to UI Structure
-const mapCampaignToUI = (camp: any): Campaign => {
+export const mapCampaignToUI = (camp: any): Campaign => {
   const mainSchema = camp.schemaConfig?.mainSchema || {};
   const meta = camp.migrationMeta || {};
 
@@ -129,7 +86,16 @@ const mapCampaignToUI = (camp: any): Campaign => {
     members: camp.members || [],
     updatedDate: new Date(camp.updatedAt || camp.createdAt || Date.now()).toLocaleDateString(),
     profilesCount: meta.profilesCount || 0,
-    daysLeft: camp.daysLeft || 0
+    daysLeft: (() => {
+      if (camp.customData?.closedAt) {
+        const closedAt = new Date(camp.customData.closedAt);
+        const now = new Date();
+        const diffTime = closedAt.getTime() - now.getTime();
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      }
+      return camp.daysLeft || 0;
+    })(),
+    engageStatus: (camp.engageStatus as 'Green' | 'Yellow' | 'Grey') || 'Grey'
   };
 };
 
@@ -140,6 +106,7 @@ interface CampaignsProps {
 
 export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, initialTab }) => {
   const { addToast } = useToast();
+  const location = useLocation();
   const { campaigns: liveCampaigns, stats, loading, error } = useCampaigns();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -160,11 +127,13 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
   }, [liveCampaigns]);
 
   // Sync tab if passed from parent (e.g. Sidebar)
+  // Sync tab if passed from parent (e.g. Sidebar) or via router state
   useEffect(() => {
-    if (initialTab && ['Active', 'Closed', 'Archived'].includes(initialTab)) {
-      setActiveTab(initialTab);
+    const tabToSet = (location.state as any)?.tab || initialTab;
+    if (tabToSet && ['Active', 'Closed', 'Archived'].includes(tabToSet)) {
+      setActiveTab(tabToSet);
     }
-  }, [initialTab]);
+  }, [initialTab, location.state]);
 
   const filteredCampaigns = localCampaigns.filter(c => {
     // 1. Filter by Tab (Active/Closed/Archived)
@@ -207,15 +176,30 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
     }
   };
 
-  const toggleFavorite = (id: any) => {
+  const toggleFavorite = async (id: any) => {
+    // Optimistic Update
     setLocalCampaigns(prev => prev.map(c => {
       if (c.id === id) {
         const newVal = !c.isFavorite;
-        addToast(newVal ? "Campaign added to favorites" : "Campaign removed from favorites", "success");
+        // addToast(newVal ? "Campaign added to favorites" : "Campaign removed from favorites", "success");
         return { ...c, isFavorite: newVal };
       }
       return c;
     }));
+
+    // API Call
+    try {
+      await campaignService.toggleFavorite(id);
+    } catch (error) {
+      // Revert on error
+      setLocalCampaigns(prev => prev.map(c => {
+        if (c.id === id) {
+          return { ...c, isFavorite: !c.isFavorite };
+        }
+        return c;
+      }));
+      addToast("Failed to update favorite status", "error");
+    }
   };
 
   // --- Long Press Handlers ---
@@ -248,7 +232,7 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
           </div>
         )}
 
-        <CampaignStats activeTab={activeTab} onTabChange={setActiveTab} counts={stats} />
+
 
         {/* Toolbar */}
         <div className="bg-white dark:bg-slate-800 p-4 rounded-t-xl border border-gray-200 dark:border-slate-700 border-b-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -342,7 +326,18 @@ export const Campaigns: React.FC<CampaignsProps> = ({ onNavigateToCampaign, init
                           >
                             <Heart size={14} className={camp.isFavorite ? "fill-red-500 text-red-500" : ""} />
                           </button>
-                          <button onClick={(e) => e.stopPropagation()} className="text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 p-1 rounded transition-colors"><Network size={14} /></button>
+
+                          {/* Network Icon - Engage AI Status */}
+                          <div className="tooltip z-50">
+                            <button onClick={(e) => e.stopPropagation()} className={`p-1 rounded transition-colors 
+                                ${camp.engageStatus === 'Green' ? 'text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' :
+                                camp.engageStatus === 'Yellow' ? 'text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' :
+                                  'text-slate-300 hover:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'}
+                             `}>
+                              <Network size={14} className={camp.engageStatus === 'Green' || camp.engageStatus === 'Yellow' ? 'fill-current' : ''} />
+                            </button>
+                            {/* Optional Tooltip logic could go here if tooltip component exists */}
+                          </div>
                         </div>
                       </div>
                     </td>

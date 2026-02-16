@@ -44,13 +44,13 @@ export const Login = ({ onLogin }: LoginProps) => {
             onLogin();
         } catch (error: any) {
             const status = error.response?.status;
-            const message = error.response?.data?.message || "";
+            const message = error.response?.data?.message || t("Authentication failed.");
 
             if (status === 404) {
-                addToast(t("Account not found. Please check with the support team."), "error");
-                setIsSupportOpen(true); // Open modal for 404 as requested
+                addToast(message || t("Invalid email address."), "error");
+                setIsSupportOpen(true);
             } else if (status === 403 || status === 401) {
-                addToast(message || t("Authentication failed."), "error");
+                addToast(message, "error");
                 setIsSupportOpen(true);
             } else {
                 addToast(t("An unexpected error occurred. Please try again later."), "error");
@@ -83,7 +83,6 @@ export const Login = ({ onLogin }: LoginProps) => {
             onLogin();
 
         } catch (err: any) {
-            console.error("Passkey Auth Error:", err);
 
             const status = err.response?.status;
             const message = err.response?.data?.message || "";
@@ -109,7 +108,6 @@ export const Login = ({ onLogin }: LoginProps) => {
     const loginWithGoogle = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             setIsLoading(true);
-            console.log("Google Login Success:", tokenResponse);
 
             try {
                 // Use the new backend endpoint for real verification and login
@@ -117,17 +115,17 @@ export const Login = ({ onLogin }: LoginProps) => {
 
                 addToast(t('Successfully logged in via Google!'), "success");
                 onLogin();
-            } catch (error) {
-                console.error("Google Backend Login Failed:", error);
-                // Fallback or Error handling
-                addToast(t('Google login failed. Please try again.'), "error");
+            } catch (error: any) {
+                const status = error.response?.status;
+                const message = error.response?.data?.message || t('Google login failed. Please try again.');
+
+                addToast(message, "error");
                 setIsSupportOpen(true);
             } finally {
                 setIsLoading(false);
             }
         },
         onError: (errorResponse) => {
-            console.error("Google Login Error:", errorResponse);
             // Don't open support if user just closed the popup
             if ((errorResponse as any).error !== 'popup_closed_by_user') {
                 addToast(t("Google Sign-In failed. Please try again."), "error");
@@ -143,7 +141,6 @@ export const Login = ({ onLogin }: LoginProps) => {
             const response = await instance.loginPopup({
                 scopes: ["User.Read", "Calendars.Read"]
             });
-            console.log("Microsoft Login Success:", response);
 
             const msAuthAction = new Promise<void>((resolve) => {
                 // Simulate backend validation
@@ -161,7 +158,6 @@ export const Login = ({ onLogin }: LoginProps) => {
 
             onLogin();
         } catch (error: any) {
-            console.error("Microsoft Login Error:", error);
             // Don't open support if user cancelled the login
             const isCancelled = error.name === 'BrowserAuthError' && error.errorCode === 'user_cancelled';
             if (!isCancelled) {

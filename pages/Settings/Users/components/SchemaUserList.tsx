@@ -30,7 +30,6 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
             const data = await userService.getAll();
             setUsers(data);
         } catch (error) {
-            console.error(error);
             // Fallback to empty or toast
             // addToast("Failed to load users", "error"); 
             // Commented out to prevent annoying toast if backend not running perfectly or empty
@@ -120,7 +119,6 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
             const targetId = target.id || target._id?.$oid || target._id;
 
             addToast(`Switching to ${target.firstName || target.name || 'User'}...`, 'info');
-            console.log("Starting impersonation for:", target.email, "ID:", targetId, "Mode:", mode);
 
             const { default: api } = await import('../../../../services/api');
             const response = await api.post('/auth/impersonate', {
@@ -129,11 +127,9 @@ export const SchemaUserList = ({ searchQuery, onSelectUser }: any) => {
             });
 
             if (response.data.token) {
-                console.log("Impersonation token received for:", response.data.email);
                 startImpersonation(response.data.token, response.data, mode);
             }
         } catch (error: any) {
-            console.error("Impersonation Error:", error);
             addToast(error.response?.data?.message || "Impersonation failed", 'error');
         } finally {
             setImpersonateModal({ isOpen: false, user: null });

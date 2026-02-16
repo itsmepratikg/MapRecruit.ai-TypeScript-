@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link2, Eye, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { CampaignService } from '../../../services/CampaignService';
 
 interface JobUrlFetcherProps {
-    onFetch: (url: string) => Promise<void>;
+    onFetch: (data: string) => void;
 }
 
 export const JobUrlFetcher: React.FC<JobUrlFetcherProps> = ({ onFetch }) => {
@@ -17,9 +18,15 @@ export const JobUrlFetcher: React.FC<JobUrlFetcherProps> = ({ onFetch }) => {
         setIsLoading(true);
         setStatus('idle');
         try {
-            await onFetch(url);
-            setStatus('success');
+            const result = await CampaignService.scrapeJobUrl(url);
+            if (result.success && result.data) {
+                onFetch(result.data.content || result.data.text);
+                setStatus('success');
+            } else {
+                throw new Error(result.message || 'Scraping failed');
+            }
         } catch (error) {
+            console.error("Scraping error:", error);
             setStatus('error');
         } finally {
             setIsLoading(false);
@@ -40,10 +47,10 @@ export const JobUrlFetcher: React.FC<JobUrlFetcherProps> = ({ onFetch }) => {
                             onChange={(e) => setUrl(e.target.value)}
                             placeholder="https://example.com/careers/job-id"
                             className={`w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border rounded-lg focus:ring-2 focus:ring-emerald-500/20 transition-colors dark:text-slate-200 ${status === 'error'
-                                    ? 'border-red-300 focus:border-red-500 dark:border-red-700'
-                                    : status === 'success'
-                                        ? 'border-emerald-300 focus:border-emerald-500 dark:border-emerald-700'
-                                        : 'border-slate-300 focus:border-emerald-500 dark:border-slate-600'
+                                ? 'border-red-300 focus:border-red-500 dark:border-red-700'
+                                : status === 'success'
+                                    ? 'border-emerald-300 focus:border-emerald-500 dark:border-emerald-700'
+                                    : 'border-slate-300 focus:border-emerald-500 dark:border-slate-600'
                                 }`}
                         />
                         <Link2 className="absolute left-3 top-2.5 text-slate-400" size={18} />

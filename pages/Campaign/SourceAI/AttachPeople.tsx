@@ -5,7 +5,7 @@ import {
   CheckCircle, Clock, ThumbsUp, XCircle, ArrowRight, MessageSquare,
   Users
 } from '../../../components/Icons';
-import { MOCK_PROFILES } from '../../../data';
+import { useCandidates } from '../../../hooks/useCandidates';
 import { FilterPopup, filterProfilesEngine, QUICK_FILTERS } from '../../../components/TalentSearchEngine';
 import { LandingDashboard } from '../../Profiles/SearchProfile/LandingDashboard';
 import { AdvancedSearchModal } from '../../../components/AdvancedSearchModal';
@@ -80,6 +80,7 @@ const SourceProfileCard: React.FC<{ profile: any, onAdd: () => void }> = ({ prof
 
 export const AttachPeople = () => {
   const { addToast } = useToast();
+  const { candidates, loading, error } = useCandidates();
   const [searchState, setSearchState] = useState<SearchState>({
     view: 'initial',
     inputValue: '',
@@ -98,8 +99,8 @@ export const AttachPeople = () => {
 
   // Filter Logic Reused
   const filteredProfiles = useMemo(() => {
-    return filterProfilesEngine(MOCK_PROFILES, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords);
-  }, [searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords]);
+    return filterProfilesEngine(candidates, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords);
+  }, [candidates, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });

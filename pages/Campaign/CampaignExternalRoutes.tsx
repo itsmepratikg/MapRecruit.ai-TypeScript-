@@ -11,6 +11,11 @@ import { campaignService } from '../../services/api'; // Using generic api proxy
 import { CampaignService as NewCampaignService } from '../../services/CampaignService'; // The one we refactored
 
 import { Campaign } from '../../types';
+import { Recommendations } from './Recommendations';
+import { Navigate } from 'react-router-dom';
+import { useWebSocket } from '../../context/WebSocketContext';
+import { useUserProfile } from '../../hooks/useUserProfile';
+import { mapCampaignToUI } from '../Campaigns';
 
 // Wrapper to fetch campaign and render content with Header
 const ExternalRouteWrapper = ({
@@ -28,6 +33,8 @@ const ExternalRouteWrapper = ({
     const [loading, setLoading] = useState(true);
     const [isScrolled, setIsScrolled] = useState(false);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const { joinRoom, leaveRoom } = useWebSocket();
+    const { userProfile } = useUserProfile();
 
     useEffect(() => {
         const loadCampaign = async () => {
@@ -41,7 +48,7 @@ const ExternalRouteWrapper = ({
                 // reusing logic from App.tsx wrapper roughly
                 const all = await campaignService.getAll();
                 const found = all.find((c: any) => (c._id?.$oid || c._id)?.toString() === id);
-                if (found) setCampaign(found);
+                if (found) setCampaign(mapCampaignToUI(found));
             } catch (err) {
                 console.error(err);
             } finally {
@@ -50,6 +57,24 @@ const ExternalRouteWrapper = ({
         };
         loadCampaign();
     }, [id]);
+
+    // Join Room
+    useEffect(() => {
+        if (id && userProfile) {
+            joinRoom(id, {
+                id: userProfile.id || 'visitor',
+                firstName: userProfile.firstName || 'Visitor',
+                lastName: userProfile.lastName || '',
+                email: userProfile.email || '',
+                color: userProfile.color || 'blue',
+                avatar: userProfile.avatar
+            }, activeTab);
+
+            return () => {
+                leaveRoom(id, userProfile.id || 'visitor');
+            };
+        }
+    }, [id, userProfile, joinRoom, leaveRoom]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -67,7 +92,7 @@ const ExternalRouteWrapper = ({
 
     return (
         <div className="flex flex-col h-full bg-slate-50/50 dark:bg-slate-900 transition-colors overflow-hidden">
-            <CampaignHeader campaign={campaign} isScrolled={isScrolled} onBack={() => navigate('/campaigns')} />
+            <CampaignHeader campaign={campaign} isScrolled={isScrolled} onBack={() => navigate('/campaigns')} currentUserId={userProfile?.id} />
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar">
                 <Component campaign={campaign} activeView={activeTab} {...subProps} />
             </div>
@@ -78,42 +103,69 @@ const ExternalRouteWrapper = ({
 export const CampaignExternalRoutes = () => {
     return (
         <Routes>
-            {/* /showcampaign/intelligence/:id */}
+            {/* --- INTELLIGENCE --- */}
             <Route path="intelligence/:id" element={
                 <ExternalRouteWrapper component={Intelligence} activeTab="INTELLIGENCE" />
             } />
 
-            {/* /showcampaign/sourceai/jobdescription/:id */}
+            {/* --- SOURCE AI --- */}
+            <Route path="sourceai/attachpeople/:id" element={
+                <ExternalRouteWrapper component={SourceAIWrapper} activeTab="ATTACH" />
+            } />
+            <Route path="sourceai/profiles/:id" element={
+                <ExternalRouteWrapper component={SourceAIWrapper} activeTab="PROFILES" />
+            } />
+            <Route path="sourceai/portalsourcing/:id/emailtemplates" element={
+                <ExternalRouteWrapper component={SourceAIWrapper} activeTab="TEMPLATES" />
+            } />
+            <Route path="sourceai/portalsourcing/:id/analytics" element={
+                <ExternalRouteWrapper component={SourceAIWrapper} activeTab="ANALYTICS" />
+            } />
+            <Route path="sourceai/integrations/:id" element={
+                <ExternalRouteWrapper component={SourceAIWrapper} activeTab="INTEGRATIONS" />
+            } />
             <Route path="sourceai/jobdescription/:id" element={
                 <ExternalRouteWrapper component={SourceAIWrapper} activeTab="JD" />
             } />
 
-            {/* /showcampaign/sourceai/integrations/:id */}
-            <Route path="sourceai/integrations/:id" element={
-                <ExternalRouteWrapper component={SourceAIWrapper} activeTab="INTEGRATIONS" />
-            } />
-
-            {/* /showcampaign/sourceai/attachpeople/:id */}
-            <Route path="sourceai/attachpeople/:id" element={
-                <ExternalRouteWrapper component={SourceAIWrapper} activeTab="ATTACH" />
-            } />
-
-            {/* /showcampaign/matchai/:id */}
+            {/* --- MATCH AI --- */}
             <Route path="matchai/:id" element={
                 <ExternalRouteWrapper component={MatchAI} activeTab="MATCH" />
             } />
 
-            {/* /showcampaign/engageai/:id */}
+            {/* --- ENGAGE AI --- */}
+            {/* Default Builder View */}
             <Route path="engageai/:id" element={
                 <ExternalRouteWrapper component={EngageAIWrapper} activeTab="BUILDER" />
             } />
 
-            {/* /showcampaign/engageai/:id/:roundId/dashboard */}
+            {/* Specific Round Routes */}
             <Route path="engageai/:id/:roundId/dashboard" element={
                 <ExternalRouteWrapper component={EngageAIWrapper} activeTab="TRACKING" />
             } />
+            <Route path="engageai/:id/:roundId/questionnaire" element={
+                <ExternalRouteWrapper component={EngageAIWrapper} activeTab="QUESTIONNAIRE" />
+            } />
+            <Route path="engageai/:id/:roundId/autoschedule" element={
+                <ExternalRouteWrapper component={EngageAIWrapper} activeTab="AUTOSCHEDULE" />
+            } />
+            <Route path="engageai/:id/:roundId/reachouttemplates/:channel" element={
+                <ExternalRouteWrapper component={EngageAIWrapper} activeTab="TEMPLATES" />
+            } />
+            <Route path="engageai/:id/:roundId/automation" element={
+                <ExternalRouteWrapper component={EngageAIWrapper} activeTab="AUTOMATION" />
+            } />
+            <Route path="engageai/:id/:roundId/room" element={
+                <ExternalRouteWrapper component={EngageAIWrapper} activeTab="ROOM" />
+            } />
 
-            {/* Add more specific routes as needed */}
+            {/* --- RECOMMENDATIONS --- */}
+            <Route path="recommendedprofiles/:id" element={
+                <ExternalRouteWrapper component={Recommendations} activeTab="PROFILES" />
+            } />
+
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="intelligence" replace />} />
 
         </Routes>
     );

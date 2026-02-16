@@ -134,9 +134,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     localStorage.setItem(STORAGE_KEY_EXPIRY, newExpiry.toString());
                 }
             } catch (err: any) {
-                console.error("Profile fetch failed", err);
                 setError("Failed to load profile");
-                if (err.response?.status === 401) {
+                if (err.response?.status === 401 || err.response?.status === 404) {
                     logout();
                 }
             } finally {

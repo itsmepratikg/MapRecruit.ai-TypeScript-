@@ -8,7 +8,9 @@ const {
     createCampaign,
     updateCampaign,
     deleteCampaign,
-    bulkUpdateStatus
+    bulkUpdateStatus,
+    scrapeJobUrl,
+    toggleFavorite
 } = require('../controllers/campaignController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -21,6 +23,8 @@ router.route('/')
 router.get('/stats', protect, getCampaignStats);
 router.get('/recent', protect, getRecentCampaigns);
 router.post('/bulk-status', protect, bulkUpdateStatus);
+router.post('/scrape', protect, scrapeJobUrl);
+router.post('/:id/favorite', protect, toggleFavorite);
 
 router.route('/:id')
     .get(protect, tenantGuard('Campaign'), getCampaign)

@@ -37,10 +37,9 @@ const getUsers = async (req, res) => {
         // Exact match as Schema and Data are now both ObjectId
         const users = await User.find({ companyID: req.user.companyID }).select('-password');
 
-        console.log(`GET /users - Found ${users.length} users`);
+
         res.status(200).json(users);
     } catch (error) {
-        console.error(error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
@@ -64,7 +63,6 @@ const getUserById = async (req, res) => {
         }
         res.status(200).json(user);
     } catch (error) {
-        console.error(error);
         res.status(500).json({ message: 'Server Error' });
     }
 };
@@ -74,7 +72,6 @@ const getUserById = async (req, res) => {
 // @access  Private
 const createUser = async (req, res) => {
     try {
-        console.log('POST /users - Payload:', JSON.stringify(req.body));
         const { email, password, clients } = req.body;
         const { companyID, id: actingUserId } = req.user;
 
@@ -149,15 +146,13 @@ const createUser = async (req, res) => {
             companyID: req.user.companyID // Ensure tenant context
         };
 
-        console.log('Creating User with Data:', JSON.stringify({ ...userData, password: '***' }, null, 2));
+
 
         const user = await User.create(userData);
 
         const createdUser = await User.findById(user._id).select('-password');
         res.status(201).json(createdUser);
     } catch (error) {
-        console.error('CREATE USER FATAL ERROR:', error);
-        console.error('Stack:', error.stack);
         res.status(500).json({ message: 'Server Error' });
     }
 };
@@ -313,7 +308,6 @@ const updateUser = async (req, res) => {
 
         res.status(200).json(responseUser);
     } catch (error) {
-        console.error(error);
         res.status(500).json({ message: 'Server Error' });
     }
 };

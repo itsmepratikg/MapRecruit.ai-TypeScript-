@@ -1,6 +1,7 @@
 
 import { GenerateJDFormState } from '../components/Campaign/Generator/GenerateJDForm';
 import { Campaign, JobDetails, JobRequirements, SkillRequirement } from '../types/Campaign';
+import api from './api';
 
 export interface CampaignSettings {
     openJob: boolean;
@@ -20,7 +21,7 @@ export interface CampaignSettings {
         enabled: boolean;
         startDate: string;
         endDate: string;
-        jobBoards: string[]; // "LinkedIn", "AppCast", "Indeed"
+        jobBoards: string[];
     }
 }
 
@@ -60,11 +61,8 @@ export const CampaignService = {
 
         // 1. Map Skills
         const mapSkills = (skills: any[], checkType: 'Required' | 'Preferred'): SkillRequirement[] => {
-            // UI provides grouped skills, we flatten them for the new schema or keep them logic-based?
-            // "Campaign.ts" defines flat SkillRequirement[], but JSONs showed nested structures sometimes.
-            // Requirement was to map "Required" -> "Required", "Important" -> "High".
-
             const flatSkills: SkillRequirement[] = [];
+            if (!skills) return flatSkills;
 
             skills.forEach(group => {
                 if (group.skills) {
@@ -73,7 +71,7 @@ export const CampaignService = {
                             text: skill.name,
                             canonical_name: skill.name,
                             eligibilityCheck: checkType,
-                            importance: "High", // Defaulting to High, could comes from UI
+                            importance: checkType === 'Required' ? "High" : "Important",
                             yearsOfExperienceMin: 0,
                             yearsOfExperienceMax: 50
                         });
@@ -89,7 +87,7 @@ export const CampaignService = {
         ];
 
         // 2. Map Locations
-        const mappedLocations = formData.locations.map(loc => ({
+        const mappedLocations = (formData.locations || []).map(loc => ({
             city: "", // extracting from text? or leaving empty if not parsed
             state: "",
             country: "",
@@ -98,9 +96,9 @@ export const CampaignService = {
 
         // 3. Construct Payload
         const payload: Partial<Campaign> = {
-            companyID: user?.companyId || "", // From Session
-            clientID: user?.clientId || "",   // From Session
-            userID: user?.id || "",             // Current User
+            companyID: user?.companyID || user?.companyId || "",
+            clientID: user?.clientID || user?.clientId || "",
+            userID: user?._id || user?.id || "",
 
             title: campaignTitle,
             displayName: formData.jobTitle || campaignTitle,
@@ -115,11 +113,11 @@ export const CampaignService = {
             updatedAt: new Date().toISOString(),
 
             teams: {
-                ownerID: settings.teams.ownerID.length > 0 ? settings.teams.ownerID : [user?.id],
+                ownerID: settings.teams.ownerID.length > 0 ? settings.teams.ownerID : [user?._id || user?.id],
                 managerID: settings.teams.managerID,
                 recruiterID: settings.teams.recruiterID
             },
-            sharedUserID: [], // Initialize empty
+            sharedUserID: [],
 
             jobPosting: {
                 enabled: settings.jobPosting.jobBoards.length > 0,
@@ -136,28 +134,27 @@ export const CampaignService = {
             job: {
                 details: {
                     jobTitle: {
-                        text: formData.jobTitle
+                        text: formData.jobTitle || campaignTitle
                     },
                     locations: mappedLocations,
                     offeredSalary: {
-                        min: Number(formData.salary.min) || 0,
-                        max: Number(formData.salary.max) || 0,
-                        currency: formData.salary.currency,
-                        period: formData.salary.period
+                        min: Number(formData.salary?.min) || 0,
+                        max: Number(formData.salary?.max) || 0,
+                        currency: formData.salary?.currency || 'USD',
+                        period: formData.salary?.period || 'Yearly'
                     },
                     workingHours: {
-                        min: Number(formData.hours.min) || 0,
-                        max: Number(formData.hours.max) || 0,
-                        type: "Per Day" // Defaulting
+                        min: Number(formData.hours?.min) || 0,
+                        max: Number(formData.hours?.max) || 40,
+                        type: "Per Week"
                     },
-                    jobType: formData.jobType,
+                    jobType: formData.jobType || "Full-time",
                     jobDescription: {
                         text: descriptionHtml
                     }
                 },
                 requirements: {
                     skills: combinedSkills,
-                    // Additional legacy buckets
                     contextualSkills: [],
                     removedSkills: [],
                     importantLines: [],
@@ -165,7 +162,6 @@ export const CampaignService = {
                 }
             },
 
-            // Initializing AI Config
             MRIPreferences: {
                 experience: { enable: true, weightage: 0.5, matchRelatedEntities: true },
                 skills: { enable: true, weightage: 0.5, matchRelatedEntities: true },
@@ -176,12 +172,10 @@ export const CampaignService = {
                 YOE: { minYOE: 0, maxYOE: 50 }
             },
 
-            // Arrays
             screeningRounds: [],
             qualifyingRounds: [],
             tags: [],
 
-            // Stats
             stats: {
                 netPromoterScore: 0,
                 profilesCount: 0,
@@ -196,23 +190,41 @@ export const CampaignService = {
      * Checks if there are deep changes between original and current campaign data
      */
     hasChanges: (original: Campaign | null, current: Partial<Campaign>): boolean => {
-        if (!original) return true; // New campaign
+        if (!original) return true;
         return !deepEqual(original, current);
     },
 
     /**
-     * Mock API Call to Save Campaign
+     * Real API Call to Save Campaign
      */
     saveCampaign: async (campaign: Partial<Campaign>): Promise<{ success: boolean; data?: Campaign, message?: string }> => {
-        console.log("Saving Campaign Payload:", JSON.stringify(campaign, null, 2));
+        try {
+            const response = await api.post('/campaigns', campaign);
+            return { success: true, data: response.data };
+        } catch (error: any) {
+            console.error("Failed to save campaign:", error);
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || "Failed to save campaign"
+            };
+        }
+    },
 
-        // Simulate Network Delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+    scrapeJobUrl: async (url: string): Promise<{ success: boolean; data?: { title: string, content: string, text: string }, message?: string }> => {
+        try {
+            const response = await api.post('/campaigns/scrape', { url });
+            return { success: true, data: response.data };
+        } catch (error: any) {
+            console.error("Failed to scrape URL:", error);
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message || "Failed to scrape URL"
+            };
+        }
+    },
 
-        // Simulate 304 Not Modified logic (if applicable in real API)
-        // For creation, it's always new. for edit, we can check updatedAt.
-
-        // Cast to full Campaign for return
-        return { success: true, data: { ...campaign, _id: "new_mock_id_" + Date.now() } as Campaign };
+    toggleFavorite: async (id: string): Promise<{ isFavorite: boolean, id: string }> => {
+        const response = await api.post(`/campaigns/${id}/favorite`);
+        return response.data;
     }
 };
