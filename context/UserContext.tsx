@@ -85,7 +85,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initial Load & Verification
     useEffect(() => {
         const initUser = async () => {
-            const token = sessionStorage.getItem('authToken');
+            const token = localStorage.getItem('authToken');
             if (!token) {
                 setLoading(false);
                 return;

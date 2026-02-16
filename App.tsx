@@ -32,9 +32,10 @@ import { useRecentItems } from './hooks/useRecentItems';
 import { WebSocketProvider } from './context/WebSocketContext';
 
 import { useSessionTimeout } from './hooks/useSessionTimeout';
-import { campaignService } from './services/api';
+import { campaignService, clientService, authService } from './services/api';
 import { useClarity } from './hooks/useClarity';
 import { mapCampaignToUI } from './pages/Campaigns';
+import { ConfirmClientSwitchModal } from './components/ConfirmClientSwitchModal';
 
 // Import Providers and Security Components
 import { QuickTourManager } from './components/QuickTour/QuickTourManager';
@@ -137,7 +138,7 @@ const AppContent = () => {
   const [isCapturingSupport, setIsCapturingSupport] = useState(false);
 
   // Check Authentication State (Directly from storage to avoid sync issues)
-  const isAuthenticated = !!sessionStorage.getItem('authToken');
+  const isAuthenticated = !!localStorage.getItem('authToken');
 
 
 
@@ -253,8 +254,11 @@ const AppContent = () => {
 
   const handleLogout = () => {
     // If context logout is available, use it, otherwise fallback to local reset
-    // This is primarily for Login.tsx's convenience, but context handles its own state
-    sessionStorage.removeItem('authToken');
+    // This is primarily for Login.tsx's convenience, but context
+    // Clear auth on exit
+    localStorage.removeItem('authToken');
+    // Clear user local storage if it exists (as per conversation 9c5324bf)
+    localStorage.removeItem('user');
     localStorage.removeItem('user_profile_cache');
     localStorage.removeItem('session_expiry');
 
@@ -685,15 +689,19 @@ const AppContent = () => {
                     <Route path="/dashboard" element={<Home onNavigate={(tab) => navigate(`/campaigns?tab=${tab}`)} />} />
 
                     <Route path="/profiles/searchprofiles/*" element={
-                      <Profiles onNavigateToProfile={(id) => navigate(`/profile/profile/${id}`)} />
+                      <Profiles onNavigateToProfile={(id) => navigate(`/profile/${id}`)} />
                     } />
                     <Route path="/profile/:tab/:id" element={
                       <div className="h-full flex flex-col animate-in fade-in duration-300">
                         <CandidateProfile />
                       </div>
                     } />
-                    {/* Handle legacy /profile/:id and /profile/:id/:tab */}
-                    <Route path="/profile/:id" element={<LegacyProfileRedirect />} />
+                    <Route path="/profile/:id" element={
+                      <div className="h-full flex flex-col animate-in fade-in duration-300">
+                        <CandidateProfile />
+                      </div>
+                    } />
+                    {/* Handle legacy /profile/:id/:tab (Swaps to new tab/id format) */}
                     <Route path="/profile/:id/:tab" element={<LegacyProfileRedirect />} />
 
                     <Route path="/campaigns" element={
@@ -782,31 +790,93 @@ const AppContent = () => {
 const CampaignDashboardWrapper = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { userProfile, refetchProfile } = useUserProfile();
   const [campaign, setCampaign] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showSwitchModal, setShowSwitchModal] = useState(false);
+  const [targetClientName, setTargetClientName] = useState('');
+
+  const activeClientID = userProfile?.activeClientID || userProfile?.activeClient;
 
   useEffect(() => {
     const loadCampaign = async () => {
-      // Try fetching from service
+      if (!id || !userProfile) return;
+      setLoading(true);
       try {
         const campaigns = await campaignService.getAll();
         const found = campaigns.find((c: any) => (c._id?.$oid || c._id)?.toString() === id);
+
         if (found) {
-          setCampaign(mapCampaignToUI(found));
+          const campaignClient = found.clientID || found.clientId;
+
+          if (campaignClient && campaignClient !== activeClientID) {
+            // Client Mismatch! Check if user has access to this client
+            const accessibleClients = userProfile.clientID || [];
+
+            if (accessibleClients.some((cid: any) => cid.toString() === campaignClient.toString())) {
+              // User has access! Fetch client name and show modal
+              const clientData = await clientService.getById(campaignClient);
+              setTargetClientName(clientData.clientName || clientData.name || 'Another Client');
+              setCampaign(found); // Store raw for now
+              setShowSwitchModal(true);
+            } else {
+              // No access to this client's campaign
+              navigate('/dashboard');
+            }
+          } else {
+            setCampaign(mapCampaignToUI(found));
+          }
+        } else {
+          // Not found in this company/list
+          navigate('/dashboard');
         }
       } catch (err) {
         console.error("Failed to fetch campaign details", err);
+        navigate('/dashboard');
       } finally {
         setLoading(false);
       }
     };
 
     loadCampaign();
-  }, [id]);
+  }, [id, activeClientID, !!userProfile]);
+
+  const handleConfirmSwitch = async () => {
+    if (!campaign || !userProfile) return;
+    const campaignClient = campaign.clientID;
+    const companyId = userProfile.companyID;
+
+    try {
+      setLoading(true);
+      await authService.switchCompany(companyId, campaignClient);
+      await refetchProfile(); // Sync profile state
+      setShowSwitchModal(false);
+      setCampaign(mapCampaignToUI(campaign));
+    } catch (err) {
+      console.error("Switch failed", err);
+      navigate('/dashboard');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) return <div className="p-12 text-center text-slate-500 animate-pulse">Loading Campaign Details...</div>;
-  if (!campaign) return <div className="p-12 text-center text-slate-500">Campaign not found</div>;
+  if (!campaign && !showSwitchModal) return <div className="p-12 text-center text-slate-500">Campaign not found</div>;
 
-  return <CampaignDashboard campaign={campaign} activeTab={'Intelligence'} onBack={() => navigate('/campaigns')} />;
+  return (
+    <>
+      {campaign && !showSwitchModal && (
+        <CampaignDashboard campaign={campaign} onBack={() => navigate('/campaigns')} />
+      )}
+
+      <ConfirmClientSwitchModal
+        isOpen={showSwitchModal}
+        campaignName={campaign?.campaignName || 'Campaign'}
+        targetClientName={targetClientName}
+        onConfirm={handleConfirmSwitch}
+        onCancel={() => navigate('/dashboard')}
+      />
+    </>
+  );
 };
 

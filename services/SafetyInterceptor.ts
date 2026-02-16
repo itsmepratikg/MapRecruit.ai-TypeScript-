@@ -6,13 +6,13 @@ export const TRIGGER_SAFETY_MODAL = 'TRIGGER_IMPERSONATION_SAFETY_MODAL';
 export const attachSafetyInterceptor = (api: AxiosInstance) => {
     api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
         // 1. Check if we are impersonating
-        // We now rely on sessionStorage flags set by ImpersonationContext
-        const adminToken = sessionStorage.getItem('admin_restore_token');
+        // We now rely on localStorage flags set by ImpersonationContext
+        const adminToken = localStorage.getItem('admin_restore_token');
         const isImpersonating = !!adminToken;
 
         if (!isImpersonating) return config;
 
-        const mode = sessionStorage.getItem('impersonation_mode') || 'read-only';
+        const mode = localStorage.getItem('impersonation_mode') || 'read-only';
         const method = config.method?.toUpperCase() || 'GET';
         const url = config.url || '';
 

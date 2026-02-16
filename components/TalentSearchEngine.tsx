@@ -12,7 +12,8 @@ import { ProfileDrawer } from './ProfileDrawer';
 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCandidates } from '../hooks/useCandidates';
-import { userService } from '../services/api';
+import { useUserProfile } from '../hooks/useUserProfile';
+import { userService, clientService } from '../services/api';
 
 export const QUICK_FILTERS = [
   { label: "⚡ Immediate Start", value: "Immediate" },
@@ -94,9 +95,19 @@ const mapCandidateToCard = (candidate: any) => {
   };
 };
 
-export const filterProfilesEngine = (profiles: any[], activeFilters: string[], advancedParams: any = {}, searchKeywords: string[] = []) => {
+export const filterProfilesEngine = (profiles: any[], activeFilters: string[], advancedParams: any = {}, searchKeywords: string[] = [], searchLevel: string = 'Company', activeClientID: string | null = null) => {
   if (!Array.isArray(profiles)) return [];
-  let filtered = profiles.map(mapCandidateToCard);
+
+  // Pre-filter based on searchLevel before mapping
+  let baseProfiles = profiles;
+  if (searchLevel === 'Client' && activeClientID) {
+    baseProfiles = profiles.filter(p => {
+      const pClientID = p.clientID || p.clientId || (p.resume && (p.resume.clientID || p.resume.clientId));
+      return pClientID === activeClientID;
+    });
+  }
+
+  let filtered = baseProfiles.map(mapCandidateToCard);
 
   if (Object.keys(advancedParams).length > 0) {
     filtered = filtered.filter(p => {
@@ -316,7 +327,27 @@ export const TalentSearchEngine: React.FC<{
   landingComponent?: React.ReactNode // New prop for injecting the dashboard
 }> = ({ searchState, setSearchState, onNavigateToProfile, landingComponent }) => {
   const navigate = useNavigate();
-  const { candidates, loading, error } = useCandidates();
+  const { candidates, loading: candidatesLoading, error } = useCandidates();
+  const { userProfile } = useUserProfile();
+  const [searchLevel, setSearchLevel] = useState<string>('Company');
+  const [loading, setLoading] = useState(true);
+
+  const activeClientID = userProfile?.activeClientID || userProfile?.activeClient || userProfile?.clientId;
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      if (!activeClientID) return;
+      try {
+        const clientData = await clientService.getById(activeClientID);
+        setSearchLevel(clientData.settings?.profileSearchAccessLevel || 'Client');
+      } catch (err) {
+        console.error("Failed to fetch client settings", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSettings();
+  }, [activeClientID]);
 
   const [placeholder, setPlaceholder] = useState("Describe your ideal candidate...");
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
@@ -336,8 +367,8 @@ export const TalentSearchEngine: React.FC<{
   };
 
   const filteredProfiles = useMemo(() => {
-    return filterProfilesEngine(candidates, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords);
-  }, [candidates, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords]);
+    return filterProfilesEngine(candidates, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords, searchLevel, activeClientID);
+  }, [candidates, searchState.activeFilters, searchState.advancedParams, searchState.searchKeywords, searchLevel, activeClientID]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });

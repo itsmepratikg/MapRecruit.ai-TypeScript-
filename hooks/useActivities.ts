@@ -20,7 +20,7 @@ export const useActivities = (params: UseActivitiesParams) => {
 
     const fetchActivities = useCallback(async () => {
         // Wait until user is logged in
-        if (!sessionStorage.getItem('authToken')) return;
+        if (!localStorage.getItem('authToken')) return;
 
         // If specific IDs are required but missing, don't fetch (unless fetching global 'common' activities)
         if (!params.candidateID && !params.campaignID && !params.activityOf) return;

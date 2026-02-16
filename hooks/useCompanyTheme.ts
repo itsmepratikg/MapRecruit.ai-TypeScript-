@@ -11,7 +11,7 @@ export const useCompanyTheme = (userProfile: any) => {
     useEffect(() => {
         const fetchAndApplyTheme = async () => {
             // Wait until user is logged in before fetching company data
-            if (!userProfile || !sessionStorage.getItem('authToken')) {
+            if (!userProfile || !localStorage.getItem('authToken')) {
                 applyTheme(DEFAULT_THEME_COLOR);
                 return;
             }

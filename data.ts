@@ -286,6 +286,15 @@ export const INTERVIEW_TEMPLATES = [
   { id: 3, title: "Technical Screening - L1", created: "01/15/2025", author: "System", access: "Public" }
 ];
 
+export const MOCK_PROFILES = [
+  { id: 'PRO_001', name: 'Sarah Jenkins', title: 'Senior Frontend Developer', location: 'New York, NY', status: 'Active', avatar: 'SJ' },
+  { id: 'PRO_002', name: 'David Chen', title: 'Backend Engineer', location: 'San Francisco, CA', status: 'On Bench', avatar: 'DC' },
+  { id: 'PRO_003', name: 'Maria Garcia', title: 'Fullstack Developer', location: 'Austin, TX', status: 'Active', avatar: 'MG' },
+  { id: 'PRO_004', name: 'James Wilson', title: 'UI/UX Designer', location: 'Remote', status: 'Active', avatar: 'JW' },
+  { id: 'PRO_005', name: 'Priya Sharma', title: 'Data Scientist', location: 'Seattle, WA', status: 'On Bench', avatar: 'PS' },
+  { id: 'PRO_006', name: 'Michael Brown', title: 'DevOps Engineer', location: 'Chicago, IL', status: 'Active', avatar: 'MB' },
+];
+
 // QUICK_FILTERS and SIDEBAR_FILTERS moved to TalentSearchEngine.tsx
 
 

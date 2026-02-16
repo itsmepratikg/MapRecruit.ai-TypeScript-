@@ -102,54 +102,46 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
         const clientData = await clientService.getById(currentActiveClientId);
         const searchLevel = clientData.settings?.profileSearchAccessLevel || 'Client';
 
-        // 3. Access Check Logic
+        const isDirectAccess = !!urlId && !propsCandidateId;
+        const isAdmin = ['Product Admin', 'Admin', 'Super Admin'].includes(user.role);
+
         let isAllowed = false;
         let displayLabel = isFranchiseMode ? 'Franchise' : 'Client';
         let displayName = 'Unknown';
 
-        // Fetch Resume Client Data (to get clientName)
-        let resumeClientData = null;
-        if (resumeClientId) {
-          try {
-            resumeClientData = await clientService.getById(resumeClientId);
-            displayName = resumeClientData.clientName || resumeClientData.name || 'Unknown Client';
-          } catch (e) {
-            console.error("Could not fetch resume client details", e);
-          }
-        }
-
-        const isAdmin = ['Product Admin', 'Admin', 'Super Admin'].includes(user.role);
-
+        // 3. Access Check Logic
         if (isAdmin) {
           // Admins have access to everything within their Accessible Companies
           const accessibleCompanies = user.AccessibleCompanyID || [user.companyID];
           isAllowed = accessibleCompanies.some((id: string) => id.toString() === resumeCompanyId?.toString());
-        } else if (searchLevel === 'Company') {
+        } else if (isDirectAccess) {
+          // Direct Access: Strictly same company only
           isAllowed = (resumeCompanyId === currentUserCompanyId);
-          displayLabel = 'Company';
-          displayName = activeCompany.companyProfile?.companyNameAlias?.[0] || activeCompany.companyProfile?.companyName || "Your Company";
-        } else if (searchLevel === 'OwningEntity' && isFranchiseMode) {
-          displayLabel = 'Franchise';
-          // Check if candidate belongs to the same franchise as user's current client
-          const userFranchise = clientData.franchiseID || clientData.franchise;
-          if (userFranchise && resumeFranchiseId) {
-            isAllowed = (userFranchise.toString() === resumeFranchiseId.toString());
-
-            // Try to get Franchise Name
-            if (isAllowed) {
-              const franchiseDoc = await owningEntityService.getByClientId(currentActiveClientId);
-              if (franchiseDoc) {
-                displayName = franchiseDoc.name || franchiseDoc.franchiseName || 'Your Franchise';
+        } else {
+          // Search/Drawer Access: Follow Profile Search Access Level
+          if (searchLevel === 'Company') {
+            isAllowed = (resumeCompanyId === currentUserCompanyId);
+            displayLabel = 'Company';
+            displayName = activeCompany.companyProfile?.companyNameAlias?.[0] || activeCompany.companyProfile?.companyName || "Your Company";
+          } else if (searchLevel === 'OwningEntity' && isFranchiseMode) {
+            displayLabel = 'Franchise';
+            const userFranchise = clientData.franchiseID || clientData.franchise;
+            if (userFranchise && resumeFranchiseId) {
+              isAllowed = (userFranchise.toString() === resumeFranchiseId.toString());
+              if (isAllowed) {
+                const franchiseDoc = await owningEntityService.getByClientId(currentActiveClientId);
+                if (franchiseDoc) {
+                  displayName = franchiseDoc.name || franchiseDoc.franchiseName || 'Your Franchise';
+                }
               }
+            } else {
+              isAllowed = currentUserClientIds.some((id: string) => id.toString() === resumeClientId?.toString());
             }
           } else {
-            // Fallback to client check if franchise missing
+            // Default Client Level Access
             isAllowed = currentUserClientIds.some((id: string) => id.toString() === resumeClientId?.toString());
+            displayLabel = 'Client';
           }
-        } else {
-          // Default Client Level Access
-          isAllowed = currentUserClientIds.some((id: string) => id.toString() === resumeClientId?.toString());
-          displayLabel = 'Client';
         }
 
         setOwnerDisplay({ label: displayLabel, name: displayName });
@@ -179,14 +171,23 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
 
   if (accessDenied) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Access Denied</h2>
-          <p className="text-slate-600 dark:text-slate-400">You do not have permission to view this profile due to Client Access Restrictions.</p>
-          <button onClick={() => window.history.back()} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            Go Back
-          </button>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-slate-900 p-6 text-center">
+        <div className="mb-6">
+          <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={48} className="text-slate-400" />
+          </div>
+          <h1 className="text-6xl font-black text-slate-200 dark:text-slate-700 mb-2">404</h1>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Profile Not Found</h2>
+          <p className="mt-2 text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            The profile you are looking for might have been removed, had its name changed, or is temporarily unavailable.
+          </p>
         </div>
+        <button
+          onClick={() => window.location.href = '/dashboard'}
+          className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-200 dark:shadow-none active:scale-95"
+        >
+          Return to Dashboard
+        </button>
       </div>
     );
   }

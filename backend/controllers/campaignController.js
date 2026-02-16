@@ -218,7 +218,9 @@ const getCampaign = async (req, res) => {
 
         const campaign = await Campaign.findOne({
             _id: { $eq: req.params.id },
-            companyID: companyID
+            companyID: companyID,
+            // REMEDIATION (SEC-01): Enforce client access
+            clientID: { $in: await getAllowedClientIds(req.user.id, companyID) }
         });
 
         if (!campaign) {
@@ -281,7 +283,9 @@ const updateCampaign = async (req, res) => {
 
         const campaign = await Campaign.findOne({
             _id: { $eq: req.params.id },
-            companyID: companyID
+            companyID: companyID,
+            // REMEDIATION (SEC-01): Enforce client access
+            clientID: { $in: await getAllowedClientIds(req.user.id, companyID) }
         });
 
         if (!campaign) {
@@ -322,7 +326,9 @@ const deleteCampaign = async (req, res) => {
 
         const campaign = await Campaign.findOne({
             _id: { $eq: req.params.id },
-            companyID: companyID
+            companyID: companyID,
+            // REMEDIATION (SEC-01): Enforce client access
+            clientID: { $in: await getAllowedClientIds(req.user.id, companyID) }
         });
 
         if (!campaign) {
@@ -354,7 +360,9 @@ const bulkUpdateStatus = async (req, res) => {
         const updateResult = await Campaign.updateMany(
             {
                 _id: { $in: ids },
-                companyID: companyID
+                companyID: companyID,
+                // REMEDIATION (SEC-02): Enforce client access for bulk ops
+                clientID: { $in: await getAllowedClientIds(req.user.id, companyID) }
             },
             {
                 $set: {

@@ -23,8 +23,8 @@ export const ImpersonationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     useEffect(() => {
         // Sync with storage on mount
-        const adminToken = sessionStorage.getItem('admin_restore_token');
-        const mode = sessionStorage.getItem('impersonation_mode') as 'read-only' | 'full';
+        const adminToken = localStorage.getItem('admin_restore_token');
+        const mode = localStorage.getItem('impersonation_mode') as 'read-only' | 'full';
 
         if (adminToken) {
             setState({
@@ -35,17 +35,17 @@ export const ImpersonationProvider: React.FC<{ children: React.ReactNode }> = ({
     }, []);
 
     const startImpersonation = (token: string, targetUser: any, mode: 'read-only' | 'full') => {
-        const currentAdminToken = sessionStorage.getItem('authToken');
+        const currentAdminToken = localStorage.getItem('authToken');
 
         if (currentAdminToken) {
-            sessionStorage.setItem('admin_restore_token', currentAdminToken);
+            localStorage.setItem('admin_restore_token', currentAdminToken);
         }
 
         // Set Impersonation Context
-        sessionStorage.setItem('impersonation_mode', mode);
+        localStorage.setItem('impersonation_mode', mode);
 
         // Swap to Target Token
-        sessionStorage.setItem('authToken', token);
+        localStorage.setItem('authToken', token);
 
         setState({
             isImpersonating: true,
@@ -58,15 +58,15 @@ export const ImpersonationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     const stopImpersonation = () => {
-        const adminToken = sessionStorage.getItem('admin_restore_token');
+        const adminToken = localStorage.getItem('admin_restore_token');
 
         if (adminToken) {
             // Restore Admin Token
-            sessionStorage.setItem('authToken', adminToken);
+            localStorage.setItem('authToken', adminToken);
 
             // Clear Backup & Context
-            sessionStorage.removeItem('admin_restore_token');
-            sessionStorage.removeItem('impersonation_mode');
+            localStorage.removeItem('admin_restore_token');
+            localStorage.removeItem('impersonation_mode');
 
             setState({ isImpersonating: false, mode: 'read-only' });
 

@@ -23,7 +23,7 @@ export const useSessionTimeout = (onLogout: () => void) => {
 
         // Throttled heartbeat to backend
         const now = Date.now();
-        const token = sessionStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken');
 
         if (token && (force || (now - lastHeartbeatRef.current > HEARTBEAT_INTERVAL))) {
             lastHeartbeatRef.current = now;

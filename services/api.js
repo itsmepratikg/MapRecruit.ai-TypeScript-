@@ -20,7 +20,7 @@ attachSafetyInterceptor(api);
 // Add a request interceptor to attach the Token
 api.interceptors.request.use(
     (config) => {
-        const token = sessionStorage.getItem('authToken');
+        const token = localStorage.getItem('authToken');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -31,21 +31,38 @@ api.interceptors.request.use(
     }
 );
 
-// Add a response interceptor to handle 401 Unauthorized
+import toast from 'react-hot-toast';
+
+// Add a response interceptor to handle 401 Unauthorized and 500 Server Errors
 api.interceptors.response.use(
     (response) => {
         return response;
     },
     (error) => {
-        if (error.response?.status === 401) {
-            // Check if we are on the login page to avoid infinite loops
-            const isLogin = window.location.pathname === '/';
-            if (!isLogin) {
-                console.warn("[API] 401 Unauthorized detected. Clearing session and redirecting...");
-                sessionStorage.removeItem('authToken');
-                // We don't want to use navigate here as this is outside a React component
-                // but window.location will force a reload and redirect via App.tsx logic
-                window.location.href = '/';
+        if (error.response) {
+            // Handle 401 Unauthorized
+            if (error.response.status === 401) {
+                // Check if we are on the login page to avoid infinite loops
+                const isLogin = window.location.pathname === '/';
+                if (!isLogin) {
+                    console.warn("[API] 401 Unauthorized detected. Clearing session and redirecting...");
+                    localStorage.removeItem('authToken');
+                    // We don't want to use navigate here as this is outside a React component
+                    // but window.location will force a reload and redirect via App.tsx logic
+                    window.location.href = '/';
+                }
+            }
+            // Handle 500 Server Error (Global Toast)
+            else if (error.response.status >= 500) {
+                const message = error.response.data?.message || 'Internal Server Error';
+                toast.error(`System Error: ${message}`, {
+                    duration: 5000,
+                    style: {
+                        border: '1px solid #ef4444',
+                        background: '#fee2e2',
+                        color: '#b91c1c',
+                    }
+                });
             }
         }
         return Promise.reject(error);
@@ -57,7 +74,7 @@ export const authService = {
         try {
             const response = await api.post('/auth/login', { email, password });
             if (response.data.token) {
-                sessionStorage.setItem('authToken', response.data.token);
+                localStorage.setItem('authToken', response.data.token);
             }
             return response.data;
         } catch (error) {
@@ -68,7 +85,7 @@ export const authService = {
         try {
             const response = await api.post('/auth/google', { credential });
             if (response.data.token) {
-                sessionStorage.setItem('authToken', response.data.token);
+                localStorage.setItem('authToken', response.data.token);
             }
             return response.data;
         } catch (error) {
@@ -78,17 +95,17 @@ export const authService = {
     register: async (userData) => {
         const response = await api.post('/auth/register', userData);
         if (response.data.token) {
-            sessionStorage.setItem('authToken', response.data.token);
+            localStorage.setItem('authToken', response.data.token);
         }
         return response.data;
     },
     logout: () => {
-        sessionStorage.removeItem('authToken');
+        localStorage.removeItem('authToken');
     },
     switchCompany: async (companyId, clientId) => {
         const response = await api.post('/auth/switch-context', { companyId, clientId });
         if (response.data.token) {
-            sessionStorage.setItem('authToken', response.data.token);
+            localStorage.setItem('authToken', response.data.token);
         }
         return response.data;
     },
