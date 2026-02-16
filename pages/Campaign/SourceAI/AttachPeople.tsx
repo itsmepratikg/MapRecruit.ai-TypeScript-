@@ -12,8 +12,9 @@ import { AdvancedSearchModal } from '../../../components/AdvancedSearchModal';
 import { ChatBubble } from '../../../components/Common';
 import { SearchState } from '../../../types';
 import { useToast } from '../../../components/Toast';
+import { ProfilePreviewModal } from '../../../components/ProfilePreviewModal';
 
-const SourceProfileCard: React.FC<{ profile: any, onAdd: () => void }> = ({ profile, onAdd }) => (
+const SourceProfileCard: React.FC<{ profile: any, onAdd: () => void, onNameClick: () => void }> = ({ profile, onAdd, onNameClick }) => (
   <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 hover:shadow-md transition-all duration-200 flex flex-col md:flex-row gap-4 group relative">
     <div className="absolute top-4 right-4 flex items-center gap-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs font-medium">
       <Sparkles size={12} />
@@ -29,7 +30,10 @@ const SourceProfileCard: React.FC<{ profile: any, onAdd: () => void }> = ({ prof
     <div className="flex-grow">
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors cursor-pointer">
+          <h3
+            onClick={onNameClick}
+            className="text-lg font-bold text-gray-900 dark:text-slate-100 hover:text-green-600 dark:hover:text-green-400 transition-colors cursor-pointer"
+          >
             {profile.name}
           </h3>
           <p className="text-gray-600 dark:text-slate-400 font-medium">{profile.title}</p>
@@ -95,6 +99,7 @@ export const AttachPeople = () => {
   const [isFilterPopupOpen, setIsFilterPopupOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAiEnabled, setIsAiEnabled] = useState(true);
+  const [previewProfileId, setPreviewProfileId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Filter Logic Reused
@@ -250,6 +255,12 @@ export const AttachPeople = () => {
 
   return (
     <div className="flex h-full bg-white dark:bg-slate-900 relative overflow-hidden transition-colors">
+      <ProfilePreviewModal
+        isOpen={previewProfileId !== null}
+        onClose={() => setPreviewProfileId(null)}
+        profileId={previewProfileId || ''}
+      />
+
       <FilterPopup
         isOpen={isFilterPopupOpen}
         onClose={() => setIsFilterPopupOpen(false)}
@@ -412,7 +423,12 @@ export const AttachPeople = () => {
                 {/* Cards */}
                 <div className="space-y-4">
                   {filteredProfiles.map(profile => (
-                    <SourceProfileCard key={profile.id} profile={profile} onAdd={() => handleAddToCampaign(profile.name)} />
+                    <SourceProfileCard
+                      key={profile.id}
+                      profile={profile}
+                      onAdd={() => handleAddToCampaign(profile.name)}
+                      onNameClick={() => setPreviewProfileId(profile.id)}
+                    />
                   ))}
                   {filteredProfiles.length === 0 && (
                     <div className="text-center py-20">
