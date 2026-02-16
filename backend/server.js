@@ -17,8 +17,15 @@ const app = express();
 const server = http.createServer(app); // Create HTTP server
 const io = new Server(server, {
     cors: {
-        origin: "*", // Allow all origins for now (adjust for production)
-        methods: ["GET", "POST"]
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "https://map-recruit-ai-type-script.vercel.app",
+            "https://maprecruit.ai",
+            "https://www.maprecruit.ai"
+        ],
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
@@ -33,7 +40,16 @@ const limiter = rateLimit({
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: [
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://map-recruit-ai-type-script.vercel.app",
+        "https://maprecruit.ai",
+        "https://www.maprecruit.ai"
+    ],
+    credentials: true
+}));
 app.use(limiter); // Apply global rate limiter
 app.use(express.json({ limit: '10mb' })); // Support large JSON payloads for schemaless data
 
