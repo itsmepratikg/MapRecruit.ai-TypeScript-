@@ -265,12 +265,6 @@ export const AttachPeople = () => {
 
   return (
     <div className="flex h-full bg-white dark:bg-slate-900 relative overflow-hidden transition-colors">
-      <ProfilePreviewModal
-        isOpen={previewProfileId !== null}
-        onClose={() => setPreviewProfileId(null)}
-        profileId={previewProfileId || ''}
-      />
-
       <FilterPopup
         isOpen={isFilterPopupOpen}
         onClose={() => setIsFilterPopupOpen(false)}
