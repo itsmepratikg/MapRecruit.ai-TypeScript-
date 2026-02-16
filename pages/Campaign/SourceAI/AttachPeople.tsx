@@ -1,5 +1,6 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search, Filter, Plus, X, Sparkles, Send, MapPin, Briefcase,
   CheckCircle, Clock, ThumbsUp, XCircle, ArrowRight, MessageSquare,
@@ -12,7 +13,7 @@ import { AdvancedSearchModal } from '../../../components/AdvancedSearchModal';
 import { ChatBubble } from '../../../components/Common';
 import { SearchState } from '../../../types';
 import { useToast } from '../../../components/Toast';
-import { ProfilePreviewModal } from '../../../components/ProfilePreviewModal';
+import { ProfileDrawer } from '../../../components/ProfileDrawer';
 
 const SourceProfileCard: React.FC<{ profile: any, onAdd: () => void, onNameClick: () => void }> = ({ profile, onAdd, onNameClick }) => (
   <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 hover:shadow-md transition-all duration-200 flex flex-col md:flex-row gap-4 group relative">
@@ -85,6 +86,7 @@ const SourceProfileCard: React.FC<{ profile: any, onAdd: () => void, onNameClick
 export const AttachPeople = () => {
   const { addToast } = useToast();
   const { candidates, loading, error } = useCandidates();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchState, setSearchState] = useState<SearchState>({
     view: 'initial',
     inputValue: '',
@@ -99,8 +101,16 @@ export const AttachPeople = () => {
   const [isFilterPopupOpen, setIsFilterPopupOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAiEnabled, setIsAiEnabled] = useState(true);
-  const [previewProfileId, setPreviewProfileId] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const handlePreview = (rid: string) => {
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('rid', rid);
+      if (!newParams.get('tab')) newParams.set('tab', 'profile');
+      return newParams;
+    });
+  };
 
   // Filter Logic Reused
   const filteredProfiles = useMemo(() => {
@@ -427,7 +437,7 @@ export const AttachPeople = () => {
                       key={profile.id}
                       profile={profile}
                       onAdd={() => handleAddToCampaign(profile.name)}
-                      onNameClick={() => setPreviewProfileId(profile.id)}
+                      onNameClick={() => handlePreview(profile.id)}
                     />
                   ))}
                   {filteredProfiles.length === 0 && (
@@ -476,6 +486,8 @@ export const AttachPeople = () => {
           </form>
         </div>
       </aside>
+
+      <ProfileDrawer candidateIds={filteredProfiles.map(p => p.id)} />
     </div>
   );
 };
