@@ -8,6 +8,7 @@ import { PublicClientApplication } from '@azure/msal-browser';
 import { MsalProvider } from '@azure/msal-react';
 import { ToastProvider } from './components/Toast';
 import './src/i18n';
+import './src/styles/index.css';
 
 // Suppress Recharts deprecation warnings
 const error = console.error;

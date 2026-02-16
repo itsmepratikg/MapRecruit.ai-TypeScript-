@@ -22,6 +22,8 @@ const io = new Server(server, {
             "http://localhost:3000",
             "https://map-recruit-ai-type-script.vercel.app",
             "https://maprecruit.ai",
+            "https://*.maprecruit.com",
+            "https://www.maprecruit.com",
             "https://www.maprecruit.ai"
         ],
         methods: ["GET", "POST"],
@@ -46,6 +48,8 @@ app.use(cors({
         "http://localhost:3000",
         "https://map-recruit-ai-type-script.vercel.app",
         "https://maprecruit.ai",
+        "https://*.maprecruit.com",
+        "https://www.maprecruit.com",
         "https://www.maprecruit.ai"
     ],
     credentials: true
