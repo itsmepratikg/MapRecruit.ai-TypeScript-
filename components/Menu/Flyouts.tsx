@@ -513,12 +513,14 @@ export const CampaignMenuContent = ({
     onNavigateToCampaign,
     activeView,
     activeClient,
+    activeClientID,
     onClose
 }: {
     onNavigate: (tab: string) => void,
     onNavigateToCampaign: (campaign: any) => void,
     activeView: string,
     activeClient: string,
+    activeClientID?: string,
     onClose: () => void
 }) => {
     const { t } = useTranslation();
@@ -538,11 +540,12 @@ export const CampaignMenuContent = ({
             try {
                 setLoading(true);
                 // Dynamically import clientService here to avoid circular dependencies if any
-                // Dynamically import clientService here to avoid circular dependencies if any
                 const { clientService } = await import('../../services/api');
 
                 // Fetch Stats
-                const statsData = await campaignService.getStats(activeClient);
+                // Use activeClientID if available, fallback to nothing (which implies global/user context)
+                // Passing the name 'activeClient' was causing the issue because API expects an ID
+                const statsData = await campaignService.getStats(activeClientID);
                 setCounts(statsData);
 
                 // Fetch Clients to map Types
@@ -705,9 +708,17 @@ export const CampaignMenuContent = ({
                                                             <HoverMenu
                                                                 campaign={{ ...camp, title: camp.name }}
                                                                 onAction={(action) => {
-                                                                    if (action === 'INTELLIGENCE') onNavigateToCampaign(camp);
+                                                                    if (action === 'INTELLIGENCE') onNavigateToCampaign({ ...camp, view: 'INTELLIGENCE' });
+                                                                    else if (action === 'SETTINGS') onNavigateToCampaign({ ...camp, view: 'SETTINGS' });
                                                                     else {
-                                                                        onNavigateToCampaign(camp);
+                                                                        // Pass the action as part of the campaign object or handle it in the parent?
+                                                                        // The parent expects a campaign object.
+                                                                        // Typically onNavigateToCampaign takes a campaign object.
+                                                                        // Let's assume we pass the campaign and the parent handles routing based on current state or default.
+                                                                        // But for specific actions like Source/Match, we might need to modify the campaign object or pass extra data.
+                                                                        // Looking at prior code, onNavigateToCampaign(camp) was called.
+                                                                        // Let's attach the target view to the campaign object if possible.
+                                                                        onNavigateToCampaign({ ...camp, targetView: action });
                                                                     }
                                                                     onClose();
                                                                 }}

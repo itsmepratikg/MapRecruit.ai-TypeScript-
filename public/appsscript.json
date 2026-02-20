@@ -1,0 +1,17 @@
+{
+    "timeZone": "America/New_York",
+    "dependencies": {},
+    "oauthScopes": [
+        "https://www.googleapis.com/auth/gmail.addons.execute",
+        "https://www.googleapis.com/auth/gmail.addons.current.message.readonly",
+        "https://www.googleapis.com/auth/script.external_request"
+    ],
+    "gmail": {
+        "contextualTriggers": [
+            {
+                "unconditional": {},
+                "onTriggerFunction": "buildAddOn"
+            }
+        ]
+    }
+}

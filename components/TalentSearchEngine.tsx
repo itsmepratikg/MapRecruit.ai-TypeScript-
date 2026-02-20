@@ -332,7 +332,7 @@ export const TalentSearchEngine: React.FC<{
   const [searchLevel, setSearchLevel] = useState<string>('Company');
   const [loading, setLoading] = useState(true);
 
-  const activeClientID = userProfile?.activeClientID || userProfile?.activeClient || userProfile?.clientId;
+  const activeClientID = userProfile?.activeClientID || (typeof userProfile?.activeClient === 'object' ? userProfile?.activeClient?._id : undefined) || userProfile?.clientId;
 
   useEffect(() => {
     const fetchSettings = async () => {

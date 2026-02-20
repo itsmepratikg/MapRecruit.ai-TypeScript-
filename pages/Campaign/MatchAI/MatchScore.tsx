@@ -2,16 +2,18 @@
 import React from 'react';
 import { ExternalLink, ThumbsUp, MessageSquare, ThumbsDown } from '../../../components/Icons';
 
-export const MatchScore = ({ candidate, onPreview }: any) => (
+import { HeroWidgets } from '../../../components/HeroWidgets';
+
+export const MatchScore = ({ candidate, widgets, metaData, permissions, onAction, shortlistStatus }: any) => (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 transition-colors">
         <div className="flex flex-col md:flex-row justify-between items-start gap-6">
             <div className="flex gap-5">
-                <div className="w-20 h-20 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-2xl font-bold text-slate-500 dark:text-slate-300 shadow-inner shrink-0 cursor-pointer" onClick={onPreview}>
+                <div className="w-20 h-20 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-2xl font-bold text-slate-500 dark:text-slate-300 shadow-inner shrink-0 cursor-pointer" onClick={() => onAction('view_profile')}>
                     {candidate.avatar}
                 </div>
                 <div>
                     <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2 flex-wrap">
-                        <span onClick={onPreview} className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                        <span onClick={() => onAction('view_profile')} className="cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                             {candidate.name}
                         </span>
                         <a
@@ -24,16 +26,16 @@ export const MatchScore = ({ candidate, onPreview }: any) => (
                         </a>
                     </h2>
                     <p className="text-slate-600 dark:text-slate-400 font-medium mb-2">{candidate.role} <span className="text-slate-300 dark:text-slate-600 mx-2">|</span> {candidate.location}</p>
-                    <div className="flex gap-2 flex-wrap">
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-sm transition-colors">
-                            <ThumbsUp size={16} /> Shortlist
-                        </button>
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
-                            <MessageSquare size={16} /> Message
-                        </button>
-                        <button className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                            <ThumbsDown size={18} />
-                        </button>
+
+                    {/* Hero Widgets Replacement */}
+                    <div className="mt-2">
+                        <HeroWidgets
+                            widgets={widgets}
+                            metaData={metaData}
+                            permissions={permissions}
+                            onAction={onAction}
+                            shortlistStatus={shortlistStatus}
+                        />
                     </div>
                 </div>
             </div>

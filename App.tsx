@@ -350,7 +350,11 @@ const AppContent = () => {
   }, [isDesktop, navigate]);
 
   const handleCampaignClick = React.useCallback((c: any) => {
-    navigate(`/showcampaign/intelligence/${c.id || c._id?.$oid || c._id}`);
+    const view = c.view || c.targetView || 'intelligence';
+    // Ensure view is lowercase for URL if needed, but 'intelligence' path uses lowercase.
+    // 'settings' is mapped in CampaignExternalRoutes as 'settings/:id'
+    // 'intelligence' is mapped as 'intelligence/:id' (or via fallback)
+    navigate(`/showcampaign/${view.toLowerCase()}/${c.id || c._id?.$oid || c._id}`);
   }, [navigate]);
 
   const handleSwitchClient = async (newClientId: string) => {

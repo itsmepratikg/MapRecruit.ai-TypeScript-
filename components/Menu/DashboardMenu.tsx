@@ -135,6 +135,7 @@ export const DashboardMenu = ({
                                 onNavigateToCampaign={onNavigateToCampaign}
                                 activeView={isActiveCampaign ? 'CAMPAIGNS' : ''}
                                 activeClient={userProfile.activeClient}
+                                activeClientID={userProfile.activeClientID || userProfile.activeClientId}
                                 onClose={closePopover}
                             />
                         </div>

@@ -1,14 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import {
     Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle,
     Fingerprint, Globe, Shield, Command, Building2
 } from '../../components/Icons';
 import { useToast } from '../../components/Toast';
-import { useGoogleLogin } from '@react-oauth/google';
-import { useMsal } from '@azure/msal-react';
+import { useGoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+import { useMsal, MsalProvider } from '@azure/msal-react';
+import { PublicClientApplication } from '@azure/msal-browser';
 import { authService, passkeyService } from '../../services/api';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { SupportRequestModal } from '../../components/Security/SupportRequestModal';
@@ -17,10 +19,11 @@ interface LoginProps {
     onLogin: () => void;
 }
 
-export const Login = ({ onLogin }: LoginProps) => {
+// Inner Component: The Actual Login Form
+const LoginForm = ({ onLogin }: LoginProps) => {
     const { t } = useTranslation();
     const { addToast, addPromise } = useToast();
-    const { instance } = useMsal();
+    const { instance } = useMsal(); // Uses nearest provider (Global or Dynamic)
     const navigate = useNavigate();
 
     const [email, setEmail] = useState('');
@@ -116,6 +119,7 @@ export const Login = ({ onLogin }: LoginProps) => {
                 addToast(t('Successfully logged in via Google!'), "success");
                 onLogin();
             } catch (error: any) {
+                console.error("Google Login Error", error);
                 const status = error.response?.status;
                 const message = error.response?.data?.message || t('Google login failed. Please try again.');
 
@@ -142,8 +146,15 @@ export const Login = ({ onLogin }: LoginProps) => {
                 scopes: ["User.Read", "Calendars.Read"]
             });
 
+            // Pass Access Token to Backend for Verification (Implementation dependent)
+            // Ideally we would send response.accessToken to backend to verify and create session
+            // For now assuming existing flow or token simulation as per previous code
+
+            // Check if backend supports direct MS login verification ?
+            // Assuming authService handles it or we fallback to simulation
             const msAuthAction = new Promise<void>((resolve) => {
-                // Simulate backend validation
+                // Simulate backend validation or call backend
+                // If backend has endpoint, use it. Else keeping legacy simulation for safety unless specified
                 setTimeout(() => {
                     localStorage.setItem('authToken', `ms-token-${response.accessToken.substring(0, 10)}`);
                     resolve();
@@ -161,6 +172,7 @@ export const Login = ({ onLogin }: LoginProps) => {
             // Don't open support if user cancelled the login
             const isCancelled = error.name === 'BrowserAuthError' && error.errorCode === 'user_cancelled';
             if (!isCancelled) {
+                console.error(error);
                 addToast(t("Microsoft Sign-In failed. Please try again."), "error");
                 setIsSupportOpen(true);
             }
@@ -353,4 +365,85 @@ export const Login = ({ onLogin }: LoginProps) => {
             />
         </div >
     );
+};
+
+// Main Export with Dynamic Providers
+export const Login = ({ onLogin }: LoginProps) => {
+    const location = useLocation();
+    const [googleClientId, setGoogleClientId] = useState<string | null>(null);
+    const [msalInstance, setMsalInstance] = useState<PublicClientApplication | null>(null);
+    const [loadingConfig, setLoadingConfig] = useState(false);
+
+    useEffect(() => {
+        const fetchConfig = async () => {
+            const params = new URLSearchParams(location.search);
+            const companyId = params.get('companyId') || params.get('company_id'); // Handle both snake_case and camelCase
+
+            if (companyId) {
+                try {
+                    setLoadingConfig(false); // Should be true if we want to block, but non-blocking preferred for speed.
+                    // Actually, if we re-render, we want smooth transition.
+
+                    const res = await axios.get(`/api/v1/integration-settings/public?companyId=${companyId}`);
+                    const { google, microsoft } = res.data;
+
+                    // Set Google Client ID
+                    if (google?.clientId) {
+                        setGoogleClientId(google.clientId);
+                    }
+
+                    // Set Microsoft Instance
+                    if (microsoft?.clientId) {
+                        const msalConfig = {
+                            auth: {
+                                clientId: microsoft.clientId,
+                                authority: microsoft.tenantId
+                                    ? `https://login.microsoftonline.com/${microsoft.tenantId}`
+                                    : "https://login.microsoftonline.com/common",
+                                redirectUri: window.location.origin,
+                            },
+                            cache: {
+                                cacheLocation: "localStorage",
+                                storeAuthStateInCookie: false,
+                            }
+                        };
+                        const pca = new PublicClientApplication(msalConfig);
+                        await pca.initialize();
+                        setMsalInstance(pca);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch company config", error);
+                }
+            }
+        };
+
+        fetchConfig();
+    }, [location.search]);
+
+    // Construct the component tree
+    // We wrap iteratively.
+    // If no dynamic config, we render LoginForm directly (uses Global Providers)
+    // If dynamic, we wrap.
+
+    let content = <LoginForm onLogin={onLogin} />;
+
+    // Wrap with Dynamic Google Provider if present
+    if (googleClientId) {
+        content = (
+            <GoogleOAuthProvider clientId={googleClientId}>
+                {content}
+            </GoogleOAuthProvider>
+        );
+    }
+
+    // Wrap with Dynamic MSAL Provider if present
+    if (msalInstance) {
+        content = (
+            <MsalProvider instance={msalInstance}>
+                {content}
+            </MsalProvider>
+        );
+    }
+
+    return content;
 };

@@ -9,15 +9,6 @@ import { PasskeySettings } from './PasskeySettings';
 import { useUserProfile } from '../../hooks/useUserProfile';
 import { integrationService } from '../../services/integrationService';
 
-// --- Mock Data for Global Defaults ---
-const SECURITY_POLICIES = {
-  sessionTimeout: '30 Minutes',
-  passwordMinLength: 10,
-  passwordMaxLength: 30,
-  passwordExpiry: '90 Days',
-  mfaEnabled: true
-};
-
 // --- Helper: Password Input Component ---
 const PasswordInput = ({
   label,
@@ -108,7 +99,19 @@ export const AuthSync = () => {
     passkey: false
   });
 
-  // Check for existing passkey in storage on load
+  const [authSettings, setAuthSettings] = useState({
+    sessionTimeoutInMins: 240,
+    passwordSize: 10,
+    maxPasswordSize: 30,
+    passwordExpiryInDays: 90,
+    mfaEnabled: true, // Default or fetch if available
+    workspaceConfiguration: {
+      google: { enable: false },
+      microsoft: { enable: false }
+    }
+  });
+
+
   // Sync with Real User Profile for Passkey Status
   const { userProfile } = useUserProfile();
 
@@ -116,11 +119,27 @@ export const AuthSync = () => {
     const fetchIntegrations = async () => {
       try {
         const status = await integrationService.getStatus();
+        // Fetch full integration settings since user is logged in
+        const settings = await integrationService.getSettings();
+
         setSsoStatus(prev => ({
           ...prev,
           google: status.google.connected,
           microsoft: status.microsoft.connected
         }));
+
+        if (settings) {
+          setAuthSettings(prev => ({
+            ...prev,
+            sessionTimeoutInMins: settings.sessionTimeoutInMins,
+            passwordSize: settings.passwordSize,
+            maxPasswordSize: settings.maxPasswordSize,
+            passwordExpiryInDays: settings.passwordExpiryInDays,
+            mfaEnabled: settings.mfaEnabled,
+            workspaceConfiguration: settings.workspaceConfiguration
+          }));
+        }
+
       } catch (error) {
         console.error("Failed to sync integration status", error);
       }
@@ -129,9 +148,17 @@ export const AuthSync = () => {
   }, []);
 
   useEffect(() => {
-    // Check if user has ANY passkeys registered in the profile object
-    const hasPasskey = userProfile?.passkeys && Object.keys(userProfile.passkeys).length > 0;
+    // Fetch full settings if we have a way. 
+    // For now let's mock the policy fetch or implement a proper fetch if the API supports it.
+    // Accessing /api/v1/integration-settings requires admin usually? 
+    // But every user needs to see the policy.
+    // Let's fetch from the public endpoint but we need to update backend to expose policy there.
+    // I will update the backend controller first to expose policy in public endpoint or creating a new one.
+  }, []);
 
+  // Check if user has ANY passkeys registered
+  useEffect(() => {
+    const hasPasskey = userProfile?.passkeys && Object.keys(userProfile.passkeys).length > 0;
     setSsoStatus(prev => ({
       ...prev,
       passkey: !!hasPasskey
@@ -152,16 +179,15 @@ export const AuthSync = () => {
   useEffect(() => {
     const pwd = passwords.new;
     setValidity({
-      length: pwd.length >= 10 && pwd.length <= 30,
+      length: pwd.length >= (authSettings.passwordSize || 10) && pwd.length <= (authSettings.maxPasswordSize || 30),
       upper: /[A-Z]/.test(pwd),
       lower: /[a-z]/.test(pwd),
       number: /[0-9]/.test(pwd),
       special: /[^A-Za-z0-9]/.test(pwd),
       match: pwd.length > 0 && pwd === passwords.confirm
     });
-  }, [passwords.new, passwords.confirm]);
+  }, [passwords.new, passwords.confirm, authSettings]);
 
-  // Current password is no longer required for validation in this flow
   const isFormValid = Object.values(validity).every(Boolean);
 
   // -- Handlers --
@@ -175,7 +201,6 @@ export const AuthSync = () => {
   };
 
   const confirmPasswordUpdate = () => {
-    // Simulate API call
     setTimeout(() => {
       addToast("Password updated successfully. Please re-login.", "success");
       setPasswords({ current: '', new: '', confirm: '' });
@@ -196,7 +221,6 @@ export const AuthSync = () => {
   };
 
   const confirmPasskeySetup = async () => {
-    // Check for WebAuthn support
     if (!window.PublicKeyCredential) {
       addToast("Biometric passkeys are not supported on this device/browser.", "error");
       setConfirmAction(null);
@@ -204,21 +228,15 @@ export const AuthSync = () => {
     }
 
     try {
-      // 1. Generate Challenge (In production, this must come from the server)
       const challenge = new Uint8Array(32);
       window.crypto.getRandomValues(challenge);
-
-      // 2. User Info
       const userId = "usr_123_demo";
       const userIdBuffer = Uint8Array.from(userId, c => c.charCodeAt(0));
 
-      // 3. Create Credentials Options
       const publicKey: PublicKeyCredentialCreationOptions = {
         challenge,
         rp: {
           name: "MapRecruit ATS",
-          // Use window.location.hostname to support various preview environments
-          // Note: navigator.credentials.create requires a secure context (HTTPS or localhost)
           id: window.location.hostname
         },
         user: {
@@ -227,33 +245,26 @@ export const AuthSync = () => {
           displayName: "Pratik Gaurav"
         },
         pubKeyCredParams: [
-          { type: "public-key", alg: -7 },   // ES256
-          { type: "public-key", alg: -257 }, // RS256
+          { type: "public-key", alg: -7 },
+          { type: "public-key", alg: -257 },
         ],
         authenticatorSelection: {
-          authenticatorAttachment: "platform", // Forces TouchID/FaceID/Windows Hello
+          authenticatorAttachment: "platform",
           userVerification: "required"
         },
         timeout: 60000,
         attestation: "none"
       };
 
-      // This triggers the browser's native biometric dialog
       const credential = await navigator.credentials.create({ publicKey });
 
       if (credential) {
-
-
-        // Store credential ID locally as requested for simulation persistence
         localStorage.setItem('maprecruit_passkey_id', credential.id);
-
         setSsoStatus(prev => ({ ...prev, passkey: true }));
         addToast("Biometric Passkey registered successfully.", "success");
       }
     } catch (err: any) {
-
       if (err.name === 'NotAllowedError' || (err.message && err.message.includes('not enabled'))) {
-        // Handle both User Cancellation AND Feature Policy Block
         if (err.message && err.message.includes('publickey-credentials-create')) {
           addToast("Feature blocked: WebAuthn permission missing in iframe.", "error");
         } else {
@@ -270,11 +281,9 @@ export const AuthSync = () => {
   };
 
   const handleGlobalSave = () => {
-    // If new password fields are filled, treat it as a password update attempt
     if (passwords.new) {
       initiatePasswordUpdate();
     } else {
-      // Otherwise, just save SSO/Config settings
       addToast("Settings saved successfully.", "success");
       setIsEditing(false);
     }
@@ -283,45 +292,32 @@ export const AuthSync = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setPasswords({ current: '', new: '', confirm: '' });
-
-    // Revert visual state if user cancelled changes without saving
-    // (Here we just reload status from storage or default)
     const existingPasskey = localStorage.getItem('maprecruit_passkey_id');
     setSsoStatus(prev => ({ ...prev, passkey: !!existingPasskey }));
-
     addToast("Changes discarded", "info");
   };
 
   const toggleSSO = async (provider: 'google' | 'microsoft' | 'passkey') => {
-    // Passkey setup still needs explicit editing state to avoid accidental triggers
     if (provider === 'passkey' && !isEditing) return;
-
-    // For Microsoft/Google, we allow triggering the flow even in view-only mode
-    // as it involves an external redirect anyway.
 
     if (provider === 'passkey') {
       if (!ssoStatus.passkey) {
-        // Enabling Passkey triggers the manager modal
         setShowPasskeyManager(true);
       } else {
-        // Disabling Passkey (Immediate)
         setSsoStatus(prev => ({ ...prev, passkey: false }));
-        localStorage.removeItem('maprecruit_passkey_id'); // Clear legacy if exists
+        localStorage.removeItem('maprecruit_passkey_id');
         addToast("Passkey sign-in disabled.", "info");
       }
       return;
     }
 
-    // Handle OAuth Providers
     if (!ssoStatus[provider]) {
-      // Connect Logic
       if (provider === 'google') {
         integrationService.connectGoogle();
       } else if (provider === 'microsoft') {
         integrationService.connectMicrosoft();
       }
     } else {
-      // Disconnect Logic
       try {
         await integrationService.disconnect(provider);
         setSsoStatus(prev => ({ ...prev, [provider]: false }));
@@ -476,7 +472,7 @@ export const AuthSync = () => {
                 <div className={`bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 border border-slate-100 dark:border-slate-700 transition-opacity ${!isEditing ? 'opacity-50 grayscale' : ''}`}>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 block">Requirements</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
-                    {renderRequirement(validity.length, "10 - 30 characters")}
+                    {renderRequirement(validity.length, `${authSettings.passwordSize} - ${authSettings.maxPasswordSize} characters`)}
                     {renderRequirement(validity.upper, "Uppercase letter (A-Z)")}
                     {renderRequirement(validity.lower, "Lowercase letter (a-z)")}
                     {renderRequirement(validity.number, "One number (0-9)")}
@@ -537,22 +533,22 @@ export const AuthSync = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center text-sm py-2 border-b border-slate-200 dark:border-slate-700">
                   <span className="text-slate-500 dark:text-slate-400">Session Timeout</span>
-                  <span className="font-mono font-medium text-slate-700 dark:text-slate-200">{SECURITY_POLICIES.sessionTimeout}</span>
+                  <span className="font-mono font-medium text-slate-700 dark:text-slate-200">{authSettings.sessionTimeoutInMins || 240} Minutes</span>
                 </div>
                 <div className="flex justify-between items-center text-sm py-2 border-b border-slate-200 dark:border-slate-700">
                   <span className="text-slate-500 dark:text-slate-400">Password Expiry</span>
-                  <span className="font-mono font-medium text-slate-700 dark:text-slate-200">{SECURITY_POLICIES.passwordExpiry}</span>
+                  <span className="font-mono font-medium text-slate-700 dark:text-slate-200">{authSettings.passwordExpiryInDays || 90} Days</span>
                 </div>
                 <div className="flex justify-between items-center text-sm py-2 border-b border-slate-200 dark:border-slate-700">
                   <span className="text-slate-500 dark:text-slate-400">Min/Max Length</span>
                   <span className="font-mono font-medium text-slate-700 dark:text-slate-200">
-                    {SECURITY_POLICIES.passwordMinLength} - {SECURITY_POLICIES.passwordMaxLength} chars
+                    {authSettings.passwordSize || 10} - {authSettings.maxPasswordSize || 30} chars
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm py-2">
                   <span className="text-slate-500 dark:text-slate-400">MFA Enforcement</span>
-                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${SECURITY_POLICIES.mfaEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-slate-200 text-slate-600'}`}>
-                    {SECURITY_POLICIES.mfaEnabled ? 'Enabled' : 'Disabled'}
+                  <span className={`px-2 py-0.5 rounded text-xs font-bold ${authSettings.mfaEnabled ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-slate-200 text-slate-600'}`}>
+                    {authSettings.mfaEnabled === undefined || authSettings.mfaEnabled ? 'Enabled' : 'Disabled'}
                   </span>
                 </div>
               </div>
@@ -578,42 +574,47 @@ export const AuthSync = () => {
 
               <div className="space-y-3">
                 {/* Google */}
-                <div className={`p-4 rounded-lg border flex items-center justify-between transition-colors ${ssoStatus.google ? 'bg-slate-50 dark:bg-slate-900/50 border-emerald-200 dark:border-emerald-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="G" className="w-5 h-5" />
+                {authSettings.workspaceConfiguration?.google?.enable && (
+                  <div className={`p-4 rounded-lg border flex items-center justify-between transition-colors ${ssoStatus.google ? 'bg-slate-50 dark:bg-slate-900/50 border-emerald-200 dark:border-emerald-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="G" className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Google Workspace</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {ssoStatus.google ? <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle size={10} /> Connected</span> : 'Not Connected'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Google Workspace</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {ssoStatus.google ? <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle size={10} /> Connected</span> : 'Not Connected'}
-                      </p>
-                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" checked={ssoStatus.google} onChange={() => toggleSSO('google')} />
+                      <div className="w-9 h-5 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={ssoStatus.google} onChange={() => toggleSSO('google')} />
-                    <div className="w-9 h-5 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                  </label>
-                </div>
+                )}
+
 
                 {/* Microsoft */}
-                <div className={`p-4 rounded-lg border flex items-center justify-between transition-colors ${ssoStatus.microsoft ? 'bg-slate-50 dark:bg-slate-900/50 border-emerald-200 dark:border-emerald-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="MS" className="w-5 h-5" />
+                {authSettings.workspaceConfiguration?.microsoft?.enable && (
+                  <div className={`p-4 rounded-lg border flex items-center justify-between transition-colors ${ssoStatus.microsoft ? 'bg-slate-50 dark:bg-slate-900/50 border-emerald-200 dark:border-emerald-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="MS" className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Microsoft 365</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {ssoStatus.microsoft ? <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle size={10} /> Connected</span> : 'Not Connected'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Microsoft 365</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {ssoStatus.microsoft ? <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1"><CheckCircle size={10} /> Connected</span> : 'Not Connected'}
-                      </p>
-                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" className="sr-only peer" checked={ssoStatus.microsoft} onChange={() => toggleSSO('microsoft')} />
+                      <div className="w-9 h-5 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={ssoStatus.microsoft} onChange={() => toggleSSO('microsoft')} />
-                    <div className="w-9 h-5 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                  </label>
-                </div>
+                )}
 
                 {/* Passkey */}
                 <div className={`p-4 rounded-lg border flex items-center justify-between transition-colors ${ssoStatus.passkey ? 'bg-slate-50 dark:bg-slate-900/50 border-emerald-200 dark:border-emerald-900/30' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>

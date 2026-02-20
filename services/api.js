@@ -170,8 +170,12 @@ export const userService = {
 };
 
 export const campaignService = {
-    getAll: async () => {
-        const response = await api.get('/campaigns');
+    getAll: async (params) => {
+        const response = await api.get('/campaigns', { params });
+        return response.data;
+    },
+    getById: async (id) => {
+        const response = await api.get(`/campaigns/${id}`);
         return response.data;
     },
     getStats: async (clientID) => {

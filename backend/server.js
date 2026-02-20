@@ -202,6 +202,12 @@ app.use('/api/user/integrations', require('./routes/integrationRoutes'));
 app.use('/api/webhooks', require('./routes/webhookRoutes'));
 app.use('/api/support', require('./routes/supportRoutes'));
 
+// Integration Routes (SharePoint, Drive, Uploads)
+app.use('/api/v1/sharepoint', require('./routes/sharepointRoutes'));
+app.use('/api/v1/drive', require('./routes/googleDriveRoutes'));
+app.use('/api/v1/upload', require('./routes/uploadRoutes'));
+app.use('/api/v1/integration-settings', require('./routes/integrationSettingsRoutes'));
+
 // Initialize Background Sync Scheduler
 const syncService = require('./services/syncService');
 syncService.init();

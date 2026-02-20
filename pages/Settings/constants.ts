@@ -24,4 +24,5 @@ export const SETTINGS_CONTENT: Record<string, { title: string, desc: string, ico
   QUESTIONNAIRE: { title: "Questionnaire Builder", desc: "Create screening questionnaires and assessment forms for candidates.", icon: ClipboardList },
   PROFILE_SOURCES: { title: "Profile Sources", desc: "Manage external profile sources and configure data import settings.", icon: Database },
   MRI_PREFERENCE: { title: "MRI Preferences", desc: "Configure MapRecruit Intelligence preferences and scoring weights.", icon: SlidersHorizontal },
+  WORKSPACE_CONFIG: { title: "Workspace Configuration", desc: "Manage integration architecture (Single vs Multi-tenant) and test API permissions.", icon: Shield },
 };

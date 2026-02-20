@@ -236,6 +236,38 @@ export const integrationService = {
     async updateCalendarEvent(eventId: string, eventData: any): Promise<{ success: boolean; event: any }> {
         const response = await api.put(`/user/integrations/google/calendar/events/${eventId}`, eventData);
         return response.data;
+    },
+
+    /**
+     * getSettings: Fetches the current integration settings (Admin)
+     */
+    async getSettings(): Promise<any> {
+        const response = await api.get('/v1/integration-settings');
+        return response.data;
+    },
+
+    /**
+     * updateSettings: Updates the integration settings (Admin)
+     */
+    async updateSettings(data: any): Promise<any> {
+        const response = await api.put('/v1/integration-settings', data);
+        return response.data;
+    },
+
+    /**
+     * testPermissions: Tests the provided credentials
+     */
+    async testPermissions(data: any): Promise<any> {
+        const response = await api.post('/v1/integration-settings/test', data);
+        return response.data;
+    },
+
+    /**
+     * getPublicSettings: Fetches public integration settings (No Auth Required)
+     */
+    async getPublicSettings(): Promise<any> {
+        const response = await api.get('/v1/integration-settings/public/config');
+        return response.data;
     }
 };
 

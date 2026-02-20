@@ -19,6 +19,7 @@ import { owningEntityService } from '../services/owningEntityService'; // Added 
 import { useToast } from '../components/Toast';
 
 import { LocalMatchAnalysisModal } from '../components/LocalMatchAnalysisModal';
+import { ResumePreviewModal } from '../components/ResumePreviewModal';
 
 import { useParams, useLocation } from 'react-router-dom';
 import { useCandidateProfile } from '../hooks/useCandidateProfile';
@@ -69,6 +70,7 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
   const [isContactModalOpen, setIsContactModalOpen] = useState(false); // Contact Modal State
   const [shortlistStatus, setShortlistStatus] = useState<'shortlisted' | 'rejected' | 'none'>('none');
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [showResumePreview, setShowResumePreview] = useState(false);
 
   // --- ACCESS CONTROL & OWNING ENTITY LOGIC ---
   useEffect(() => {
@@ -83,7 +85,7 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
         const currentUserClientIds = Array.isArray(user.clientID || user.clients)
           ? (user.clientID || user.clients)
           : [user.clientID || user.clients].filter(Boolean);
-        const currentActiveClientId = user.activeClientID || user.activeClient || user.clientId;
+        const currentActiveClientId = user.activeClientID || (typeof user.activeClient === 'object' ? user.activeClient?._id : undefined) || user.clientId;
 
         const resumeClientId = liveData.clientID || liveData.clientId;
         const resumeCompanyId = liveData.companyID || liveData.companyId;
@@ -285,7 +287,7 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
         addToast("Duplicate check clicked", "info");
         break;
       case 'view_resume':
-        // Trigger Resume Preview Logic
+        setShowResumePreview(true);
         break;
       default:
         addToast(`${action} widget clicked`, "default");
@@ -411,6 +413,11 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
     <div className="flex flex-col h-full overflow-hidden relative bg-slate-50 dark:bg-slate-900 w-full animate-in fade-in duration-300">
       {/* MODALS */}
       {showMatchScore && <LocalMatchAnalysisModal onClose={() => setShowMatchScore(false)} />}
+      <ResumePreviewModal
+        isOpen={showResumePreview}
+        onClose={() => setShowResumePreview(false)}
+        resumeID={id || null}
+      />
       <EditProfileModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -583,7 +590,11 @@ export const CandidateProfile = ({ activeTab: propsActiveTab, candidateId: props
               <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500 transition-colors">
                 <Mail size={18} />
               </button>
-              <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500 transition-colors">
+              <button
+                onClick={() => setShowResumePreview(true)}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-500 transition-colors"
+                title="View Resume"
+              >
                 <FileEdit size={18} />
               </button>
             </div>

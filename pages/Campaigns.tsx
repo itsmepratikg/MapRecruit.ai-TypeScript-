@@ -88,6 +88,7 @@ export const mapCampaignToUI = (camp: any): Campaign => {
   };
 
   return {
+    ...camp,
     id: camp._id?.$oid || camp._id || 0,
     name: camp.title || camp.name || camp.displayName || mainSchema.title || 'Untitled Campaign',
     role: camp.job?.details?.jobTitle?.text || mainSchema.jobType || 'General Role',
@@ -111,6 +112,7 @@ export const mapCampaignToUI = (camp: any): Campaign => {
       return camp.daysLeft || 0;
     })(),
     engageStatus: (camp.engageStatus as 'Green' | 'Yellow' | 'Grey') || 'Grey',
+    clientID: camp.clientID,
     rounds: [] // Add empty rounds to satisfy Type
   };
 };

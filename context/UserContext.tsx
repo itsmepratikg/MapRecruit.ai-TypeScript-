@@ -89,8 +89,15 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (response.data) {
                 const userData = response.data;
+                // Ensure activeClientID is an ID (Foreign Key)
+                let safeActiveClientID = userData.activeClientID;
+                if (!safeActiveClientID && typeof userData.activeClient === 'object' && userData.activeClient?._id) {
+                    safeActiveClientID = userData.activeClient._id;
+                }
+
                 const mappedProfile = {
                     ...userData,
+                    activeClientID: safeActiveClientID,
                     _id: userData._id || userData.id,
                     phone: userData.phone || userData.mobile || userData.phoneNumber,
                     teams: Array.isArray(userData.clientID)

@@ -14,6 +14,7 @@ import { ClientProfileContainer } from './ClientProfile/ClientProfileContainer';
 import { FranchiseSettings } from './Franchise';
 import { RoleHierarchy } from './Roles/RoleHierarchy';
 import { ThemeSettings } from './ThemeSettings';
+import { WorkspaceConfigurations } from './WorkspaceConfigurations';
 
 import { Routes, Route, Navigate } from 'react-router-dom';
 
@@ -46,6 +47,7 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
             'REACHOUT_LAYOUTS': 'reachoutlayouts',
             'ROLE_HIERARCHY': 'rolehierarchy',
             'THEMES': 'themes',
+            'WORKSPACE_CONFIG': 'workspaceconfig',
             // Add others as needed, or fallback to TitleCase
         };
         if (map[id]) return map[id];
@@ -90,13 +92,15 @@ export const SettingsPage = ({ onSelectUser }: SettingsPageProps) => {
             <Route path={getPath('FRANCHISE')} element={<FranchiseSettings />} />
             <Route path={getPath('REACHOUT_LAYOUTS')} element={<ReachOutLayouts />} />
             <Route path={getPath('THEMES')} element={<ThemeSettings />} />
+            <Route path={getPath('WORKSPACE_CONFIG')} element={<WorkspaceConfigurations />} />
+            <Route path={getPath('AUTHENTICATION')} element={<WorkspaceConfigurations />} />
             <Route path="users/userprofile/:section/:id" element={<UserProfileContainer />} />
             <Route path="users/userprofile/:section" element={<UserProfileContainer />} />
             <Route path="clientprofile/:tab/:clientId" element={<ClientProfileContainer />} />
             {/* Add routes for other settings items */}
             {Object.keys(SETTINGS_CONTENT).map(id => {
                 // Only render placeholder for items not explicitly routed above
-                if (!['COMPANY_INFO', 'ROLES', 'USERS', 'REACHOUT_LAYOUTS', 'CLIENTS', 'FRANCHISE', 'ROLE_HIERARCHY', 'THEMES'].includes(id)) {
+                if (!['COMPANY_INFO', 'ROLES', 'USERS', 'REACHOUT_LAYOUTS', 'CLIENTS', 'FRANCHISE', 'ROLE_HIERARCHY', 'THEMES', 'WORKSPACE_CONFIG', 'AUTHENTICATION'].includes(id)) {
                     return <Route key={id} path={getPath(id)} element={<SettingsContentWrapper id={id} />} />;
                 }
                 return null;

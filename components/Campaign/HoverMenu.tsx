@@ -60,6 +60,9 @@ export const HoverMenu = ({ campaign, onAction, isOpenMobile, position = 'right'
                     <button onClick={(e) => { e.stopPropagation(); onAction('MATCH_AI'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">
                         {t("Match AI")}
                     </button>
+                    <button onClick={(e) => { e.stopPropagation(); onAction('SETTINGS'); }} className="w-full text-left px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-green-50 dark:hover:bg-slate-700 hover:text-green-700 dark:hover:text-green-400 transition-colors">
+                        {t("Settings")}
+                    </button>
                     <div className="relative w-full" onMouseEnter={() => handleMouseEnter('ENGAGE')} onMouseLeave={handleMouseLeave}>
                         <button onClick={(e) => { e.stopPropagation(); onAction('ENGAGE_AI'); }} className={`w-full text-left px-4 py-2 text-sm transition-colors flex justify-between items-center ${activeSub === 'ENGAGE' ? 'bg-sky-50 dark:bg-slate-700 text-green-600 dark:text-green-400' : 'text-gray-600 dark:text-slate-300 hover:bg-sky-50 dark:hover:bg-slate-700 hover:text-green-600 dark:hover:text-green-400'}`}>
                             <span>{t("Engage AI")}</span>

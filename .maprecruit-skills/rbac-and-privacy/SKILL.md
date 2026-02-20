@@ -26,3 +26,7 @@ Protects user data and enforces organizational boundaries.
 ### 3. Session Security
 - Enforce 30-minute inactivity timeouts (banking-style logout).
 - Ensure sensitive keys are never exposed in console logs or network payloads.
+
+### 4. External Integrations
+- Refer to `RBAC-EXTERNAL-PERMISSIONS.md` for a comprehensive list of required scopes for Microsoft Graph and Google APIs.
+- Ensure that `Application Permissions` (like `Sites.Read.All`) are only granted to backend services, never to client-side tokens.

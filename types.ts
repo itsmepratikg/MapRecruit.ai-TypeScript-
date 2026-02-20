@@ -135,6 +135,13 @@ export interface Campaign {
   engageStatus?: 'Green' | 'Yellow' | 'Grey';
   // Access Control Integration
   access?: AccessSettings;
+
+  // Added missing original data
+  job?: any;
+  customData?: any;
+  jobPosting?: any;
+  jobDescription?: any;
+  [key: string]: any;
 }
 
 export interface Tag {

@@ -12,7 +12,7 @@ export const SourceAIWrapper = ({ activeView = 'ATTACH', campaign }: { activeVie
         {activeView === 'ATTACH' && <AttachPeople />}
         {activeView === 'PROFILES' && <AttachedPeople campaign={campaign} />}
         {activeView === 'INTEGRATIONS' && <Integrations />}
-        {activeView === 'JD' && <JobDescription />}
+        {activeView === 'JD' && <JobDescription campaign={campaign} />}
         {activeView === 'TEMPLATES' && <div className="p-10 text-center text-slate-500">Email Templates Placeholder</div>}
         {activeView === 'ANALYTICS' && <div className="p-10 text-center text-slate-500">Analytics Placeholder</div>}
       </div>

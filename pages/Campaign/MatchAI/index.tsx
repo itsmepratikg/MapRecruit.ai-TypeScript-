@@ -11,6 +11,8 @@ import { AdditionalJobRequirement } from './AdditionalJobRequirement';
 import { ProfileDrawer } from '../../../components/ProfileDrawer';
 import { interviewService } from '../../../services/interviewService';
 import { stripHtml, getSkillCategory, formatMatchScore, SkillMatchCategory } from '../../../utils/mongoUtils';
+import { useUserProfile } from '../../../hooks/useUserProfile';
+import { ResumePreviewModal } from '../../../components/ResumePreviewModal';
 
 // MATCH_CANDIDATES logic will be handled by state
 
@@ -71,6 +73,15 @@ export const MatchAI = () => {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const { isDesktop } = useScreenSize();
+    const { userProfile } = useUserProfile();
+
+    // Helper for initials
+    const getInitials = (name: string) => {
+        if (!name) return 'C';
+        const parts = name.trim().split(' ');
+        if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -84,6 +95,31 @@ export const MatchAI = () => {
                     .filter((iv: any) => iv.linked === true)
                     .map((iv: any) => {
                         const allSkills = iv.MRI?.experience?.skills || iv.experience?.skills || [];
+                        const candidateName = iv.profile?.fullName || 'Unknown Candidate';
+
+                        // Helper to find current/most recent job title
+                        const getRecentJobTitle = () => {
+                            // 1. Check for Resume Experience (Priority)
+                            const resumeExp = iv.resume?.professionalExperience || iv.profile?.professionalExperience || [];
+                            if (Array.isArray(resumeExp) && resumeExp.length > 0) {
+                                // Try to find current role
+                                const current = resumeExp.find((e: any) => !e.endDate || e.endDate.text?.toLowerCase() === 'present' || e.currentStatus === 'Working');
+                                if (current && (current.jobTitle?.text || current.jobTitle)) return current.jobTitle.text || current.jobTitle;
+                                // Fallback to first item
+                                if (resumeExp[0]?.jobTitle?.text || resumeExp[0]?.jobTitle) return resumeExp[0].jobTitle.text || resumeExp[0].jobTitle;
+                            }
+
+                            // 2. Check for Candidate Experience (Legacy/Alternative path)
+                            const exp = iv.profile?.experience || iv.MRI?.experience || [];
+                            if (Array.isArray(exp) && exp.length > 0) {
+                                const current = exp.find((e: any) => e.isCurrent || !e.endDate);
+                                if (current && current.jobTitle) return current.jobTitle.title || current.jobTitle;
+                                if (exp[0].jobTitle) return exp[0].jobTitle.title || exp[0].jobTitle;
+                            }
+
+                            // 3. Fallback to professional summary or campaign title
+                            return iv.resume?.professionalSummary?.currentRole?.jobTitle || iv.profile?.professionalSummary?.currentRole?.title || iv.campaign?.title || 'No Role Specified';
+                        };
 
                         const groupedSkills = {
                             matched: {
@@ -103,11 +139,11 @@ export const MatchAI = () => {
                         return {
                             id: iv._id,
                             resumeID: iv.resumeID, // Store for profile linking
-                            name: iv.profile?.fullName || 'Unknown Candidate',
-                            role: iv.MRI?.experience?.jobTitle?.jobTitle || iv.profile?.MRI?.experience?.jobTitle?.jobTitle || iv.campaign?.title || 'No Role Specified',
-                            location: iv.profile?.locations?.[0]?.text || 'No Location',
+                            name: candidateName,
+                            role: getRecentJobTitle(),
+                            location: iv.resume?.profile?.locations?.[0]?.text || iv.profile?.locations?.[0]?.text || iv.profile?.contact?.currentLocation?.text || 'No Location',
                             score: formatMatchScore(iv.MRI?.actual_mri_score || 0),
-                            avatar: (iv.profile?.firstName?.[0] || '') + (iv.profile?.lastName?.[0] || 'C'),
+                            avatar: getInitials(candidateName),
                             status: iv.feedBack?.status || iv.status || 'New',
                             email: iv.profile?.emails?.[0]?.text || 'N/A',
                             phone: iv.profile?.phones?.[0]?.text || 'N/A',
@@ -119,11 +155,14 @@ export const MatchAI = () => {
                             skills: groupedSkills,
                             aiSummary: iv.MRI?.genAI?.[0]?.matchSummary || iv.MRI?.experience?.matchSummary || 'No summary available.'
                         };
-                    });
+                    })
+                    // SORT BY SCORE DESCENDING
+                    .sort((a: any, b: any) => parseFloat(b.score) - parseFloat(a.score));
 
                 setCandidates(mapped);
                 if (mapped.length > 0) {
-                    setSelectedCandidateId(mapped[0].id);
+                    // Preserve selection if possible, else default to first
+                    setSelectedCandidateId(prev => prev && mapped.find(c => c.id === prev) ? prev : mapped[0].id);
                 }
             } catch (error) {
                 console.error('Failed to fetch candidates:', error);
@@ -142,24 +181,147 @@ export const MatchAI = () => {
 
     const selectedCandidate = candidates.find(c => c.id === selectedCandidateId) || candidates[0];
 
+    // --- ACTIONS ---
+    const updateCandidateStatus = async (status: string, additionalData: any = {}) => {
+        if (!selectedCandidateId || !userProfile?.id) return;
+
+        try {
+            // Optimistic Update
+            setCandidates(prev => prev.map(c =>
+                c.id === selectedCandidateId ? { ...c, status } : c
+            ));
+
+            const payload = {
+                feedBack: {
+                    status,
+                    ...additionalData
+                },
+                status // Top level status as well often used
+            };
+
+            await interviewService.update(selectedCandidateId, payload);
+            // Optionally show toast success here
+        } catch (error) {
+            console.error("Failed to update status", error);
+            // Revert on failure if needed
+        }
+    };
+
+    const handleShortlist = () => {
+        updateCandidateStatus('Shortlisted', {
+            shortlistedAt: new Date(),
+            shortlistedBy: userProfile.id
+        });
+    };
+
+    const handleReject = () => {
+        updateCandidateStatus('Rejected', {
+            rejectedAt: new Date(),
+            rejectedBy: userProfile.id
+        });
+    };
+
     const handleSelectCandidate = (id: string) => {
         setSelectedCandidateId(id);
         if (!isDesktop) setIsMobileListOpen(false);
     };
 
+    // --- RESUME PREVIEW ---
+    const [previewResumeId, setPreviewResumeId] = useState<string | null>(null);
+
+    // --- HERO WIDGETS LOGIC ---
+    const [shortlistStatus, setShortlistStatus] = useState<'shortlisted' | 'rejected' | 'none'>('none');
+
+    // Sync local shortlist status with selected candidate
+    useEffect(() => {
+        if (selectedCandidate) {
+            const status = selectedCandidate.status?.toLowerCase();
+            setShortlistStatus(status === 'shortlisted' ? 'shortlisted' : status === 'rejected' ? 'rejected' : 'none');
+        }
+    }, [selectedCandidate]);
+
+
+    const handleWidgetAction = (action: string, data?: any) => {
+        console.log("MatchAI Widget Action:", action);
+        switch (action) {
+            case 'shortlist_accept':
+                handleShortlist();
+                break;
+            case 'shortlist_reject':
+                handleReject();
+                break;
+            case 'view_profile':
+                setSearchParams(prev => {
+                    const newParams = new URLSearchParams(prev);
+                    if (selectedCandidate?.resumeID) newParams.set('rid', selectedCandidate.resumeID);
+                    return newParams;
+                });
+                break;
+            case 'view_resume':
+                if (selectedCandidate?.resumeID) handlePreview(selectedCandidate.resumeID);
+                break;
+            case 'email':
+                // Placeholder
+                alert("Email action triggered");
+                break;
+            case 'sms':
+                // Placeholder
+                alert("SMS action triggered");
+                break;
+            case 'edit_global':
+                // Placeholder or open edit modal if available
+                alert("Edit Profile triggered");
+                break;
+            default:
+                console.log("Unhandled widget action:", action);
+        }
+    };
+
+    // Construct Widgets Config (Force enable for MatchAI context)
+    const matchWidgets = {
+        resumeWidget: true,
+        shortListWidget: true,
+        massEmailWidget: true,
+        massSMSWidget: true,
+        editProfileWidget: true,
+        duplicateWidget: true,
+        attentionWidget: true,
+        favouriteWidget: true,
+        unSubscribeWidget: true,
+        referralWidget: true,
+        profileSummaryWidget: true,
+        profileViewedWidget: true,
+        downloadProfileWidget: true,
+        linkCampaignWidget: true,
+        profileShareWidget: true,
+        linkFolderWidget: true,
+        tagsAttachWidget: true,
+        skipAutomationWidget: true,
+        exportProfileWidget: true,
+        directVideoWidget: true,
+        uploadResumesWidget: true
+    };
+
+    const matchMetaData = {
+        // Add any metadata if needed by widgets
+    };
+
+    const matchPermissions = { canEdit: true };
+
     const handlePreview = (rid: string) => {
-        setSearchParams(prev => {
-            const newParams = new URLSearchParams(prev);
-            newParams.set('rid', rid);
-            if (!newParams.get('tab')) newParams.set('tab', 'profile');
-            return newParams;
-        });
+        setPreviewResumeId(rid);
     };
 
     return (
-        <div className="flex h-full bg-white dark:bg-slate-900 relative overflow-hidden transition-colors">
+        <div className="flex h-full w-full bg-slate-50 dark:bg-slate-900 overflow-hidden relative">
+            <ResumePreviewModal
+                isOpen={!!previewResumeId}
+                resumeID={previewResumeId}
+                onClose={() => setPreviewResumeId(null)}
+            />
             {/* Sidebar List */}
             <div className={`w-full lg:w-80 border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col z-10 shadow-[4px_0_24px_rgba(0,0,0,0.02)] absolute lg:relative inset-0 lg:inset-auto transition-transform duration-300 ${isMobileListOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+                {/* ... Sidebar Content ... */}
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="font-bold text-slate-800 dark:text-slate-100">Ranked Candidates</h3>
@@ -209,26 +371,32 @@ export const MatchAI = () => {
 
                         {selectedCandidate ? (
                             <>
-                                <MatchScore candidate={selectedCandidate} onPreview={() => handlePreview(selectedCandidate.resumeID)} />
+                                <MatchScore
+                                    candidate={selectedCandidate}
+                                    widgets={matchWidgets}
+                                    metaData={matchMetaData}
+                                    permissions={matchPermissions}
+                                    onAction={handleWidgetAction}
+                                    shortlistStatus={shortlistStatus}
+                                />
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                     <div className="lg:col-span-2 space-y-6">
                                         <MatchSummary candidate={selectedCandidate} />
-                                        <AdditionalJobRequirement candidateName={selectedCandidate.name} />
                                     </div>
 
                                     <div className="space-y-6">
                                         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 transition-colors">
                                             <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Contact Info</h4>
                                             <div className="space-y-3">
-                                                <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+                                                <a href={`mailto:${selectedCandidate.email}`} className="flex items-center gap-3 text-sm text-blue-600 dark:text-blue-400 hover:underline transition-colors">
                                                     <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-slate-400"><Mail size={16} /></div>
                                                     <span className="truncate">{selectedCandidate.email}</span>
-                                                </div>
-                                                <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
+                                                </a>
+                                                <a href={`tel:${selectedCandidate.phone}`} className="flex items-center gap-3 text-sm text-blue-600 dark:text-blue-400 hover:underline transition-colors">
                                                     <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-slate-400"><Phone size={16} /></div>
                                                     <span>{selectedCandidate.phone}</span>
-                                                </div>
+                                                </a>
                                                 <div className="flex items-center gap-3 text-sm text-slate-700 dark:text-slate-200">
                                                     <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-lg text-slate-400"><Linkedin size={16} /></div>
                                                     <span className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">linkedin.com/in/user</span>
@@ -236,17 +404,9 @@ export const MatchAI = () => {
                                             </div>
                                         </div>
 
-                                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 transition-colors">
-                                            <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4">Quick Actions</h4>
-                                            <div className="space-y-3">
-                                                <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 transition-all">
-                                                    <Briefcase size={16} /> View Full Resume
-                                                </button>
-                                                <button className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border border-indigo-100 dark:border-indigo-800 rounded-lg text-sm font-medium text-indigo-700 dark:text-indigo-300 transition-all">
-                                                    <Linkedin size={16} /> LinkedIn Profile
-                                                </button>
-                                            </div>
-                                        </div>
+                                        <AdditionalJobRequirement candidateName={selectedCandidate.name} />
+
+                                        {/* Removed Quick Actions Box as requested */}
                                     </div>
                                 </div>
                             </>

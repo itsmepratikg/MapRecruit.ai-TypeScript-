@@ -47,6 +47,7 @@ export const Command = (props: any) => <Icon {...props} iconClass="fa-solid fa-t
 export const Copy = (props: any) => <Icon {...props} iconClass="fa-solid fa-copy" />;
 export const CornerDownLeft = (props: any) => <Icon {...props} iconClass="fa-solid fa-arrow-turn-down" style={{ transform: 'scaleX(-1)', ...props.style }} />;
 export const CreditCard = (props: any) => <Icon {...props} iconClass="fa-solid fa-credit-card" />;
+export const DollarSign = (props: any) => <Icon {...props} iconClass="fa-solid fa-dollar-sign" />;
 export const Database = (props: any) => <Icon {...props} iconClass="fa-solid fa-database" />;
 export const Download = (props: any) => <Icon {...props} iconClass="fa-solid fa-download" />;
 export const Edit2 = (props: any) => <Icon {...props} iconClass="fa-solid fa-pen-to-square" />;

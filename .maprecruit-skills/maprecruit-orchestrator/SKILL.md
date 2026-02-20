@@ -30,7 +30,10 @@ Whenever a task is started, immediately check the `/.maprecruit-skills/` directo
 ### 3. Safety First
 - Always consult `coding-safety` when dealing with destructive actions or asynchronous state updates to ensure optional chaining and confirmation patterns are applied.
 
-### 4. Documentation Requirements
+### 4. Implementation Plan Managment
+- **Append Only**: When updating `implementation_plan.md` for a new feature or task, **NEVER** overwrite previous content. **ALWAYS APPEND** new plans to the end of the document to maintain a comprehensive history of changes.
+
+### 5. Documentation Requirements
 
 #### A. Test Documentation (`.trash/Test Cases/`)
 For any feature implementation or bug fix, create comprehensive test documentation in `.trash/Test Cases/` with the following types:
